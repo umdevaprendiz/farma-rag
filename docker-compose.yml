@@ -1,0 +1,40 @@
+services:
+  # MySQL 8 em container. Para usar um MySQL já instalado no Windows em vez deste,
+  # rode a API fora do Docker (uvicorn) com DB_HOST/DB_PORT do .env apontando para ele.
+  db:
+    image: mysql:8.4
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?defina DB_ROOT_PASSWORD no .env}
+      MYSQL_DATABASE: ${DB_NAME:-farmarag}
+      MYSQL_USER: ${DB_USER:-farmarag}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+    ports:
+      # Exposta no host para a ingestão e o benchmark (que rodam fora do Docker).
+      - "127.0.0.1:${DB_PORT:-3306}:3306"
+    volumes:
+      - dbdata:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      # Dentro do Compose o banco é o serviço "db" e o Ollama está no host.
+      DB_HOST: db
+      DB_PORT: "3306"
+      OLLAMA_URL: http://host.docker.internal:11434
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  dbdata:

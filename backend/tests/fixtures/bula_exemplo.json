@@ -1,0 +1,20 @@
+{
+  "id": "losartana-potassica-50mg-fabricante-x",
+  "medicamento": "Losartana potássica 50 mg",
+  "principio_ativo": "losartana potássica",
+  "nomes_comerciais": ["Cozaar"],
+  "fabricante": "Fabricante X",
+  "tipo_bula": "profissional",
+  "data_versao": "2025-03-15",
+  "fonte_pdf": "data/raw/losartana_fabricante_x.pdf",
+  "processado_em": "2026-10-12T10:00:00-03:00",
+  "secoes": [
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 5,
+      "texto": "O uso concomitante com anti-inflamatórios não esteroidais pode reduzir o efeito anti-hipertensivo da losartana."
+    }
+  ]
+}

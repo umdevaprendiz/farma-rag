@@ -1,0 +1,26 @@
+# Segredos e configuração local
+.env
+
+# Dados que não vão para o Git (PDFs originais; o dataset processado vai)
+data/raw/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Frontend
+node_modules/
+frontend/dist/
+
+# Docker / banco
+pgdata/
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

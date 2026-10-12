@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest>=8.0
+# Ingestão (roda só no host, não entra na imagem da API)
+pdfplumber>=0.11

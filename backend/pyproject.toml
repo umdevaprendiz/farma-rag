@@ -1,0 +1,13 @@
+# Torna o pacote `app` importável por ingestao/ e benchmark/ (pip install -e backend),
+# para que os três compartilhem cliente do Ollama, schemas e config sem copiar código.
+[project]
+name = "farmarag-backend"
+version = "0.1.0"
+requires-python = ">=3.11"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["app*"]

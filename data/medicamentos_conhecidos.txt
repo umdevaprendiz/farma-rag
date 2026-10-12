@@ -1,0 +1,45 @@
+# Medicamentos comuns de balcão. Servem para reconhecer pergunta sobre um remédio
+# SEM bula indexada e responder "não encontrei" sem chamar o LLM.
+# Os que tiverem bula indexada são ignorados automaticamente. Um nome por linha.
+paracetamol
+dipirona
+ibuprofeno
+diclofenaco
+nimesulida
+naproxeno
+cetoprofeno
+acido acetilsalicilico
+amoxicilina
+azitromicina
+cefalexina
+ciprofloxacino
+losartana
+enalapril
+captopril
+anlodipino
+atenolol
+propranolol
+hidroclorotiazida
+furosemida
+sinvastatina
+atorvastatina
+metformina
+glibenclamida
+omeprazol
+pantoprazol
+ranitidina
+loratadina
+cetirizina
+dexclorfeniramina
+prednisona
+dexametasona
+fluoxetina
+sertralina
+amitriptilina
+clonazepam
+diazepam
+alprazolam
+levotiroxina
+salbutamol
+metoclopramida
+ondansetrona
