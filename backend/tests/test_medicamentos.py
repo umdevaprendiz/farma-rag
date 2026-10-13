@@ -55,3 +55,32 @@ def test_pergunta_sem_medicamento():
 def test_palavra_comum_nao_vira_falso_positivo():
     # "acido" sozinho é genérico demais para identificar um princípio ativo
     assert detectar("o suco ácido faz mal?", CAT).indexados == []
+
+
+def test_nome_de_sal_do_catalogo_da_anvisa_vira_o_nome_que_o_usuario_diz():
+    bulas = [
+        SimpleNamespace(principio_ativo="cloridrato de loperamida", nomes_comerciais=["Imosec"]),
+        SimpleNamespace(principio_ativo="dicloridrato de cetirizina", nomes_comerciais=[]),
+        SimpleNamespace(principio_ativo="butilbrometo de escopolamina", nomes_comerciais=["Buscopan"]),
+        SimpleNamespace(principio_ativo="dipirona monoidratada", nomes_comerciais=[]),
+        SimpleNamespace(principio_ativo="ácido ascórbico", nomes_comerciais=[]),
+    ]
+    cat = Catalogo.montar(bulas)
+    assert detectar("loperamida dá sono?", cat).indexados == ["cloridrato de loperamida"]
+    assert detectar("cetirizina na gravidez", cat).indexados == ["dicloridrato de cetirizina"]
+    assert detectar("escopolamina e Buscopan são iguais?", cat).indexados == ["butilbrometo de escopolamina"]
+    assert detectar("dose de dipirona", cat).indexados == ["dipirona monoidratada"]
+    assert detectar("vitamina ascórbica em excesso", cat).indexados == ["acido ascorbico"]  # flexão (fuzzy)
+    assert detectar("ascorbico demais faz mal?", cat).indexados == ["acido ascorbico"]
+
+
+def test_marca_nao_e_quebrada_em_palavras():
+    cat = Catalogo.montar([SimpleNamespace(principio_ativo="ibuprofeno", nomes_comerciais=["Advil Forte"])])
+    assert detectar("Advil Forte tem sal?", cat).indexados == ["ibuprofeno"]
+    assert detectar("um remédio forte para dor", cat).indexados == []  # "forte" sozinho não é alias
+
+
+def test_sulfato_nao_e_confundido_com_outro_sulfato():
+    cat = Catalogo.montar([SimpleNamespace(principio_ativo="sulfato ferroso heptaidratado", nomes_comerciais=[])])
+    assert detectar("sulfato de magnésio", cat).indexados == []
+    assert detectar("ferroso em jejum", cat).indexados == ["sulfato ferroso heptaidratado"]

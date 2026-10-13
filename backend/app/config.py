@@ -7,7 +7,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Lê o .env da raiz do repositório. Nomes das variáveis não diferenciam maiúsculas."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # env_ignore_empty: "LIMIAR_SIMILARIDADE=" vazio no .env vale "não definido", não erro.
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", env_ignore_empty=True)
 
     ollama_url: str = "http://localhost:11434"
     llm_modelo: str = "qwen2.5:1.5b"
@@ -22,7 +23,7 @@ class Settings(BaseSettings):
     db_host: str = "localhost"
     db_port: int = 3306
 
-    top_k: int = 4
+    top_k: int = 3
     limiar_similaridade: float | None = None
     chunk_tokens: int = 300
     chunk_sobreposicao: int = 50
@@ -30,7 +31,7 @@ class Settings(BaseSettings):
     temperatura: float = 0.1
     num_ctx: int = 4096
     num_predict: int = 250
-    timeout_llm_s: int = 90
+    timeout_llm_s: int = 120
 
     cors_origens: str = "http://localhost:5173"
     medicamentos_conhecidos: str = "data/medicamentos_conhecidos.txt"

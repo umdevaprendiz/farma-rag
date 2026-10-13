@@ -1,0 +1,14 @@
+{
+  "contagens": {
+    "ativas_sem_nome_ou_principio": 12268,
+    "itens": 6999,
+    "itens_monocomponente": 5216,
+    "linhas_ativas": 85091,
+    "linhas_lidas": 228773,
+    "principios_ativos_distintos_monocomponente": 1525
+  },
+  "fonte": "https://dados.anvisa.gov.br/dados/DADOS_ABERTOS_MEDICAMENTOS.csv",
+  "fonte_bytes": 45901211,
+  "fonte_sha256": "b71283bece2e11db95ffc48069fee0b4020c117ead18007fbc95c4f2082965ea",
+  "saida_sha256": "3ccaaa51140a01d8b7693c8a1cf1bc3a8b3f85ad3283fa3b83154eb64f6ac136"
+}

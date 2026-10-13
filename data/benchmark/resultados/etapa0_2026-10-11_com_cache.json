@@ -1,0 +1,92 @@
+{
+  "data": "2026-10-11T21:45:53",
+  "top_k": 4,
+  "geracao": [
+    {
+      "modelo": "qwen2.5:1.5b",
+      "rodadas": [
+        {
+          "rodada": 1,
+          "parede_s": 44.8,
+          "carregamento_s": 3.9,
+          "prompt_tokens": 1617,
+          "prompt_s": 33.3,
+          "gerados": 54,
+          "tokens_por_s": 9.8,
+          "json_valido": true
+        },
+        {
+          "rodada": 2,
+          "parede_s": 31.0,
+          "carregamento_s": 0.0,
+          "prompt_tokens": 1617,
+          "prompt_s": 0.2,
+          "gerados": 250,
+          "tokens_por_s": 8.7,
+          "json_valido": false
+        },
+        {
+          "rodada": 3,
+          "parede_s": 27.4,
+          "carregamento_s": 0.0,
+          "prompt_tokens": 1617,
+          "prompt_s": 0.2,
+          "gerados": 250,
+          "tokens_por_s": 9.9,
+          "json_valido": false
+        }
+      ],
+      "mediana_parede_s_apos_aquecer": 29.2,
+      "tokens_por_s_mediana": 9.3,
+      "memoria_gb": 1.17,
+      "memoria_vram_gb": 0.0
+    },
+    {
+      "modelo": "llama3.2:3b",
+      "rodadas": [
+        {
+          "rodada": 1,
+          "parede_s": 94.7,
+          "carregamento_s": 6.9,
+          "prompt_tokens": 1610,
+          "prompt_s": 58.8,
+          "gerados": 128,
+          "tokens_por_s": 4.7,
+          "json_valido": true
+        },
+        {
+          "rodada": 2,
+          "parede_s": 35.5,
+          "carregamento_s": 0.0,
+          "prompt_tokens": 1610,
+          "prompt_s": 0.2,
+          "gerados": 127,
+          "tokens_por_s": 3.8,
+          "json_valido": true
+        },
+        {
+          "rodada": 3,
+          "parede_s": 36.8,
+          "carregamento_s": 0.0,
+          "prompt_tokens": 1610,
+          "prompt_s": 0.3,
+          "gerados": 144,
+          "tokens_por_s": 4.2,
+          "json_valido": true
+        }
+      ],
+      "mediana_parede_s_apos_aquecer": 36.15,
+      "tokens_por_s_mediana": 4.0,
+      "memoria_gb": 2.56,
+      "memoria_vram_gb": 0.0
+    }
+  ],
+  "embeddings": {
+    "modelo": "bge-m3",
+    "dimensao": 1024,
+    "trechos": 8,
+    "total_s": 27.3,
+    "s_por_trecho": 3.41,
+    "carregamento_s": 4.7
+  }
+}

@@ -13,9 +13,20 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Iterable, Protocol
 
-# Primeiras palavras de nomes compostos que não identificam o medicamento sozinhas.
-_PALAVRAS_GENERICAS = {"acido", "sulfato", "cloridrato", "sodio", "potassio", "calcio", "de", "e"}
-_MIN_ALIAS_ABREVIADO = 5
+# Palavras de sal/hidratação que o catálogo da ANVISA junta ao princípio ativo
+# ("cloridrato de loperamida", "diclofenaco sódico", "amoxicilina tri-hidratada"),
+# mas que ninguém diz na pergunta. Já normalizadas (sem acento, sem hífen).
+_SAIS = {
+    "de", "da", "do", "e", "cloridrato", "dicloridrato", "maleato", "sulfato", "fumarato",
+    "succinato", "tartarato", "acetato", "citrato", "nitrato", "mesilato", "fosfato", "besilato",
+    "bromidrato", "hidrobrometo", "brometo", "butilbrometo", "sodico", "sodica", "potassico",
+    "potassica", "calcico", "dietilamonio", "arginina", "micronizado", "micronizada",
+    "microgranulados", "monoidratado", "monoidratada", "hidratado", "hidratada", "tri", "di",
+    "tetra", "hepta", "triidratado", "heptaidratado", "heptaidratada", "anidro", "anidra",
+}
+# Palavras de nome químico que, sozinhas, não identificam o medicamento.
+_PALAVRAS_GENERICAS = {"acido", "vitamina", "sodio", "potassio", "calcio"}
+_MIN_ALIAS_PALAVRA = 5
 _MIN_ALIAS_FUZZY = 6
 _CUTOFF_FUZZY = 0.88
 
@@ -30,13 +41,23 @@ class _BulaLike(Protocol):
     nomes_comerciais: list[str]
 
 
-def _aliases(nome: str) -> set[str]:
-    """O nome inteiro e, em nomes compostos, a primeira palavra específica ("losartana")."""
+def _aliases(nome: str, principio_ativo: bool = True) -> set[str]:
+    """Formas pelas quais o nome pode aparecer numa pergunta.
+
+    "cloridrato de loperamida" -> {"cloridrato de loperamida", "loperamida"}.
+    Para princípios ativos, também cada palavra específica ("ácido ascórbico" -> "ascorbico").
+    Marcas (principio_ativo=False) só ganham a forma sem sal: quebrar "ADVIL FORTE" em palavras
+    geraria falsos positivos ("forte").
+    """
     completo = normalizar(nome)
-    aliases = {completo} if completo else set()
-    primeira = completo.split(" ")[0] if completo else ""
-    if " " in completo and len(primeira) >= _MIN_ALIAS_ABREVIADO and primeira not in _PALAVRAS_GENERICAS:
-        aliases.add(primeira)
+    if not completo:
+        return set()
+    aliases = {completo}
+    nucleo = [t for t in completo.split(" ") if t not in _SAIS]
+    if nucleo:
+        aliases.add(" ".join(nucleo))
+    if principio_ativo and len(nucleo) > 1:
+        aliases.update(t for t in nucleo if len(t) >= _MIN_ALIAS_PALAVRA and t not in _PALAVRAS_GENERICAS)
     return aliases
 
 
@@ -53,7 +74,7 @@ class Catalogo:
         for b in bulas:
             ativo = normalizar(b.principio_ativo)
             for nome in [b.principio_ativo, *b.nomes_comerciais]:
-                for alias in _aliases(nome):
+                for alias in _aliases(nome, principio_ativo=(nome == b.principio_ativo)):
                     cat.indexados[alias] = ativo
         for nome in conhecidos:
             for alias in _aliases(nome):

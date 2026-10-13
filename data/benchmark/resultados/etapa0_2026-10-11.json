@@ -1,0 +1,53 @@
+{
+  "data": "2026-10-11T21:51:32",
+  "top_k": 3,
+  "geracao": [
+    {
+      "modelo": "qwen2.5:1.5b",
+      "rodadas": [
+        {
+          "rodada": 1,
+          "parede_s": 32.4,
+          "carregamento_s": 0.0,
+          "prompt_tokens": 1251,
+          "prompt_s": 25.4,
+          "gerados": 44,
+          "tokens_por_s": 9.0,
+          "json_valido": true
+        },
+        {
+          "rodada": 2,
+          "parede_s": 41.5,
+          "carregamento_s": 0.0,
+          "prompt_tokens": 1251,
+          "prompt_s": 23.0,
+          "gerados": 154,
+          "tokens_por_s": 9.4,
+          "json_valido": true
+        },
+        {
+          "rodada": 3,
+          "parede_s": 31.5,
+          "carregamento_s": 0.0,
+          "prompt_tokens": 1251,
+          "prompt_s": 25.1,
+          "gerados": 44,
+          "tokens_por_s": 10.2,
+          "json_valido": true
+        }
+      ],
+      "mediana_parede_s_apos_aquecer": 36.5,
+      "tokens_por_s_mediana": 9.8,
+      "memoria_gb": 1.17,
+      "memoria_vram_gb": 0.0
+    }
+  ],
+  "embeddings": {
+    "modelo": "bge-m3",
+    "dimensao": 1024,
+    "trechos": 8,
+    "total_s": 20.5,
+    "s_por_trecho": 2.56,
+    "carregamento_s": 3.9
+  }
+}

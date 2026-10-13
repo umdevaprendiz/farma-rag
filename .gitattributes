@@ -1,0 +1,2 @@
+data/processed/*.jsonl text eol=lf
+data/processed/*.json text eol=lf
