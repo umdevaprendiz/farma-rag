@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     catalogo_anvisa: str = "data/processed/catalogo_anvisa.jsonl"
     aliases_ignorados: str = "data/aliases_ignorados.txt"
 
+    # Dataset em arquivo (fonte da verdade) e cache de embeddings (fora do Git).
+    bulas_dir: str = "data/processed/bulas"
+    chunks_arquivo: str = "data/processed/chunks.jsonl"
+    cache_embeddings: str = "data/cache/embeddings.sqlite"
+
     @property
     def database_url(self) -> str:
         senha = quote_plus(self.db_password)

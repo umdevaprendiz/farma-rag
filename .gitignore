@@ -3,6 +3,8 @@
 
 # Dados que não vão para o Git (PDFs originais; o dataset processado vai)
 data/raw/
+# Cache de embeddings e acervo de demonstração: recriáveis
+data/cache/
 
 # Python
 __pycache__/

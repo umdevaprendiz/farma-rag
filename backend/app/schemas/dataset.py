@@ -6,7 +6,10 @@ from typing import Literal
 from pydantic import BaseModel, Field, model_validator
 
 Secao = Literal[
+    "composicao",
     "indicacoes",
+    "resultados_eficacia",
+    "caracteristicas_farmacologicas",
     "contraindicacoes",
     "advertencias",
     "interacoes",
@@ -16,6 +19,22 @@ Secao = Literal[
     "superdose",
     "outras",
 ]
+
+# Nome da seção como aparece para o modelo e para o usuário.
+ROTULO_SECAO: dict[str, str] = {
+    "composicao": "Composição",
+    "indicacoes": "Indicações",
+    "resultados_eficacia": "Resultados de eficácia",
+    "caracteristicas_farmacologicas": "Características farmacológicas",
+    "contraindicacoes": "Contraindicações",
+    "advertencias": "Advertências e precauções",
+    "interacoes": "Interações medicamentosas",
+    "armazenamento": "Cuidados de armazenamento",
+    "posologia": "Posologia e modo de usar",
+    "reacoes_adversas": "Reações adversas",
+    "superdose": "Superdose",
+    "outras": "Outras informações",
+}
 
 Categoria = Literal[
     "interacao",
@@ -33,6 +52,8 @@ class SecaoBula(BaseModel):
     titulo_original: str
     pagina_inicio: int = Field(ge=1)
     pagina_fim: int = Field(ge=1)
+    # Parágrafos separados por "\n"; "\f" marca a virada de página dentro da seção,
+    # para que cada trecho saiba em que página começa.
     texto: str
 
     @model_validator(mode="after")

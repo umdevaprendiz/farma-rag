@@ -159,3 +159,39 @@ Mudanças de contrato decorrentes (a implementar na etapa 3/5): `status` ganha
 `precisa_esclarecimento`; `motivo` ganha `resposta_nao_verificada`; `consultas` ganha `rodadas`
 (int), `tentativas` (JSON) e `consulta_origem_id` (UUID, sem FK); env `RODADAS_MAX=3` e
 `ORCAMENTO_S` (tempo total, ex. 150 s).
+
+## 15. Fluxo de ponta a ponta por arquivos, para teste manual (2026-10-13)
+Do PDF à resposta sem MySQL, API ou tela. Da raiz, com `pip install -e backend` feito (ou
+`PYTHONPATH=backend` no terminal):
+
+1. `python -m ingestao.processar_bula <pdf> --medicamento ... --principio-ativo ... --fabricante ...
+   --data-versao AAAA-MM-DD` -> `data/processed/bulas/<id>.json` (lista as seções para conferir).
+2. `python -m ingestao.gerar_chunks` -> `data/processed/chunks.jsonl` + embeddings no cache.
+3. `python -m benchmark.perguntar ["pergunta"]` -> resposta, trechos usados e tempos.
+
+Decisões tomadas ao implementar:
+- **O dataset em arquivo é a fonte da verdade** e o `Acervo` (`services/acervo.py`) carrega dele. O
+  MySQL fica para o histórico de consultas e para a API; `rag.responder` não sabe de onde o acervo veio.
+- **Cache de embeddings** em SQLite (`data/cache/embeddings.sqlite`, fora do Git), chave = hash de
+  modelo + texto. Grava a cada lote de 8: dá para interromper e continuar.
+- O texto que vira embedding leva medicamento e seção na frente (`texto_para_embedding`): mudar
+  esse cabeçalho invalida o cache.
+- **Seções novas** em `Secao`: `composicao` ("tem lactose?"), `resultados_eficacia` e
+  `caracteristicas_farmacologicas` (mecanismo de ação). Antes caíam em `outras`.
+- **Página do trecho:** o texto da seção guarda `\f` onde a página vira; o trecho usa a página em
+  que começa.
+- **Tokens são estimados** (3,3 caracteres por token, medido com o qwen2.5:1.5b). Não há tokenizador
+  local sem baixar mais coisa.
+- **Saída do modelo por afirmações**, não mais `{resposta, citacoes}`:
+  `{"status", "afirmacoes": [{"texto", "trecho"}]}`, com JSON Schema que só aceita números de
+  trechos enviados. O `[n]` é montado no código e `validar_saida` continua conferindo. Motivo,
+  medido com a bula de teste: pedindo `[n]` dentro do texto, o qwen2.5:1.5b citou só na lista e
+  5 de 5 respostas certas foram recusadas; no formato novo, 7 de 7 passaram.
+- **Sem exemplo de resposta no prompt:** o modelo copiou o exemplo como resposta ("Deve ser tomado
+  em jejum [2]") numa pergunta sobre armazenamento, e a validação de citações deixou passar.
+- Cliente do Ollama com `urllib` (biblioteca padrão), síncrono.
+
+**Limites de hoje:** uma tentativa só (as rodadas da seção 14 entram por cima); ainda **sem a
+checagem de fundamentação** da rodada 1, então uma resposta inventada com citação válida passa;
+testado só com a bula inventada de `backend/tests/fixtures/bula_exemplo.txt`; a leitura de PDF
+(`pdfplumber`) ainda não rodou nesta máquina, porque depende do Python 3.12 (seção 12).
