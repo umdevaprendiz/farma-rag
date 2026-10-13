@@ -1,0 +1,21 @@
+# Nomes do catálogo da ANVISA que NÃO devem ser reconhecidos como medicamento na pergunta.
+# São registros reais, mas a palavra aparece em pergunta comum com outro sentido
+# ("metformina baixa a glicose?", "pode com cafeína?"). Um por linha; '#' comenta.
+# Vale só para o que vem do catálogo: nomes escritos à mão na bula (nomes_comerciais)
+# e em medicamentos_conhecidos.txt continuam valendo.
+
+# Nutrientes, exames e alimentos
+glicose
+frutose
+cafeina
+proteinas
+ureia
+zinco
+selenio
+magnesio
+oxigenio
+nitrogenio
+
+# Sobras de cadastro
+sal sodico
+produto teste 21 08

@@ -105,6 +105,27 @@ ativos distintos) é versionado. Ao adaptar `Catalogo.montar` para usá-lo:
 - Sais: o catálogo traz "losartana potássica", a pergunta diz "losartana"; o alias da primeira
   palavra já cobre isso (ver `_aliases` em `services/medicamentos.py`).
 
+**Implementado em 2026-10-13** (`Catalogo.montar(bulas, conhecidos, anvisa, ignorados)`):
+- Bula e catálogo casam pelo princípio ativo **sem a hidratação** ("dipirona" = "dipirona
+  monoidratada"), mas **com o sal**: diclofenaco sódico e potássico são bulas diferentes. Quem
+  pergunta por "diclofenaco potássico" tendo só o sódico indexado recebe "não indexado".
+- Marca do catálogo só entra com 5+ letras, se não estiver em `data/aliases_ignorados.txt`, se
+  pertencer a um único princípio ativo e não der nome também a uma associação. Só casa escrita
+  certo, sem tolerância a erro de digitação ("INTESTIN" é marca de loperamida; "intestino" não pode
+  virar loperamida). Marca curta e conhecida ("AAS", "Vitamina C") vai escrita à mão em
+  `nomes_comerciais` da bula, que sempre vale.
+- Produto que leva o nome de um indexado mas é outro remédio ("BUSCOPAN COMPOSTO", "TYLENOL SINUS")
+  entra como não indexado, e na pergunta **o nome mais longo vence**. Sem isso, a pergunta sobre
+  Buscopan Composto seria respondida com a bula do Buscopan simples.
+- Palavra que já é um nome conhecido nunca é "corrigida" para outro: "prednisona" não vira
+  "prednisolona".
+- `data/aliases_ignorados.txt`: nomes do catálogo que são palavra comum na pergunta (glicose,
+  cafeína). Cresce conforme o benchmark mostrar falso positivo.
+- **Limites:** marca de medicamento não indexado não é reconhecida ("Dorflex", "Cataflam",
+  "Clavulin"): a pergunta segue sem filtro. Princípio ativo que só existe em associação
+  ("clavulanato") também não. Formas diferentes do mesmo princípio ativo ("Voltaren gel") caem na
+  mesma bula: quem resolve é o esclarecimento da rodada 0 (seção 14).
+
 ## 14. Rodadas de verificação e perguntas de esclarecimento (desenho)
 Motivação: em saúde, "não sei" é melhor que resposta errada. Mas cada chamada ao LLM custa
 30-45 s nesta CPU (seção 1), então as rodadas são **adaptativas**: só repetem se a anterior falhar.

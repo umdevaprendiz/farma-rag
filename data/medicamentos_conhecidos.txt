@@ -43,3 +43,5 @@ levotiroxina
 salbutamol
 metoclopramida
 ondansetrona
+# Famílias que o catálogo da ANVISA só traz com complemento ("insulina humana", "insulina glargina")
+insulina

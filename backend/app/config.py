@@ -35,6 +35,8 @@ class Settings(BaseSettings):
 
     cors_origens: str = "http://localhost:5173"
     medicamentos_conhecidos: str = "data/medicamentos_conhecidos.txt"
+    catalogo_anvisa: str = "data/processed/catalogo_anvisa.jsonl"
+    aliases_ignorados: str = "data/aliases_ignorados.txt"
 
     @property
     def database_url(self) -> str:
