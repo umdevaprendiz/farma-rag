@@ -1,21 +1,19 @@
 services:
-  # MySQL 8 em container. Para usar um MySQL já instalado no Windows em vez deste,
-  # rode a API fora do Docker (uvicorn) com DB_HOST/DB_PORT do .env apontando para ele.
+  # PostgreSQL 17 com a extensão pgvector já instalada (imagem mantida pelo projeto pgvector).
+  # No Windows nativo o pgvector precisa ser compilado com Visual Studio; o container evita isso.
   db:
-    image: mysql:8.4
-    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_0900_ai_ci"]
+    image: pgvector/pgvector:pg17
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?defina DB_ROOT_PASSWORD no .env}
-      MYSQL_DATABASE: ${DB_NAME:-farmarag}
-      MYSQL_USER: ${DB_USER:-farmarag}
-      MYSQL_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
+      POSTGRES_DB: ${DB_NAME:-farmarag}
+      POSTGRES_USER: ${DB_USER:-farmarag}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
     ports:
       # Exposta no host para a ingestão e o benchmark (que rodam fora do Docker).
-      - "127.0.0.1:${DB_PORT:-3306}:3306"
+      - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
-      - dbdata:/var/lib/mysql
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$${MYSQL_ROOT_PASSWORD} --silent"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -26,7 +24,7 @@ services:
     environment:
       # Dentro do Compose o banco é o serviço "db" e o Ollama está no host.
       DB_HOST: db
-      DB_PORT: "3306"
+      DB_PORT: "5432"
       OLLAMA_URL: http://host.docker.internal:11434
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -37,4 +35,4 @@ services:
         condition: service_healthy
 
 volumes:
-  dbdata:
+  pgdata:

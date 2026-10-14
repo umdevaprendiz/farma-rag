@@ -1,12 +1,10 @@
 """Busca por similaridade de cosseno em memória (numpy).
 
-MySQL Community guarda vetores mas não calcula distância (o DISTANCE() é do HeatWave).
-Com 30-50 bulas são poucos milhares de trechos (~4 KB cada embedding), então carregar
-tudo na memória da API no startup e fazer força bruta leva milissegundos.
+Usada no fluxo por arquivos (benchmark.perguntar e testes), sem banco. Com 30-50 bulas são
+poucos milhares de trechos (~4 KB cada embedding), então a força bruta leva milissegundos.
 
-`BuscaVetorial` é a interface que o serviço de RAG usa. Quando o PostgreSQL estiver
-disponível, basta uma implementação com pgvector (`ORDER BY embedding <=> :q`) com a
-mesma assinatura; o resto do código não muda.
+`BuscaVetorial` é a interface que o serviço de RAG usa. A versão no PostgreSQL é a
+`BuscaPgvector` (busca_pgvector.py), com a mesma assinatura e o mesmo resultado.
 """
 
 import math

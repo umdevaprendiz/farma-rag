@@ -15,13 +15,13 @@ class Settings(BaseSettings):
     embed_modelo: str = "bge-m3"
     embed_dim: int = 1024
 
-    # MySQL. O banco é montado a partir de partes: DB_HOST é "localhost" nos scripts
+    # PostgreSQL. O banco é montado a partir de partes: DB_HOST é "localhost" nos scripts
     # rodados no host (ingestão, benchmark) e "db" dentro do Docker Compose.
     db_user: str = "farmarag"
     db_password: str = "senha"
     db_name: str = "farmarag"
     db_host: str = "localhost"
-    db_port: int = 3306
+    db_port: int = 5432
 
     top_k: int = 3
     limiar_similaridade: float | None = None
@@ -47,8 +47,8 @@ class Settings(BaseSettings):
     def database_url(self) -> str:
         senha = quote_plus(self.db_password)
         return (
-            f"mysql+pymysql://{self.db_user}:{senha}"
-            f"@{self.db_host}:{self.db_port}/{self.db_name}?charset=utf8mb4"
+            f"postgresql+psycopg://{self.db_user}:{senha}"
+            f"@{self.db_host}:{self.db_port}/{self.db_name}"
         )
 
     @property

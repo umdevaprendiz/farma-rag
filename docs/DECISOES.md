@@ -62,19 +62,24 @@ inexistente/incoerente. `BULA_NAO_ENCONTRADA` virou `MEDICAMENTO_NAO_ENCONTRADO`
 `services/citacoes.py` garante que as citações apontam para trechos enviados. Não garante que a
 afirmação está sustentada: isso é a métrica de fidelidade (revisão manual) do benchmark.
 
-## 11. Banco: MySQL agora, PostgreSQL + pgvector depois
-Mudança em relação ao PDF, enquanto não há PostgreSQL.
-- MySQL Community não calcula similaridade de vetor. O embedding fica em `BLOB` (float32) e a
-  busca é por cosseno em memória, com numpy (`db/busca_vetorial.py`), carregada no startup da API.
-  Com 30–50 bulas (alguns milhares de trechos) isso leva milissegundos.
-- Interface `BuscaVetorial`: ao migrar, escreva uma versão com pgvector (`ORDER BY embedding <=> :q`)
-  com a mesma assinatura. O serviço de RAG não muda.
-- Ajustes de modelo para MySQL: listas em `JSON`, `Uuid` genérico, `String(n)` em chaves/índices,
-  datas em UTC sem fuso. Sem índice HNSW.
-- Driver `pymysql` (+ `cryptography`, exigida pela autenticação padrão do MySQL 8).
-- O MySQL não está instalado nesta máquina: use o serviço `db` do `docker-compose.yml` (requer
-  Docker Desktop aberto) ou instale o MySQL 8 e aponte `DB_HOST`/`DB_PORT` no `.env`.
-- Em `carregar_banco.py`, apague `chunks` antes de `bulas` ao recriar (há FK chunks -> bulas).
+## 11. Banco: PostgreSQL 17 + pgvector (2026-10-14)
+Volta ao que o PDF previa. O MySQL ficou só no código (nunca foi instalado nem recebeu dados), então
+não houve dado a migrar: o banco é preenchido a partir dos arquivos por `ingestao/carregar_banco.py`.
+- Container `pgvector/pgvector:pg17` (serviço `db` do `docker-compose.yml`, volume `pgdata`). No
+  Windows nativo o pgvector precisa ser compilado com Visual Studio; o container evita isso.
+- Driver `psycopg[binary]` 3 (`postgresql+psycopg://`) e o pacote `pgvector` para o tipo `vector`.
+- Modelos: listas em `ARRAY(Text)`, UUID nativo, `timestamptz` em UTC, `Text` sem tamanho,
+  `chunks.embedding` em `vector(1024)` (`EMBED_DIM` em `db/models.py`, conferido contra o `.env`).
+- `chunks.principio_ativo_norm` = `normalizar(principio_ativo)`: o filtro da busca no banco compara
+  igual ao `IndiceEmMemoria`.
+- `BuscaPgvector` (`db/busca_pgvector.py`) implementa `BuscaVetorial` com `<=>` (distância de
+  cosseno) e a mesma divisão do k entre princípios ativos. O teste `test_busca_pgvector.py` confere
+  que devolve os mesmos trechos e scores do numpy. O `IndiceEmMemoria` continua no fluxo por arquivos.
+- **Sem índice HNSW**: com poucos milhares de trechos a varredura exata leva milissegundos e dá o
+  top-k exato; o HNSW é aproximado e, com o filtro por princípio ativo, pode devolver menos de k.
+- `carregar_banco.py` cria a extensão e as tabelas que faltam (`create_all`, sem Alembic por ora) e
+  troca `bulas` e `chunks` com `TRUNCATE` numa transação só; `consultas` não é tocada. Mudar colunas
+  de tabela já criada exige apagá-la ou adotar Alembic (decidir quando o histórico tiver dado real).
 
 ## 12. Ambiente Python
 O Python local é o 3.15, sem wheels para várias libs (ex.: PyYAML não compila sem C++ Build
@@ -161,7 +166,7 @@ Mudanças de contrato decorrentes (a implementar na etapa 3/5): `status` ganha
 `ORCAMENTO_S` (tempo total, ex. 150 s).
 
 ## 15. Fluxo de ponta a ponta por arquivos, para teste manual (2026-10-13)
-Do PDF à resposta sem MySQL, API ou tela. Da raiz, com `pip install -e backend` feito (ou
+Do PDF à resposta sem banco, API ou tela. Da raiz, com `pip install -e backend` feito (ou
 `PYTHONPATH=backend` no terminal):
 
 1. `python -m ingestao.processar_bula <pdf> --medicamento ... --principio-ativo ... --fabricante ...
@@ -171,7 +176,7 @@ Do PDF à resposta sem MySQL, API ou tela. Da raiz, com `pip install -e backend`
 
 Decisões tomadas ao implementar:
 - **O dataset em arquivo é a fonte da verdade** e o `Acervo` (`services/acervo.py`) carrega dele. O
-  MySQL fica para o histórico de consultas e para a API; `rag.responder` não sabe de onde o acervo veio.
+  PostgreSQL fica para o histórico de consultas e para a API; `rag.responder` não sabe de onde o acervo veio.
 - **Cache de embeddings** em SQLite (`data/cache/embeddings.sqlite`, fora do Git), chave = hash de
   modelo + texto. Grava a cada lote de 8: dá para interromper e continuar.
 - O texto que vira embedding leva medicamento e seção na frente (`texto_para_embedding`): mudar

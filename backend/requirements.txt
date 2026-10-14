@@ -3,8 +3,9 @@ uvicorn[standard]>=0.30
 pydantic>=2.8
 pydantic-settings>=2.4
 sqlalchemy>=2.0
-pymysql>=1.1
-# MySQL 8 autentica com caching_sha2_password, que o PyMySQL só suporta com cryptography
-cryptography>=42
+# Driver do PostgreSQL (psycopg 3; "binary" traz a libpq, sem compilar no Windows)
+psycopg[binary]>=3.2
+# Tipo vector do SQLAlchemy e operadores de distância (<=>)
+pgvector>=0.3
 numpy>=1.26
 httpx>=0.27

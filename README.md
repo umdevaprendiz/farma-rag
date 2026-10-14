@@ -43,7 +43,7 @@ NÃO ENCONTREI: não tenho a bula desse medicamento
 | RAG | Divisão do documento em trechos por seção, embeddings multilíngues (`bge-m3`), busca por similaridade de cosseno, filtro por princípio ativo, resposta com citação |
 | LLM local | Ollama, modelo pequeno (`qwen2.5:1.5b`), saída estruturada com JSON Schema, engenharia de prompt para modelo pequeno |
 | Confiabilidade da resposta | Validação das citações no código, recusa antes de chamar o modelo, catálogo de erros com código próprio para cada falha |
-| Python | Pydantic e pydantic-settings para contratos e configuração, `Protocol` para interfaces, numpy para a busca vetorial, SQLite para cache, SQLAlchemy para os modelos do banco |
+| Python | Pydantic e pydantic-settings para contratos e configuração, `Protocol` para interfaces, numpy para a busca vetorial, SQLite para cache, SQLAlchemy com PostgreSQL e pgvector para o banco |
 | Tratamento de dados | Extração de texto de PDF (`pdfplumber`), separação por seções com expressões regulares, normalização de nomes de medicamentos, tolerância a erro de digitação |
 | Dados públicos | Processamento dos dados abertos da ANVISA, validação do arquivo antes do uso, registro de procedência com SHA-256, geração determinística do catálogo |
 | Testes | pytest, 99 testes automáticos, modelo substituído por um falso para testar o fluxo sem depender do Ollama |
@@ -98,6 +98,6 @@ Hoje o fluxo completo funciona pelo terminal, com uma bula de teste. Os próximo
 2. **Verificação da resposta.** Hoje a validação garante que a citação existe, não que a frase está sustentada pelo trecho. A próxima mudança é checar no código se todo número, dose e unidade da resposta aparece no trecho citado, com novas tentativas quando falhar.
 3. **Perguntas de esclarecimento.** Quando o nome for ambíguo ou nenhum medicamento for reconhecido, o sistema pergunta de volta em vez de arriscar. Nunca pergunta dados do paciente.
 4. **Benchmark próprio.** Cinquenta perguntas com resposta conhecida, dez delas sem resposta nas bulas, para medir recall da busca, fidelidade, citação correta, recusa correta e latência, comparando modelos e tamanhos de trecho.
-5. **API.** FastAPI com endpoints de pergunta, medicamentos e histórico de consultas, usando MySQL agora e PostgreSQL com pgvector depois.
+5. **API.** FastAPI com endpoints de pergunta, medicamentos e histórico de consultas, com PostgreSQL e pgvector.
 6. **Frontend.** Tela em React com a resposta, as citações clicáveis, as fontes ao lado e o histórico.
 7. **Entrega.** Docker Compose, resultados do benchmark publicados aqui e um vídeo curto de demonstração.
