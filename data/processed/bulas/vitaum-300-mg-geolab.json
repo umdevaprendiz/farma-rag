@@ -1,0 +1,102 @@
+{
+  "id": "vitaum-300-mg-geolab",
+  "medicamento": "Vitaum 300 mg",
+  "principio_ativo": "cloridrato de tiamina",
+  "nomes_comerciais": [
+    "Vitaum"
+  ],
+  "fabricante": "Geolab",
+  "tipo_bula": "profissional",
+  "data_versao": "2025-05-01",
+  "fonte_pdf": "data/raw/bulas/tiamina_vitaum-geolab_profissional.pdf",
+  "processado_em": "2026-10-15T15:30:18-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 1,
+      "pagina_fim": 2,
+      "texto": "VITAUM® Geolab Indústria Farmacêutica S/A Comprimido Revestido 300 mg\fMODELO DE BULA PARA O PROFISSIONAL DE SAÚDE Esta bula é continuamente atualizada. Favor proceder a sua leitura antes de utilizar o medicamento.\nVITAUM® cloridrato de tiamina FORMA FARMACÊUTICA E APRESENTAÇÃO:\nComprimidos revestidos de 300mg: Embalagem contendo 30 comprimidos.\nUSO ADULTO USO ORAL"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Cada comprimido revestido contém:\ncloridrato de tiamina (vitamina B1)....................................................................................................300mg* *sobredose de 5% e correção de 4% devido a umidade.\nExcipientes: álcool etílico, povidona, estearato de magnésio, dióxido de titânio, hipromelose e macrogol."
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Vitaum® é indicado para casos de deficiência de vitamina B1 (tiamina), conhecida como beribéri e no tratamento da Síndrome de Wernicke Korsakoff (doença causada pela deficiência de tiamina, frequentemente relacionada ao alcoolismo). Vitaum® também é indicado nas condições em que a absorção de vitamina B1 pode estar reduzida como alcoolismo e pós cirurgia bariátrica (cirurgia de redução de estômago)."
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "2. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Farmacodinâmica e Farmacocinética A vitamina B1 é absorvida no duodeno (NATIONAL ACADEMIES PRESS, 1998; SRIRAM; MANZANARES; JOSEP, 2012), sendo rapidamente transformada em pirofosfato (TPP) de tiamina que é a sua forma ativa (SRIRAM; MANZANARES; JOSEP, 2012).\nÉ armazenada em pequenas quantidades, onde cerca de metade da quantidade total de tiamina no corpo está presente no músculo (ZEMPLENI, 2007). A tiamina atravessa a placenta (BARKER et al., 1981) e pode estar presente no leite materno (DAVIS; ICKE, 1983). Seu excesso é eliminado na urina (DAVIS et al., 1984).\nA tiamina na forma de TPP é uma coenzima em várias reações enzimáticas. O TPP também pode ter uma função não coenzimática durante a estimulação de células neuronais e outros tecidos excitáveis, como o músculo esquelético (EXPERT GROUP ON VITAMINS AND MINERALS, 2003) A vitamina B1 atua como cofator de diversas reações do metabolismo dos carboidratos e aminoácidos sendo desta forma, fundamental para o metabolismo energético (MARTEL et al., 2023)."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "3. CONTRAINDICAÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Hipersensibilidade conhecida aos demais componentes da formulação.\nNão tem descrito na literatura médica até o momento, contraindicações absolutas à tiamina.\nNão há restrições específicas para o uso de Vitaum® em pacientes idosos.\nEste medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista.\nEste medicamento é contraindicado na faixa etária inferior a 12 anos."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "4. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 3,
+      "texto": "Vitaum® não deve ser administrado por períodos prolongados em doses superiores às recomendadas.\nCategoria de risco na gravidez: categoria C.\nEste medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista.\nO uso desse medicamento não interfere no aleitamento do bebê.\fO uso deste medicamento no período da lactação depende da avaliação e acompanhamento do seu médico ou cirurgião-dentista.\nAtenção: Contém o corante dióxido de titânio."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "5. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Não existem registros de interação da vitamina B1 (via oral), com outras drogas.\nInterações com Alimentos e Testes Laboratoriais Não há dados disponíveis até o momento sobre a interferência de Vitaum® com alimentos e em testes laboratoriais."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "6. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Vitaum® deve ser armazenado em temperatura ambiente (de 15°C a 30°C), protegido da luz e umidade.\nPrazo de Validade: de 24 meses após a data de fabricação.\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use o medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\nCaracterísticas físicas e organolépticas:\nVitaum® apresenta-se na forma de comprimidos revestidos, semiabaulado liso de coloração branca.\nAntes de usar, observe o aspecto do medicamento.\nTODO MEDICAMENTO DEVE SER MANTIDO FORA DO ALCANÇE DAS CRIANÇAS."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "7. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "O comprimido deve ser ingerido com água ou um pouco de líquido.\nDose diária: a critério médico Este medicamento não pode ser partido, aberto ou mastigado."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Até o momento, não existem evidências de reações adversas, devido ao uso regular e prolongado de Vitaum® nas doses recomendadas.\nReações alérgicas podem ocorrer quando o paciente for sensível a um ou mais componentes da fórmula.\nPode ocorrer também dermatite de contato com o uso deste medicamento.\nReações adversas embora raras: cansaço; prurido; urticária e náusea.\nEm casos de eventos adversos, notifique pelo Sistema VigiMed, disponível no Portal da Anvisa."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Não foram descritos, até o momento, sintomas de superdosagem com o uso deste medicamento.\nEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações."
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "DIZERES LEGAIS",
+      "pagina_inicio": 3,
+      "pagina_fim": 4,
+      "texto": "Registro 1.5423.0129 Registrado e Produzido por:\nGeolab Indústria Farmacêutica S/A CNPJ: 03.485.572/0001-04 VP. 1B QD.08-B MÓDULOS 01 A 08 - DAIA - ANÁPOLIS – GO Indústria Brasileira www.geolab.com.br Indústria Brasileira SAC: 0800 701 6080 VENDA SOB PRESCRIÇÃO\fAnexo B"
+    }
+  ],
+  "numero_registro": "1.5423.0129",
+  "forma_farmaceutica": "comprimido revestido",
+  "versao": "V.03_05/2025"
+}

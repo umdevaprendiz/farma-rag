@@ -23,11 +23,19 @@ from app.services.acervo import AcervoIncompletoError, carregar_dataset
 from app.services.medicamentos import normalizar
 
 
+# Colunas que entraram depois da primeira versão de `bulas`: create_all não altera tabela que já
+# existe, então quem criou o banco antes recebe as colunas aqui.
+_COLUNAS_NOVAS = ("numero_registro", "forma_farmaceutica", "versao")
+
+
 def preparar_banco(engine: Engine) -> None:
-    """Cria a extensão vector e as tabelas que faltarem (não altera tabelas existentes)."""
+    """Cria a extensão vector, as tabelas que faltarem e as colunas novas de `bulas`."""
     with engine.begin() as conexao:
         conexao.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
     models.Base.metadata.create_all(engine)
+    with engine.begin() as conexao:
+        for coluna in _COLUNAS_NOVAS:
+            conexao.execute(text(f"ALTER TABLE bulas ADD COLUMN IF NOT EXISTS {coluna} text"))
 
 
 def gravar(engine: Engine, bulas: list[Bula], chunks: list[Chunk], matriz: np.ndarray) -> None:
@@ -44,6 +52,9 @@ def gravar(engine: Engine, bulas: list[Bula], chunks: list[Chunk], matriz: np.nd
                 fabricante=b.fabricante,
                 data_versao=b.data_versao,
                 fonte_pdf=b.fonte_pdf,
+                numero_registro=b.numero_registro,
+                forma_farmaceutica=b.forma_farmaceutica,
+                versao=b.versao,
             )
             for b in bulas
         )

@@ -1,0 +1,109 @@
+{
+  "id": "hystin-2-mg-geolab",
+  "medicamento": "Hystin 2 mg",
+  "principio_ativo": "maleato de dexclorfeniramina",
+  "nomes_comerciais": [
+    "Hystin"
+  ],
+  "fabricante": "Geolab",
+  "tipo_bula": "profissional",
+  "data_versao": "2023-01-01",
+  "fonte_pdf": "data/raw/bulas/dexclorfeniramina_hystin-geolab_profissional.pdf",
+  "processado_em": "2026-10-15T15:29:59-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 1,
+      "pagina_fim": 2,
+      "texto": "HYSTIN® Geolab Indústria Farmacêutica S/A Comprimido 2mg\f______________________________________________________________________________________ MODELO DE BULA PARA O PROFISSIONAL DE SAÚDE Esta bula é continuamente atualizada. Favor proceder a sua leitura antes de utilizar o medicamento.\nHystin® maleato de dexclorfeniramina FORMA FARMACÊUTICA E APRESENTAÇÃO:\nComprimido de 2mg: Embalagem contendo 20 comprimidos.\nUSO ORAL USO ADULTO E PEDIÁTRICO ACIMA DE 12 ANOS"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Cada comprimido contém:\nmaleato de dexclorfeniramina.........................................................................................................................................2mg Excipientes: celulose microcristalina, lactose monoidratada, corante vermelho allura laca FD&C nº 40 e estearato de magnésio."
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1.INDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Hystin® é indicado para alergia, prurido, rinite alérgica, urticária, picada de inseto, conjuntivite alérgica, dermatite atópica e eczemas alérgicos."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2.RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 2,
+      "pagina_fim": 3,
+      "texto": "Vinte e três pacientes com urticária crônica foram tratados com cinarizina, dexclorfeniramina e placebo em um estudo duplo-cego, cruzado. Em comparação ao tratamento com placebo tanto a cinarizina como a dexclorfeniramina causaram uma melhora estatisticamente significativa dos sintomas clínicos (p < 0,01).\nNão ocorreram diferenças significativas entre cinarizina e dexclorfeniramina, que foram igualmente eficazes no tratamento de urticária crônica. 1 Um estudo duplo-cego foi realizado em 65 pacientes com rinite sazonal para comparar a eficácia e tolerância de terfenadina e dexclorfeniramina. Os pacientes foram distribuídos aleatoriamente para receber tratamento durante 1 semana com 60mg de terfenadina 2 vezes ao dia, ou 2 mg de maleato de dexclorfeniramina 3 vezes ao dia. Antes e após o tratamento, os pacientes foram submetidos a testes cutâneos para reatividade ao pólen e aqueles que foram positivos também tiveram medidas rinomanométricas realizadas para resistência nasal. Diários foram usados pelos pacientes para registrar a gravidade da obstrução nasal, rinorreia, espirros, olhos lacrimejantes, irritados e vermelhos, irritação do nariz, garganta, olhos e tosse. Foram avaliadas a frequência e a gravidade dos efeitos colaterais. Contagem de pólen foram tomadas diariamente durante o período de tratamento. Os resultados mostraram que tanto a terfenadina como a dexclorfeniramina produziram bom ou excelente alívio dos principais sintomas em 78% e 73% dos pacientes, respectivamente. Não houve correlação significativa entre a contagem de pólen e a redução da gravidade dos sintomas.\nAmbas as drogas produziram uma redução da resistência nasal total, mas isso não foi significativamente diferente do valor inicial, nem houve uma diferença significativa entre os tratamentos.2 Maleato de dexclorfeniramina 6mg foi comparado com Terfenadina 60mg para a eficácia no controle dos sintomas da febre do feno Ragweed, bem como a tolerância e a ocorrência de reações adversas. O estudo foi realizado com grupos\fparalelos multicêntricos randomizados, duplo-cego, que envolveu 174 pacientes divididos igualmente, 87 recebendo dexclorfeniramina e 87 terfenadina, por um período de duas semanas durante a última quinzena de agosto e a primeira quinzena de setembro 1983. O estudo indicou que dexclorfeniramina nas doses testadas, foi significativamente mais eficaz no controle dos sintomas da febre do feno do que a terfenadina.3"
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3.CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "O Hystin® é um composto sintético que antagoniza eficazmente os efeitos característicos da histamina, sendo, assim, de valor clínico na prevenção e no alívio das manifestações alérgicas.\nSua ação parece depender da competição com a histamina pelos receptores celulares.\nExperimentos in vitro e in vivo da potência anti-histamínica dos isômeros opticamente ativos da clorfeniramina demonstraram que a atividade predominante deve-se ao isômero dextrógero da dexclorfeniramina.\nApós administração oral de 4mg de maleato de clorfeniramina, em voluntários sadios em jejum, houve rápida detecção nos níveis sanguíneos. O pico de concentração sanguínea foi de aproximadamente 7mg/mL, alcançado após 3 horas da administração. A meia-vida do maleato de clorfeniramina variou de 20 a 24 horas. Após a administração de dose única de maleato de clorfeniramina marcado com trítio, a droga foi extensivamente metabolizada tanto quando administrada por via oral ou como por via intravenosa. A droga e seus metabólitos foram primariamente excretados pela urina, com 19% da dose aparecendo em 24 horas e um total de 34% em 48 horas.\nEm um estudo em voluntários sadios, a alta velocidade do fluxo de urina ácida resultou em uma alta velocidade de excreção do maleato de clorfeniramina. Durante uma faixa de concentração plasmática de 0,28 a 1,24mcg/mL, a clorfeniramina encontrava-se 72% a 69% ligada às proteínas plasmáticas, respectivamente."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4.CONTRAINDICAÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Este medicamento é contraindicado em pacientes com hipersensibilidade aos componentes da fórmula ou a outros anti-histamínicos de estrutura química similar. Hystin®, como os demais anti-histamínicos, não deve ser usado em prematuros ou recém-nascidos e em pacientes que estão fazendo uso de inibidores da monoaminoxidase (IMAOs).\nHystin® é contraindicado para menores de 6 anos."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 4,
+      "texto": "Mantenha este medicamento fora do alcance das crianças e animais domésticos. Não permita que outra pessoa utilize este medicamento e não o utilize para tratar outras doenças. Não utilize este produto com maior frequência ou em doses maiores do que o recomendado na bula.\nSe você teve qualquer alergia séria ou qualquer reação incomum a outro produto para alergia, tosse ou resfriado, ou se você desenvolveu algum tipo de reação enquanto estava tomando Hystin®, entre em contato com seu médico ou farmacêutico antes de continuar o tratamento com este produto.\fEste medicamento pode afetar o comportamento de algumas pessoas, tornando-as sonolentas, com tontura e estado de alerta diminuído. Tenha certeza de como você reage a este medicamento antes de realizar atividades que possam ser perigosas se você não estiver alerta.\nDurante o tratamento, o paciente não deve dirigir veículos ou operar máquinas, pois sua habilidade e atenção podem estar prejudicadas.\nNão se esqueça de dizer ao seu médico ou farmacêutico, antes de iniciar o tratamento com este produto, se você tem glaucoma ou algum outro problema ocular, problemas no intestino ou estômago, úlcera, próstata aumentada, entupimento das vias urinárias ou dificuldade em urinar, doença no coração, hipertensão arterial, problemas na tireoide ou problemas respiratórios, pois este medicamento deve ser usado com cautela nestas situações.\nInforme seu médico sobre qualquer medicamento que esteja usando, antes do início ou durante o tratamento.\nHystin® contêm corantes que podem, eventualmente, causar reações alérgicas.\nEste medicamento pode causar doping.\nPrecauções Os antialérgicos têm efeito aditivo com o álcool e outros depressores do Sistema Nervoso Central, como sedativos, hipnóticos e tranquilizantes.\nUso em idosos Em pacientes com mais de 60 anos poderá causar maior sonolência, vertigem e hipotensão arterial.\nUso em crianças Os antialérgicos podem causar excitação em crianças.\nGravidez - Categoria de risco B: Os estudos em animais não demonstraram risco fetal, mas também não há estudos controlados em mulheres grávidas; ou então, os estudos em animais revelaram riscos, mas que não foram confirmados em estudos controlados em mulheres grávidas.\nHystin® poderá ser utilizado durante os primeiros dois trimestres de gestação somente se claramente necessário e sob estrito acompanhamento médico.\nEste produto não deverá ser utilizado durante o terceiro trimestre de gestação porque recém-nascidos e prematuros poderão apresentar reações severas aos anti-histamínicos. Não foi comprovado se o Hystin® é excretado no leite materno e, portanto, deve haver precaução na administração a mulheres que estão amamentando.\nEste medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6.INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Interações medicamento-medicamento Os IMAOs prolongam e intensificam os efeitos dos anti-histamínicos, podendo ocorrer hipotensão arterial grave. O uso de anti-histamínicos com álcool e medicamentos para depressão, podem potencializar os efeitos sedativos. A ação dos anticoagulantes orais pode ser diminuída por anti-histamínicos. Depressores do sistema nervoso central como sedativos, hipnóticos e tranquilizantes, podem potencializar os efeitos sedativos Interações em testes laboratoriais O tratamento com Hystin® deverá ser suspenso dois dias antes da execução de teste de pele para detectar alergia, pois este medicamento poderá afetar os resultados destes testes."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7.CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 4,
+      "pagina_fim": 5,
+      "texto": "Hystin® deve ser mantido em temperatura ambiente (15°C a 30°C), protegido da luz e da umidade.\nValidade do medicamento: 24 meses.\fNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\nCaracterísticas físicas e organolépticas:\nHystin® apresenta-se na forma de comprimido, circular plano, com vinco e de coloração rosa.\nAntes de usar, observe o aspecto do medicamento.\nTODO MEDICAMENTO DEVE SER MANTIDO FORA DO ALCANCE DAS CRIANÇAS."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8.POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "Hystin® é indicado para uso oral. A dose deverá ser individualizada de acordo com a necessidade e resposta individual do paciente.\nAdultos e crianças maiores de 12 anos: 1 comprimido 3 a 4 vezes por dia. Não ultrapassar a dose máxima de 12mg/dia (ou seja, 6 comprimidos/dia).\nCrianças de 6 a 12 anos: 1/2 comprimido três vezes por dia. Um máximo de 6mg diários (ou seja, 3 comprimidos/dia)."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9.REAÇÕES ADVERSAS",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "Poderá ocorrer sonolência leve ou moderada durante o uso deste medicamento. Os eventos adversos de maleato de dexclorferniramina são apresentados em frequência decrescente a seguir:\nReações comuns (ocorrem entre 1% e 10% dos pacientes que utilizam este medicamento):\nSonolência leve ou moderada durante o uso;\nReações raras (ocorrem entre 0,01% e 0,1% dos pacientes que utilizam este medicamento):\nCardiovasculares: hipotensão arterial; cefaleia; taquicardia;\nGerais devido o uso de antialérgico: urticária; prurido; erupções na pele; sensibilidade na pele quando exposta ao sol;\nhiperhidrose calafrios; fraqueza; choque anafilático;\nGastrintestinais: azia; desconforto gástrico; obstipação; náuseas;\nGeniturinários: disúria; poliúria alterações no ciclo menstrual;\nHematológicos: anemia hemolítica; anemia hipoplásica; trombocitopenia e agranulocitose;\nNeurológicos: visão borrada e nervosismo;\nRespiratórios: espessamento das secreções brônquicas; compressão do tórax; desconforto nasal; dificuldade respiratória.\nEm casos de eventos adversos, notifique pelo Sistema VigiMed, disponível no Portal da Anvisa."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10.SUPERDOSE",
+      "pagina_inicio": 5,
+      "pagina_fim": 6,
+      "texto": "Na ocorrência de superdose, o tratamento de emergência deve ser iniciado imediatamente. A dose letal de dexclorfeniramina estimada no homem é de 2,5 a 5,0mg por kg.\nAs manifestações podem variar desde depressão do Sistema Nervoso Central como: sedação, apneia, redução do estado de alerta mental, insuficiência cardíaca, insônia, alucinações, tremores ou convulsões, até morte.\nOutros sinais e sintomas podem incluir tontura, zumbidos, ataxia, visão borrada e hipotensão arterial.\nExcitação, assim como os sinais e sintomas semelhantes à ação da atropina (manifestações no estômago e intestino, boca seca, midríase, rubor e hipertermia), são mais observadas em crianças.\nTratamento: considerar as medidas padrão para remoção de qualquer droga que não foi absorvida pelo estômago, tais como: adsorção por carvão vegetal ativado administrado sob a forma de suspensão em água e lavagem gástrica. O agente preferido para a lavagem gástrica, em crianças, é a solução salina fisiológica. Em adultos, poderá ser usada água filtrada; entretanto, antes de se proceder à instilação seguinte, deverá ser retirado o maior volume possível do líquido já\fadministrado. Os agentes catárticos salinos atraem água para o intestino por osmose e, portanto, podem ser valiosos por sua ação diluente rápida do conteúdo intestinal. Após administrar-se tratamento de emergência, o paciente deverá permanecer sob observação clínica.\nEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações.\nSiga corretamente o modo de usar, não desaparecendo os sintomas procure orientação médica."
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "DIZERES LEGAIS",
+      "pagina_inicio": 6,
+      "pagina_fim": 7,
+      "texto": "Registro M.S. nº 1.5423.0012 Farm. Resp.: Ronan Juliano Pires Faleiro - CRF-GO n° 3772 Geolab Indústria Farmacêutica S/A CNPJ: 03.485.572/0001-04 VP. 1B QD.08-B MÓDULOS 01 A 08 - DAIA - ANÁPOLIS – GO www.geolab.com.br Indústria Brasileira SAC: 0800 701 6080 Esta bula foi atualizada conforme Bula Padrão aprovada pela Anvisa em 26/04/2021\fAnexo B"
+    }
+  ],
+  "numero_registro": "1.5423.0012",
+  "forma_farmaceutica": "comprimido",
+  "versao": "V.02_01/2023"
+}

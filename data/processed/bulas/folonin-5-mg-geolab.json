@@ -1,0 +1,109 @@
+{
+  "id": "folonin-5-mg-geolab",
+  "medicamento": "Folonin 5 mg",
+  "principio_ativo": "ácido fólico",
+  "nomes_comerciais": [
+    "Folonin"
+  ],
+  "fabricante": "Geolab",
+  "tipo_bula": "profissional",
+  "data_versao": "2025-09-01",
+  "fonte_pdf": "data/raw/bulas/acido-folico_folonin-geolab_profissional.pdf",
+  "processado_em": "2026-10-15T15:30:05-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 1,
+      "pagina_fim": 2,
+      "texto": "FOLONIN® Geolab Indústria Farmacêutica S/A Comprimido Revestido 5mg\fMODELO DE BULA PARA O PROFISSIONAL DE SAÚDE Esta bula é continuamente atualizada. Favor proceder a sua leitura antes de utilizar FOLONIN® ácido fólico FORMA FARMACÊUTICA E APRESENTAÇÃO:\nComprimidos revestidos de 5mg: Embalagem contendo 20 comprimidos.\nUSO ADULTO USO ORAL"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Cada comprimido revestido contém:\nácido fólico:.......................................................................................................................................5,64*mg *sobredose de 5% e correção de 7% devido a umidade.\nExcipientes: lactose, celulose microcristalina, dióxido de silício, croscarmelose sódica, estearato de magnésio, álcool etílico, hipromelose, macrogol, amarelo de tartrazina laca de alumínio, azul brilhante 133 laca de alumínio e dióxido de titânio."
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Folonin® está indicado para:\n- Tratamento da anemia megaloblástica.\n- Prevenção de recorrência de anormalidades do tubo neural, especialmente em mulheres que tiveram uma gravidez anterior complicada por um defeito do tubo neural (DTN)."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2. RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 2,
+      "pagina_fim": 3,
+      "texto": "No estudo clínico prospectivo e unicêntrico, iniciado e terminado com 215 mulheres com uma gravidez anterior afetada por um defeito do tubo neural (DTN), foi investigado o efeito do ácido fólico para prevenção da recorrência de DTN. As mulheres que seguiram totalmente (n = 81) ou parcialmente (n= 20) o tratamento não tiveram recorrência de DTN, enquanto no grupo que não recebeu tratamento com ácido fólico (n= 114) houve uma taxa de recorrência de DTN de 3,5%. Sendo assim o estudo mostra que o tratamento com ácido fólico em mulheres que tiveram um DTN anterior pode prevenir a recorrência de DTN. Além disso os valores de folatos séricos e eritrocitários aumentaram significativamente nas pacientes que seguiram totalmente o tratamento. VERGEL, R. G. et al. Primary Prevention of Neural Tube Defects With Folic Acid Supplementation: Cuban Experience. Prenatal diagnosis. V. 10, p. 149-152. 1990.\fNo estudo clínico randomizado, prospectivo, de 2 braços, aberto e unicêntrico, publicado por Nguyen et al., 2009 iniciado com 40 mulheres não grávidas na idade fértil. Este grupo de mulheres foram aleatoriamente designadas em 2 grupos (20 para cada grupo) para receber multivitamínico pré-natal contendo 1,1 mg de ácido fólico ou multivitamínico contendo 5 mg de ácido fólico. Os multivitamínicos pré-natais eram idênticos no conteúdo de outras vitaminas e minerais (12 ug de vitamina B12, 250 UI de vitamina D e 300 mg de cálcio), diferindo apenas na concentração de ácido fólico. Um indivíduo de cada grupo abandonou o estudo devido à ansiedade com exames de sangue e dificuldade de comprometer com o protocolo do estudo, logo, o estudo terminou com 38 pacientes.\nO desfecho primário foi medir as concentrações plasmáticas de folato nos glóbulos vermelhos na linha de base e nas semanas 2, 4, 6, 12 e 30. Para este teste, os resultados do estudo apontam que nenhuma diferença significativa foi detectada nas concentrações basais de folato entre os grupos de ácido fólico 5 e 1,1 mg [48,8 6 +/- 14,5 e 49,4 +/- 15,7 nmol/L, respectivamente (P ¼ 0,96)]. No entanto, houve diferenças significativas nas semanas 2, 4, 6, 12 e 30. As concentrações plasmáticas de folato aumentaram para 165,3 ± 109,9 nmol/L para o grupo de 5 mg de ácido fólico e para 96,8 ± 41,1 nmol/L para o grupo de 1,1 mg de ácido fólico na semana 30.\nNenhuma diferença significativa foi detectada nas concentrações basais de folato nos eritrócitos entre os 2 grupos, que foram medidas como 1121 ± 410 nmol/L para o grupo de 5 mg de ácido fólico e como 1035 ± 273 nmol/L para o grupo de 1,1 mg de ácido fólico (P=0,51). No entanto, houve diferenças significativas entre os grupos na semana 4 (P=0,006), semana 6 (P=0,001), semana 12 (P=0,0002) e semana 30 (P=0,0005). O folato nos glóbulos vermelhos foi detectado entre os grupos nas semanas 4, 6, 12 e 30. As concentrações de folato nos glóbulos vermelhos na semana 30 foram de 2339 ± 782 e 1625 ± 339 nmol/L para os grupos de ácido fólico de 5 e 1,1 mg, respectivamente.\nO estudo concluiu que o uso de 5 mg de ácido fólico entre mulheres em idade fértil produziu maiores concentrações de folato no sangue, com uma taxa mais rápida de acúmulo de folato, em comparação com 1,1 mg de ácido fólico, sendo recomendado 5 mg de ácido fólico para prevenção de defeitos do tubo neural em mulheres em idade reprodutiva que podem estar em risco de estado de folato abaixo do ideal (ou seja, < 906 nmol/L de folato de hemácias) e também para tratamento da anemia megaloblástica pela deficiência de folato. (NGUYEN, P. et al. Steady state folate concentrations achieved with 5 compared with 1.1 mg folic acid supplementation among women of childbearing age 1 – 3. Am J Clin Nutr, v. 89, n. February, p.\n844–852, 2009)"
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 4,
+      "texto": "Ácido fólico pertence às vitaminas do grupo B.\nO ácido fólico é reduzido no organismo a tetra-hidrofolato, o qual atua como coenzima para vários processos metabólicos incluindo a síntese de purina e pirimidina e portanto na síntese de DNA. Está envolvido também na conversão de alguns aminoácidos e na utilização o folato.\nEm casos onde há deficiência de ácido fólico, algumas reações metabólicas ficam comprometidas em vários níveis, conforme varia a afinidade do ácido fólico com as enzimas de tais reações. Clinicamente, a deficiência severa de ácido fólico resulta no desenvolvimento de anemia megaloblástica.\fA administração de ácido fólico reduz o risco, tanto da ocorrência quanto da recorrência, de malformações fetais, pois auxilia no fechamento do tubo neural, essencial para a formação da calota craniana e da coluna vertebral.\nFarmacocinéticas:\nO metabolismo do ácido fólico ocorre no fígado.\nO ácido fólico é convertido no fígado e plasma em presença de ácido ascórbico, em sua forma metabolicamente ativa (ácido tetra-hidrofólico) mediante di-hidrofolato redutase.\nEliminação:\nRenal: O ácido fólico é quase completamente eliminado com metabólitos. As quantidades superiores às necessidades diárias são eliminadas na urina, principalmente como produto inalterado.\nEm diálise: O ácido fólico é eliminado por hemodiálise.\nAbsorção:\nO ácido fólico, depois de sua conversão em ácido tetra-hidrofólico, é usado na eritropoiese normal e para a síntese de nucleoproteínas."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4. CONTRAINDICAÇÕES",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Folonin® é contraindicado a pacientes com hipersensibilidade ao ácido fólico e/ou demais componentes da formulação e em casos de anemia perniciosa.\nEste medicamento pode ser utilizado durante a gravidez desde que sob prescrição médica ou do cirurgião dentista.\nEste medicamento não deve ser usado por pessoas com síndrome de má-absorção de glicose-galactose.\nAtenção: Contém o corante amarelo de tartrazina laca de alumínio, azul brilhante 133 laca de alumínio e dióxido de titânio."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "A utilização de ácido fólico não é apropriada para anemia perniciosa e anemias megaloblásticas causadas pela deficiência de vitamina B12.\nGravidez e lactação:\nFolonin® é um medicamento vitamínico complementar na gestação e lactação.\nO uso desse medicamento não interfere no aleitamento do bebê.\nEste medicamento pode ser utilizado durante a gravidez desde que sob prescrição médica ou do cirurgião dentista.\nPopulações especiais:\nNão há restrições na administração de ácido fólico em crianças e idosos, desde que sejam observadas as doses recomendadas e indicações do produto.\nAtenção: Contém lactose (tipo de açúcar) abaixo de 0,25g/comprimido.\nAtenção: Contém o corante amarelo de tartrazina laca de alumínio, azul brilhante 133 laca de alumínio e dióxido de titânio.\nEste produto contém amarelo de TARTRAZINA, que pode causar reações alérgicas, como a asma, especialmente em pessoas alérgicas ao ácido acetilsalicílico."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "Interações Medicamentos/medicamentos:\nGravidade moderada:\nMedicamento: anticonvulsivantes (barbitúricos, fenitoína, primidona) Efeitos na interação: pode levar a diminuição da eficácia do anticonvulsivante.\nMedicamento: difenilhidantoína:\nEfeitos na interação: pode interferir na absorção e armazenamento de ácido fólico.\nGravidade menor:\nMedicamento: metotrexato Efeitos na interação: pode interferir na absorção e armazenamento de ácido fólico.\nInterações medicamento/álcool Álcool Efeitos na interação: o consumo de álcool reduz a absorção de ácido fólico."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "Folonin® deve ser armazenado em temperatura ambiente (15ºC a 30ºC), protegido da luz e umidade.\nPrazo de validade: 24 meses a partir da sua data de fabricação.\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\nCaracterísticas físicas e organoléptica:\nFolonin® apresenta-se na forma de comprimido revestido circular de coloração verde e semiabaulado liso.\nAntes de usar, observe o aspecto do medicamento.\nTODO MEDICAMENTO DEVE SER MANTIDO FORA DO ALCANCE DAS CRIANÇAS."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "Folonin® deve ser ingerido sem mastigar, por via oral e com um pouco de líquido.\nDe acordo com a indicação, a dose de ácido fólico pode variar conforme descrito abaixo:\n- Tratamento da anemia megaloblástica. Recomenda-se a utilização do Folonin® até a completa recuperação da anemia.\n- Prevenção de recorrência de anormalidades do tubo neural, especialmente em mulheres que tiveram uma gravidez anterior complicada por um defeito do tubo neural (DTN). É indicado 1 comprimido/dia no período pré-gestacional, 90 dias antes da concepção, até a 12ª semana de gestação.\nA dose máxima diária de Folonin® é de 15mg. Doses acima de 15mg demostraram maior ocorrência de reações adversas do sistema nervoso central e toxicidade Este medicamento não deve ser partido, aberto ou mastigado."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 6,
+      "pagina_fim": 6,
+      "texto": "Avise seu médico o mais cedo possível se você não se sentir bem enquanto estiver usando o Folonin®.\nA ocorrência de alguns eventos adversos pode estar associada ao uso de Folonin®, entre eles:\n- Trato Gastrointestinal: náusea (enjoo), distensão abdominal (aumento do volume da barriga), alteração do paladar (gosto amargo na boca), flatulência (gazes);\n- Sistema Nervoso Central: irritabilidade, alterações do sono;\n- Sistema Imunológico: reações de hipersensibilidade (alergia), com quadros de urticária, rash cutâneo, prurido (coceira) e eritema (vermelhidão na pele).\nAs reações adversas geralmente estão relacionadas à ingestão de doses elevadas (mais 15mg/dia).\nEmbora haja inúmeras comprovações de mínima toxicidade do ácido fólico, existem relatos na literatura de que doses de 15mg ou mais possam produzir alterações no Sistema Nervoso Central, decorrentes de aumento na síntese de aminas cerebrais além de eventuais distúrbios gastrointestinais.\nDoses elevadas (acima de 15mg/dia) podem comprometer a absorção intestinal do zinco e levar a uma precipitação de cristais de ácido fólico nos rins.\nA frequência de ocorrência das reações adversas citadas não está disponível, sendo as reações relatadas apenas em casos isolados.\nEm casos de eventos adversos, notifique pelo Sistema VigiMed, disponível no Portal da Anvisa."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 6,
+      "pagina_fim": 6,
+      "texto": "A conduta na ingestão de doses superiores a 15mg por dia corresponde à suspensão da administração de ácido fólico e medidas gerais de suporte apropriado ao quadro.\nDoses elevadas (acima de 15mg/dia) podem produzir alterações no SNC, decorrentes de aumento na síntese de aminas cerebrais além de eventuais distúrbios gastrointestinais e comprometimento da absorção intestinal do zinco e levar a uma precipitação de cristais de ácido fólico nos rins.\nEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações."
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "DIZERES LEGAIS",
+      "pagina_inicio": 6,
+      "pagina_fim": 7,
+      "texto": "Registro 1.5423.0142 Registrado e Produzido por:\nGeolab Indústria Farmacêutica Ltda VP. 1B QD.08-B Módulos 01 A 08 - DAIA - Anápolis – GO CNPJ: 03.485.572/0001-04 SAC: 0800-701 6080 VENDA SOB PRESCRIÇÃO\fAnexo B"
+    }
+  ],
+  "numero_registro": "1.5423.0142",
+  "forma_farmaceutica": "comprimido revestido",
+  "versao": "V.06_09/2025"
+}

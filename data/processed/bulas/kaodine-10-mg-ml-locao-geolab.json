@@ -1,0 +1,109 @@
+{
+  "id": "kaodine-10-mg-ml-locao-geolab",
+  "medicamento": "Kaodine 10 mg/mL loção",
+  "principio_ativo": "permetrina",
+  "nomes_comerciais": [
+    "Kaodine"
+  ],
+  "fabricante": "Geolab",
+  "tipo_bula": "profissional",
+  "data_versao": "2025-12-01",
+  "fonte_pdf": "data/raw/bulas/permetrina_kaodine-geolab_profissional.pdf",
+  "processado_em": "2026-10-15T15:30:17-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 1,
+      "pagina_fim": 2,
+      "texto": "KAODINE® Geolab Indústria Farmacêutica S/A Loção 10mg/mL\fMODELO DE BULA PARA O PROFISSIONAL DA SAÚDE Esta bula é continuamente atualizada. Favor proceder a sua leitura antes de utilizar o medicamento.\nKaodine® permetrina FORMA FARMACÊUTICA E APRESENTAÇÃO:\nLoção. Frasco plástico com 60mL.\nUSO EXTERNO - VIA TÓPICA USO ADULTO E PEDIÁTRICO ACIMA DE 02 ANOS"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Cada mL de loção contém:\npermetrina .....................................................................................................................10mg Excipientes: água purificada, álcool cetoestearílico, álcool etílico, AMP 95, essência, metilparabeno, óleo mineral, propilparabeno e quaternário de amônio."
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Kaodine® é indicado para o tratamento de pediculose causada por Pediculus humanus va. capitis e seus ovos."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2. RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Kaodine® tem seu uso cientificamente reconhecido para o tratamento da pediculose (Bigby, 2000; Chosidow, 2006; Elgart, 2003; Strong, 2007; Walker, 2000)."
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Kaodine® age diretamente sobre os piolhos, induzindo alterações eletroquímicas na membrana celular do inseto afetando sua mobilidade. A distribuição da permetrina de aplicação tópica se dá primordialmente na pele, e a quantidade absorvida sistematicamente é muito pequena - inferior a 0,5% nas primeiras 48 horas. A permetrina é metabolizada na pele e no fígado, produzindo metabólicos inativos, que são excretados principalmente na urina."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4. CONTRAINDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 3,
+      "texto": "Este medicamento é contraindicado para pacientes com história de hipersensibilidade a permetrina ou a quaisquer componentes da fórmula, ou a outros piretróides, piretrinas, ou crisântemos. Crianças menores de 2 anos de idade devem ser tratadas apenas\fcom a remoção manual ou utilização do pente-fino. Informe ao seu médico ou cirurgião dentista se você estiver fazendo uso de algum outro medicamento."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "O paciente deve testar este medicamento em uma pequena área do couro cabeludo para saber se tem hipersensibilidade. Se o paciente apresentar coceira ou vermelhidão ou irritação no couro cabeludo, na área de teste, o produto não deverá ser aplicado.\nSe o paciente apresentar alguma irritação e não houver melhora com a suspensão do uso do produto, ele deverá procurar o médico. Permetrina não é irritante ocular, mas o contato deve ser evitado, pois os outros componentes podem ser muito irritantes. Não aplicar em membranas mucosas e próximo dos olhos, e evitar contato com a boca. Em caso de contato acidental com os olhos o paciente deve lavar abundantemente com água. Em caso de ingestão acidental do produto o paciente deve procurar orientação médica imediatamente. Este medicamento não deve ser aplicado se tiver alguma inflamação, ferimento, queimadura ou outros tipos de lesões no couro cabeludo. O paciente não deve usar secador de cabelo enquanto estiver usando este medicamento, não há dados evidenciando se esse uso poderia afetar a eficácia da permetrina no tratamento. O paciente deve usar este medicamento apenas na presença de piolhos vivos ou lêndeas, não podendo ser usado para prevenção. Mulheres grávidas ou amamentando não devem usar este medicamento sem orientação médica.\nAtenção: Contém álcool (etanol).\nEste medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião dentista. Informe seu médico ou cirurgião dentista se você está fazendo uso de algum outro medicamento."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Não há relatos de interações com o uso deste medicamento."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMANEZAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Kaodine® deve ser armazenado em temperatura ambiente (de15 a 30ºC), protegido da luz e umidade.\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\nKaodine® é uma loção de cor branca, homogênea, viscosa e com odor floral.\nAntes de usar, observe o aspecto do medicamento.\nTodo medicamento deve ser mantido fora do alcance de crianças."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 3,
+      "pagina_fim": 4,
+      "texto": "O paciente deve:\n- Lavar o cabelo com xampu de sua preferência, enxaguar e enxugar com a toalha.\n- Agitar bem o frasco de Kaodine® e aplicar nos cabelos ainda úmidos, cobrindo todo o couro cabeludo, esfregando abundantemente em toda a extensão, principalmente atrás das orelhas e na nuca, onde os piolhos e as lendêas se concentram mais. Assegurar de que todo o couro cabeludo ficou bem encharcado para não afetar o tratamento.\n- Deixar o produto agir por 10 minutos.\n- Passar o pente fino para a remoção dos piolhos e das lêndeas.\n- Enxaguar o cabelo com água morna e enxaguar com a toalha.\nA quantidade de Kaodine® necessária depende do volume e tamanho dos cabelos, pode ser necessário usar o frasco inteiro, e em alguns casos de cabelo mais longos pode ser necessário mais de um frasco. O efeito completo poderá ocorrer dentro de algumas horas. É provável encontrar alguns piolhos vivos logo após o uso. Esperar algumas horas antes de usar o pente fino de novo. Em\fgeral uma única aplicação é suficiente. Se ainda houver piolhos e lêndea após 7 dias da primeira aplicação, aplicar o medicamento pela segunda vez. Após 7 dias da segunda aplicação caso o paciente ainda encontre algum piolho vivo, deverá procurar o médico. É importante assegurar que o tratamento foi realizado corretamente, para que o produto possa ter efeito desejado. Pessoas que aplicam este produto rotineiramente podem usar luvas, para evitar uma possível irritação nas mãos.\nEvidências sugerem que a resistência à permetrina tem aumentado ao longo dos anos. Em caso da falha do tratamento devido à resistência do piolho à permetrina, o médico deverá ser consultado."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "O paciente poderá ter algumas reações indesejáveis tais como parestesia e alterações na pele (eczema, edema, vermelhidão, coceira, queimação, irritação, desconforto e dor). Caso o paciente tenha uma reação alérgica, deve parar de usar o medicamento e procurar o médico.\nEm casos de eventos adversos, notifique pelo Sistema VigiMed, disponível no Portal da Anvisa."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUSPERDOSE",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Em casos de aplicação em grandes quantidades o paciente pode raramente apresentar tontura, perda de apetite, náusea, vômito, dor de cabeça, fraqueza, convulsão e perda de consciência. Em caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações."
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "DIZERES LEGAIS",
+      "pagina_inicio": 4,
+      "pagina_fim": 5,
+      "texto": "Registro 1.5423.0342 Registrado por:\nGeolab Indústria Farmacêutica S/A VP. 1B QD. 08-B Módulos 01 a 08 DAIA - Anápolis - GO CNPJ: 03.485.572/0001-04 Indústria Brasileira Produzido por:\nIFAL INDÚSTRIA E COMÉRCIO DE PRODUTOS FARMACÊUTICOS Ltda. Av.\nJosé Loureiro da Silva 1211 CEP 96784-072 - Camaquã - RS Indústria Brasileira CNPJ:00.376.959/0001-26 SAC: 0800 701 6080 Siga corretamente o modo de usar. Não desaparecendo os sintomas, procure orientação de um profissional de saúde.\fAnexo B"
+    }
+  ],
+  "numero_registro": "1.5423.0342",
+  "forma_farmaceutica": "loção",
+  "versao": "V.01_12/2025"
+}

@@ -1,0 +1,123 @@
+{
+  "id": "desalex-5-mg-e-0-5-mg-ml-organon",
+  "medicamento": "Desalex 5 mg e 0,5 mg/mL",
+  "principio_ativo": "desloratadina",
+  "nomes_comerciais": [
+    "Desalex"
+  ],
+  "fabricante": "Organon",
+  "tipo_bula": "profissional",
+  "data_versao": "2025-11-03",
+  "fonte_pdf": "data/raw/bulas/desloratadina_desalex_profissional.pdf",
+  "processado_em": "2026-10-15T15:29:44-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 1,
+      "pagina_fim": 1,
+      "texto": "DESALEX® desloratadina ORGANON FARMACÊUTICA LTDA.\nComprimido revestido: 5 mg Xarope: 0,5 mg/mL"
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "IDENTIFICAÇÃO DO MEDICAMENTO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "DESALEX® desloratadina"
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "APRESENTAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "DESALEX® Comprimido revestido de:\n- 5 mg em embalagem com 10 ou 30 comprimidos revestidos.\n- USO ADULTO E PEDIÁTRICO ACIMA DE 12 ANOS DESALEX® Xarope de:\n- 0,5 mg/mL em embalagem com 1 frasco com 60 ou 100 mL acompanhado de uma seringa dosadora e adaptador de frasco.\n- USO ADULTO E PEDIÁTRICO ACIMA DE 6 MESES USO ORAL"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "DESALEX® Comprimidos 5 mg:\nCada comprimido revestido contém 5 mg de desloratadina.\nExcipientes: fosfato de cálcio dibásico di-hidratado, celulose microcristalina, amido, talco, lactose monoidratada, hipromelose, dióxido de titânio, macrogol, cera branca de abelha e cera de carnaúba.\nDESALEX® Xarope 0,5 mg/mL:\nCada mL contém 0,5 mg de desloratadina.\nExcipientes: propilenoglicol, sorbitol, ácido cítrico, citrato de sódio di-hidratado, benzoato de sódio, edetato dissódico, sacarose, aroma artificial e natural de chiclé e água purificada."
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "DESALEX® é indicado para o alívio dos sintomas da rinite alérgica, como espirro, rinorreia, prurido e congestão nasal, prurido ocular, lacrimejamento e vermelhidão dos olhos, prurido do palato e tosse.\nDESALEX® também é indicado para o alívio dos sinais e sintomas de urticária."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2. RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Em pacientes adultos e adolescentes com rinite alérgica, DESALEX® Comprimidos foi eficaz no alívio de sintomas, como espirro, rinorreia, prurido e congestão nasal, assim como prurido, lacrimejamento e vermelhidão dos olhos e prurido do palato. DESALEX® Comprimidos controlou os sintomas de modo eficaz por 24 horas.\nAlém das classificações estabelecidas de sazonal e perene, a rinite alérgica pode ser classificada alternativamente como rinite alérgica intermitente e rinite alérgica persistente de acordo com a duração dos sintomas. A rinite alérgica intermitente é definida como a presença de sintomas por menos de 4 dias por semana ou menos de 4 semanas por ano. A rinite alérgica persistente é definida como a presença de sintomas por 4 dias ou mais por semana e por mais de 4 semanas durante o ano.\nEm dois estudos de 4 semanas em pacientes com rinite alérgica (RA) e asma concomitante, a desloratadina foi eficaz na redução dos sintomas de RA e asma, reduzindo o uso de beta 2-agonista e sem ação adversa sobre o VEF1. A melhoria nos sintomas, sem nenhuma diminuição na função pulmonar, sustenta a segurança da administração de desloratadina a pacientes com RA sazonal e asma leve a moderada concomitante.\nA urticária idiopática crônica foi estudada como modelo clínico de todas as formas de urticária, uma vez que a fisiopatologia subjacente é similar, independentemente da etiologia e, pelo fato de os pacientes poderem ser mais facilmente recrutados prospectivamente. Já que a liberação de histamina é um fator causal comum, espera-se que a desloratadina seja eficaz em proporcionar alívio sintomático para as outras formas, além da urticária idiopática crônica, conforme aconselhado nas diretrizes clínicas.\nEm estudos clínicos conduzidos em adultos e adolescentes com urticária idiopática crônica, DESALEX® Comprimidos foi eficaz no alívio do prurido e na redução do tamanho e número de erupções cutâneas, um dia após o início do tratamento. Em cada estudo, os efeitos foram sustentados pelo período de 24 horas. O tratamento com DESALEX® Comprimidos também melhorou a função diurna e o sono, avaliados pela redução da interferência no sono e nas atividades rotineiras diárias.\nDESALEX® foi eficaz no alívio do desconforto da rinite alérgica, como demonstrado pelo escore total do questionário de qualidade de vida das rinoconjuntivites. A grande melhora foi demonstrada nos domínios relacionados a situações rotineiras e atividades diárias limitadas pelos sintomas."
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 2,
+      "pagina_fim": 3,
+      "texto": "A desloratadina é um antagonista não-sedante da histamina, de ação prolongada, com potente atividade antagonista seletiva dos receptores H1 periféricos da histamina. A desloratadina tem demonstrado atividades antialérgica, anti-histamínica e anti-inflamatória.\nAlém da atividade anti-histamínica, a desloratadina tem demonstrado atividades antialérgica e anti-inflamatória em vários estudos in vitro (a maioria conduzida em células de origem humana) e in vivo. Estes estudos têm demonstrado que a desloratadina inibe a grande cascata de eventos que inicia e propaga a inflamação alérgica, entre eles:\nliberação das citocinas pró-inflamatórias, dentre elas IL-4, IL-6, IL-8, IL-13;\fliberação de importantes quimocinas pró-inflamatórias, como RANTES (regulador da atividade normal de célula T expressa e secretada);\nprodução do ânion superóxido pelos neutrófilos polimorfonucleares ativados;\nadesão e quimiotaxia de eosinófilos;\nexpressão de moléculas de adesão, como a P-selectina;\nliberação de histamina, prostaglandina (PGD) e leucotrieno (LTC), dependentes da IgE;\n2 4 resposta broncoconstritora alérgica aguda e tosse alérgica em modelos animais.\nPropriedades farmacodinâmicas: após administração oral, a desloratadina bloqueia seletivamente os receptores H1 periféricos, uma vez que a droga é efetivamente excluída da entrada do sistema nervoso central (SNC).\nA segurança de DESALEX® Xarope foi demonstrada em três estudos pediátricos. Crianças com idades de 6 meses a 11 anos com histórico comprovado de rinite alérgica (RA) ou urticária idiopática crônica (UIC), que foram candidatas à terapia anti-histamínica, receberam uma dose diária de 1 mg (6 a 11 meses de idade), 1,25 mg (1 a 5 anos de idade) ou 2,5 mg (6 a 11 anos de idade). O tratamento foi bem tolerado, conforme documentado por exames laboratoriais clínicos, sinais vitais e dados sobre intervalos eletrocardiográficos, incluindo QTc. Quando administrada nas doses recomendadas, a atividade farmacocinética da desloratadina foi comparável nas populações pediátrica e adulta. Portanto, como o tratamento da RA/UIC e o perfil da desloratadina são semelhantes em pacientes adultos e pediátricos, dados de eficácia da desloratadina em adultos podem ser extrapolados para a população pediátrica.\nEm um estudo com doses múltiplas, com administração diária de até 20 mg de desloratadina, durante 14 dias, não foram observados efeitos cardiovasculares estatística ou clinicamente significantes. Em um estudo farmacológico em que a desloratadina foi administrada numa dose de 45 mg diariamente (nove vezes a dose clínica), durante dez dias, não foi observado prolongamento do intervalo QTc.\nA desloratadina não penetra facilmente no sistema nervoso central. Na dose recomendada de 5 mg diários, não houve incidência excessiva de sonolência em comparação ao placebo. Até na dose de 7,5 mg diários, DESALEX® não afetou o desempenho psicomotor nos estudos clínicos.\nEm uma dose única de 5 mg, a desloratadina não interferiu nas medidas de avaliação sobre desempenho em voos, incluindo exacerbação da sonolência subjetiva ou tarefas relativas ao voo.\nNão foram observadas alterações clinicamente significantes nas concentrações plasmáticas da desloratadina, nos estudos de interações farmacológicas de doses múltiplas realizados com cetoconazol, eritromicina, azitromicina, fluoxetina e cimetidina.\nNos estudos farmacológicos clínicos, a administração concomitante de álcool não aumentou o prejuízo do desempenho induzido pelo álcool e nem a sonolência. Não houve diferenças significativas nos resultados de testes psicomotores entre os grupos que receberam a desloratadina e o placebo administrados isoladamente ou com álcool.\nPropriedades farmacocinéticas: concentrações plasmáticas de desloratadina podem ser detectadas dentro de 30 minutos após sua administração. A desloratadina é bem absorvida com pico de concentração plasmática obtido aproximadamente após 3 horas; a meia-vida da fase terminal é de aproximadamente 27 horas. O nível de acúmulo de desloratadina foi consistente com a sua meia-vida (aproximadamente 27 horas) e com a frequência de dose de uma vez ao dia. Em adultos e adolescentes, a biodisponibilidade foi proporcional em relação à dose na faixa de 5 mg até 20 mg.\nA desloratadina é moderadamente ligada às proteínas plasmáticas (83% - 87%). Não há evidência clinicamente relevante de acúmulo da droga após doses únicas diárias de desloratadina (5 mg a 20 mg) durante 14 dias.\nA enzima responsável pelo metabolismo da desloratadina ainda não foi identificada e, portanto, não se pode excluir totalmente a possibilidade de algumas interações com outras drogas. Estudos in vivo com inibidores da CYP3A4 e CYP2D6 específicos demonstraram que estas enzimas não são importantes no metabolismo da desloratadina. A desloratadina não inibe a CYP3A4 e CYP2D6 e também não é substrato nem inibidor da glicoproteína-P.\nEm um estudo de dose única com 7,5 mg de desloratadina, não houve efeito da alimentação (café da manhã altamente gorduroso e calórico) na distribuição da desloratadina.\nEm uma única dose, em um ensaio cruzado com desloratadina, as formulações comprimido e xarope foram bioequivalentes e não foram afetadas pela presença de alimentação.\nEm estudos separados de dose única, dentro das doses recomendadas, pacientes pediátricos tiveram valores de AUC e Cmáx de desloratadina comparáveis aos dos adultos que receberam 5 mg de desloratadina xarope."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4. CONTRAINDICAÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Este medicamento é contraindicado para uso por pacientes com hipersensibilidade à substância ativa ou a qualquer um dos seus componentes."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 4,
+      "texto": "De acordo com estudos clínicos, este medicamento tem pouca ou nenhuma influência sobre a capacidade de dirigir veículos e operar máquinas. Os pacientes devem ser informados de que a maioria das pessoas não apresenta sonolência com o uso deste medicamento.\nNo entanto, como existe uma variação individual da resposta a todos os medicamentos, é recomendado aconselhar os pacientes a não realizar atividades que exigem agilidade mental, como dirigir um carro ou operar máquinas, até que eles tenham estabelecido a sua própria resposta ao medicamento.\nUso durante a gravidez e a lactação Categoria de risco na gravidez C.\nEste medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista.\nNão foram observados efeitos da desloratadina sobre a fertilidade em ratas, em uma exposição 34 vezes maior que a exposição em ser humano na dose clínica recomendada. Não foram observados efeitos teratogênicos, nem mutagênicos nos estudos realizados em animais com a desloratadina. Como não há dados clínicos de gestantes expostas à desloratadina, o uso de DESALEX® durante a gravidez não foi estabelecido. DESALEX® não deve ser usado durante a gravidez, a não ser que os benefícios potenciais sejam maiores que o risco.\nA desloratadina é excretada no leite materno. Desse modo, o uso de DESALEX® não é recomendado para mulheres que estejam amamentando.\nUso criterioso no aleitamento ou na doação de leite humano: o uso deste medicamento no período da lactação depende da avaliação e acompanhamento do seu médico ou cirurgião-dentista.\fUso em crianças DESALEX® Comprimidos: a eficácia e segurança da desloratadina não foram estabelecidas em pacientes menores de 12 anos de idade.\nDESALEX® Xarope: a eficácia e segurança da desloratadina não foram estabelecidas em crianças menores de 6 meses de idade.\nDesloratadina deve ser administrada com cautela em pacientes com histórico médico ou familiar de convulsões. Em particular, crianças jovens podem ser mais suscetíveis ao desenvolvimento de novas convulsões sob tratamento com desloratadina (relatadas em pacientes com e sem distúrbio convulsivo conhecido). Os profissionais de saúde podem considerar a descontinuação de desloratadina em pacientes que apresentem convulsão durante o tratamento.\nDESALEX® Comprimidos:\nAtenção: contém lactose (tipo de açúcar) abaixo de 0,25 g/comprimido. Este medicamento não deve ser usado por pessoas com síndrome de má-absorção de glicose-galactose.\nAtenção: contém o corante dióxido de titânio.\nDESALEX® Xarope:\nEste produto contém benzoato de sódio, que pode causar reações alérgicas, como a asma, especialmente em pessoas alérgicas ao ácido acetilsalicílico.\nAtenção: contém 490 mg de sacarose (tipo de açúcar) /mL. Deve ser usado com cautela por portadores de Diabetes. Este medicamento não deve ser usado por pessoas com síndrome de má-absorção de glicose-galactose e/ou insuficiência de sacarose-isomaltase.\nContém sorbitol (edulcorante)."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Não foram observadas interações medicamentosas clinicamente significativas com DESALEX® Comprimidos nos estudos clínicos.\nNão houve alteração na disponibilidade da desloratadina na presença de alimentos ou suco de grapefruit."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "DESALEX® Comprimidos: armazenar em temperatura ambiente (de 15°C a 30°C), protegido da umidade.\nDESALEX® Xarope: armazenar em temperatura ambiente (de 15°C a 30°C).\nO prazo de validade do medicamento é de 24 meses a partir da data de fabricação.\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\nDESALEX® Comprimidos é de cor branca ou quase branca, redondo, com as iniciais \"SP\" em um dos lados e liso no outro.\nDESALEX® Xarope é uma solução incolor e possui aroma de chiclé.\nAntes de usar, observe o aspecto do medicamento.\nTodo medicamento deve ser mantido fora do alcance das crianças."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Em crianças de 6 a 11 meses de idade: 2 mL (1 mg) de DESALEX® Xarope uma vez por dia, independentemente da alimentação, para alívio dos sintomas associados com a rinite alérgica (incluindo rinite alérgica intermitente e persistente) e urticária. Para uso oral.\nEm crianças de 1 a 5 anos de idade: 2,5 mL (1,25 mg) de DESALEX® Xarope uma vez por dia, independentemente da alimentação, para alívio dos sintomas associados com a rinite alérgica (incluindo rinite alérgica intermitente e persistente) e urticária. Para uso oral.\nCrianças de 6 a 11 anos de idade: 5 mL (2,5 mg) de DESALEX® Xarope uma vez por dia, independentemente da alimentação, para alívio dos sintomas associados com a rinite alérgica (incluindo rinite alérgica intermitente e persistente) e urticária. Para uso oral.\nAdultos e adolescentes (maior ou igual a 12 anos de idade): um comprimido revestido de 5 mg de DESALEX® ou 10 mL (5 mg) de DESALEX® Xarope uma vez por dia, independentemente da alimentação, para alívio dos sintomas associados com a rinite alérgica (incluindo rinite alérgica intermitente e persistente) e urticária.\nRinite alérgica intermitente: presença dos sintomas durante menos de 4 dias por semana ou por menos de 4 semanas por ano. O paciente deve ser tratado de acordo com a avaliação do histórico da doença do paciente e o tratamento pode ser descontinuado após a resolução dos sintomas e reiniciado com o reaparecimento dos mesmos.\nRinite alérgica persistente: presença de sintomas durante 4 dias ou mais por semana por mais de 4 semanas ao ano. Pode ser proposto tratamento contínuo aos pacientes durante períodos de exposição aos alérgenos.\nO paciente deve ser orientado a utilizar DESALEX® conforme indicado.\nO paciente deve ser aconselhado a não aumentar a dose ou a frequência da dose, uma vez que não há estudos que demonstrem aumento da efetividade em doses maiores e sonolência pode ocorrer.\nDESALEX® Comprimidos não deve ser partido, aberto ou mastigado."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "Em um estudo clínico em uma população pediátrica, DESALEX® Xarope foi administrado a um total de 246 crianças com idade de 6 meses a 11 anos. A incidência global de eventos adversos foi semelhante para os grupos DESALEX® e placebo. Em crianças de 6 a 23 meses, os eventos adversos mais frequentes relatados, superiores ao do placebo foram: diarreia (3,7%), febre (2,3%) e insônia (2,3%). Em estudos clínicos com indicações, incluindo rinite alérgica e urticária idiopática crônica, na dose recomendada de 5 mg diários, 3% a mais dos pacientes tratados com DESALEX® Comprimidos relataram reações adversas em relação aos pacientes tratados com placebo. Os efeitos adversos mais frequentes superiores aos do placebo foram fadiga (1,2%), boca seca (0,8%) e cefaleia (0,6%).\nOutras reações adversas podem ocorrer com o uso de DESALEX®:\nMuito raras (ocorrem em até 0,01% dos pacientes que utilizam este medicamento): casos de reações de hipersensibilidade (incluindo anafilaxia e erupções cutâneas), taquicardia, palpitações, convulsões, hiperatividade psicomotora, sonolência, enzimas hepáticas e bilirrubina elevadas, hepatite, aumento do apetite, alucinações, dor abdominal, náusea, vômitos, dispepsia e mialgia;\nFrequência desconhecida: alteração de comportamento, agressão, prolongamento do intervalo QT, fotossensibilidade e astenia.\nEm casos de eventos adversos, notifique pelo Sistema VigiMed, disponível no Portal da Anvisa."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "De acordo com o verificado no uso pós comercialização, o perfil de eventos adversos associados à superdose é similar àquele observado com doses terapêuticas, embora a magnitude dos efeitos possa ser maior.\nTratamento Em caso de superdose, considerar as medidas estabelecidas para remoção de substâncias ativas não absorvidas. O tratamento auxiliar dos sintomas é recomendado.\nDesloratadina não é eliminada via hemodialise; Não se sabe se é eliminada via diálise peritoneal.\nSintomas Em um ensaio clínico de dose múltipla, em que até 45 mg de desloratadina foram administrados (nove vezes a dose clínica), não foram observados efeitos clinicamente relevantes.\nPopulação pediátrica De acordo com o verificado no uso pós comercialização, o perfil de eventos adversos associados à superdose é similar àquele observado com doses terapêuticas, embora a magnitude dos efeitos possa ser maior.\nEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações."
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "DIZERES LEGAIS",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "Registro 1.0029.0191 DESALEX® XAROPE:\nProduzido por:\nOrganon Farmacêutica Ltda.\nRua 13 de Maio, 1.161 – Sousas, Campinas/SP Registrado por:\nOrganon Farmacêutica Ltda.\nRua 13 de Maio, 815 - Sousas, Campinas/SP CNPJ: 45.987.013/0001-34 – Indústria Brasileira DESALEX® COMPRIMIDO:\nProduzido por:\nOrganon Pharma México, S. A. de C.V., Xochimilco, México Importado e Registrado por:\nOrganon Farmacêutica Ltda.\nRua 13 de Maio, 815 – Sousas, Campinas/SP CNPJ: 45.987.013/0001-34 – Indústria Brasileira Central de Atendimento:\n0800 00 00 149 contate@organon.com Siga corretamente o modo de usar, não desaparecendo os sintomas procure orientação de um profissional de saúde.\nCopyright 2026 Grupo de empresas Organon. Todos os direitos reservados"
+    }
+  ],
+  "numero_registro": "1.0029.0191",
+  "forma_farmaceutica": "comprimido revestido e xarope",
+  "versao": "histórico de 03/11/2025"
+}

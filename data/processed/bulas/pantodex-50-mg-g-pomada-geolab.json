@@ -1,0 +1,109 @@
+{
+  "id": "pantodex-50-mg-g-pomada-geolab",
+  "medicamento": "Pantodex 50 mg/g pomada",
+  "principio_ativo": "dexpantenol",
+  "nomes_comerciais": [
+    "Pantodex"
+  ],
+  "fabricante": "Geolab",
+  "tipo_bula": "profissional",
+  "data_versao": "2025-12-01",
+  "fonte_pdf": "data/raw/bulas/dexpantenol_pantodex-geolab_profissional.pdf",
+  "processado_em": "2026-10-15T15:30:12-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 1,
+      "pagina_fim": 2,
+      "texto": "PANTODEX® Geolab Indústria Farmacêutica S/A Pomada 50mg/g\f______________________________________________________________________________________ MODELO DE BULA PARA O PROFISSIONAL DE SAÚDE Esta bula é continuamente atualizada. Favor proceder a sua leitura antes de utilizar o medicamento.\nPANTODEX® dexpantenol FORMA FARMACÊUTICA E APRESENTAÇÃO:\nPomada de 50mg/g: Embalagem contendo 1 bisnaga com 30g.\nUSO DERMATOLÓGICO USO ADULTO E PEDIÁTRICO"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Cada g da pomada contém:\ndexpantenol (Vitamina B5).….............................................................................................................................................50mg Excipientes: lanolina, petrolato branco, petrolato líquido, monoestearato de glicerila, álcool cetoestearílico, cetomacrogol 1000 e água purificada."
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Pantodex® é indicado para tratamento e prevenção de dermatite de fraldas (assaduras), das fissuras (rachaduras) de pele e mucosas (mamilos, lábios e região anal) e das feridas (ferimentos e escoriações)."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2. RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 2,
+      "pagina_fim": 3,
+      "texto": "O estudo abaixo demonstrou que a ocorrência de dermatite de fraldas (amonical) foi menor no grupo que utilizou dexpantenol pomada, mais cuidados higiênicos tópicos (31%) comparada àquela do grupo tratado somente com cuidados higiênicos (57%).\nEm grupos pareados de gêmeos os índices foram 17% no grupo Dexpantenol pomada, mais cuidados e 58% no grupo tratado somente com cuidados higiênicos. Putet, G.et al – Effect of Bepanthen ointment in the prevention of diaper rash on premature and full-term babies: open piloty study – Reálités pediatriques n.52 juin 2000. Dexpantenol pomada foi estudado em um modelo de cicatrização em área doadora de enxerto e demonstrou que após 14 dias de uso houve melhor cicatrização na área tratada com dexpantenol pomada, comparada à área tratada somente com veículo. A área tratada com Dexpantenol pomada demonstrou também melhor flexibilidade pela promoção de hidratação e um processo inicial de neovascularização mais intenso que aquela ocorrida na área tratada com veículo, melhorando a vascularização local, assim, facilitando a cicatrização.\fA regeneração mais rápida proporcionou também uma melhora da sintomatologia com menos prurido e dor.\nGirard, P. et al- Effect Bepanthen ointment on the graft-donor site wound-headling model: double blind biometrological and clinical study, withassessment by the patient, versus vehicle – Nouv. Dermatol. 1998; 17:559-570.\nO estudo abaixo, randomizado e duplo cego, controlado por placebo, demonstrou que o dexpantenol formulado em diferentes veículos lipofílicos, após 7 dias de usou melhorou a hidratação da camada córnea e reduziu a perda transepidérmica de água com diferenças favoráveis quando comparado ao uso dos veículos isoladamente.\nConcluiu-se que o dexpantenol, formulado em veículos lipofílicos, estabiliza a função protetora (barreira da pele).\nWolfgang Gehring and Max Gloor – Effect of topically applied dexpanthenol on epidermal barrier function and stratum corneum hydration – Drug Res 50 (II), 659-663 – 2000."
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Pantodex contém como princípio ativo o dexpantenol associado a um excipiente de elevado teor oleoso.\nO dexpantenol, substância ativa do Pantodex®, é rapidamente transformado nas células da pele e das mucosas em ácido pantotênico.\nO ácido pantotênico é um componente da coenzima A, necessária para os processos de regeneração e cicatrização da pele e mucosas.\nO ácido pantotênico estimula a multiplicação da células basais que realizarão a epitelização da epiderme e dos fibroblastos que promovem a síntese do colágeno, constituinte fundamental da derme.\nO dexpantenol, substância ativa de Pantodex® tem o status de GRAS (Generally Recognized as Safe) o que significa que não é tóxico, mesmo em altas doses."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4. CONTRAINDICAÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Pantodex não deve ser administrado em indivíduos com hipersensibilidade conhecida a qualquer um dos seus componentes.\nNão há contraindicação relativa a faixas etárias."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Não existem relatos sobre precauções especiais necessárias para o uso do Pantodex®.\nEste medicamento pode ser utilizado durante a gravidez desde que sob prescrição médica ou do cirurgião-dentista."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Não existem relatos de interações medicamentosas de Pantodex® com outras substâncias."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 3,
+      "pagina_fim": 4,
+      "texto": "Pantodex® deve ser armazenado em temperatura ambiente (de 15ºC a 30ºC), protegido da luz e umidade.\nPrazo de validade: 24 meses a partir da data de fabricação.\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\fCaracterísticas físicas e organolépticas:\nPantodex apresenta-se na forma de pomada homogênea, amarelada e isenta de grumos.\nAntes de usar, observe o aspecto do medicamento.\nTODO MEDICAMENTO DEVE SER MANTIDO FORA DO ALCANCE DAS CRIANÇAS."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Pantodex® deve ser aplicado diretamente sobre a pele limpa.\nPara profilaxia e tratamento das dermatites de fraldas ou assaduras: a cada troca de fralda, limpe a pele do bebê e aplique uma camada de Pantodex®.\nPara profilaxia e tratamento das lesões dos mamilos ou fissuras mamárias: após amamentar, aplique uma camada de Pantodex®.\nPara demais lesões de pele: aplicar uma camada de Pantodex® de 1 a 3 vezes ao dia ou conforme orientação médica."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Reações de hipersensibilidade podem ocorrer em raros casos, caso ocorra recomenda-se interromper o uso do medicamento e procurar orientação médica.\nEm caso de evento de adversos, notifique ao Sistema de Notificações em Vigilância Sanitária – NOTIVISA, disponível em www.anvisa.gov.br/hotsite/notivisa/index.htm ou para Vigilância Sanitária Estadual ou Municipal."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "O dexpantenol, substância ativa de Pantodex®, tem o status GRAS (Generalluy Recognized as Safe) o que significa que não é tóxico, mesmo em altas doses.\nEm caso de ingestão, acidental ou proposital, de quantidade excessiva de Pantodex® as seguintes medidas podem ser consideradas: Indução do vômito e/ou lavagem gástrica.\nEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações."
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "DIZERES LEGAIS",
+      "pagina_inicio": 4,
+      "pagina_fim": 5,
+      "texto": "Registro 1.5423.0148 Registrado e Produzido por:\nGeolab Indústria Farmacêutica S/A CNPJ: 03.485.572/0001-04 VP. 1B QD.08-B MÓDULOS 01 A 08 - DAIA - ANÁPOLIS – GO www.geolab.com.br Indústria Brasileira SAC: 0800 701 6080 Esta bula foi aprovada pela Anvisa em 19/12/2025.\fAnexo B"
+    }
+  ],
+  "numero_registro": "1.5423.0148",
+  "forma_farmaceutica": "pomada",
+  "versao": "V.04_12/2025"
+}

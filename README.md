@@ -56,14 +56,14 @@ NÃO ENCONTREI: não tenho a bula desse medicamento
 | Medição do hardware (etapa 0) | ✅ pronto | `benchmark/medir_ambiente.py`, `data/benchmark/resultados/` |
 | Catálogo da ANVISA (6.999 pares nome comercial / princípio ativo) | ✅ pronto | `ingestao/catalogo_anvisa.py`, `data/processed/catalogo_anvisa.jsonl` |
 | Detecção do medicamento na pergunta (sem LLM) | ✅ pronto | `app/services/medicamentos.py` |
-| Ingestão: PDF/TXT → JSON por seção → trechos → embeddings com cache | ✅ pronto, testado só com bula inventada | `ingestao/processar_bula.py`, `ingestao/gerar_chunks.py` |
+| Ingestão: PDF/TXT → JSON por seção → trechos → embeddings com cache | ✅ pronto | `ingestao/processar_lote.py`, `ingestao/processar_bula.py`, `ingestao/gerar_chunks.py` |
 | Busca vetorial em memória (numpy) | ✅ pronto | `app/db/busca_vetorial.py` |
 | Busca vetorial no PostgreSQL + pgvector | ✅ pronto, testado contra o numpy | `app/db/busca_pgvector.py`, `ingestao/carregar_banco.py` |
 | Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citacoes.py` |
 | Agente em grafo (LangGraph, 7 nós, rodadas 0 a 3) | ✅ pronto, testado com LLM falso e com a bula de teste | `app/services/grafo.py` |
 | Teste manual pelo terminal | ✅ pronto | `python -m benchmark.perguntar` |
 | Testes automáticos | ✅ 114 testes (7 precisam do PostgreSQL de pé) | `backend/tests/` |
-| Bulas reais dos 40 medicamentos do MVP | ⏳ próximo passo | `data/raw/`, `data/medicamentos_mvp.json` |
+| Bulas reais: 20 PDFs → 24 bulas em JSON, com registro ANVISA e forma farmacêutica | ✅ 20 de 40 medicamentos (faltam trechos e embeddings) | `data/bulas_manifesto.json`, `data/processed/bulas/` |
 | Checagem de fundamentação (números, doses, termos) | ✅ pronto | `app/services/fundamentacao.py` |
 | Perguntas de esclarecimento (rodada 0) | 🟡 sem nome reconhecido: pronto; forma farmacêutica ambígua: falta `forma` na bula | `app/services/grafo.py` |
 | Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metricas.py` |
@@ -79,7 +79,8 @@ O fluxo funciona de ponta a ponta pelo terminal. O dataset em arquivo é a fonte
 ```mermaid
 flowchart LR
   subgraph ING["Ingestão (offline, no host)"]
-    PDF["PDF da bula<br/>data/raw/"] --> PB["processar_bula.py<br/>pdfplumber + separar_secoes"]
+    MAN["bulas_manifesto.json"] --> PB["processar_lote.py<br/>confere hash e registro,<br/>pdfplumber + separar_bulas"]
+    PDF["PDF da bula<br/>data/raw/"] --> PB
     PB --> JSON["data/processed/bulas/&lt;id&gt;.json"]
     JSON --> GC["gerar_chunks.py"]
     GC --> JSONL["data/processed/chunks.jsonl"]
@@ -122,8 +123,9 @@ A busca fica atrás do `Protocol` `BuscaVetorial`. `IndiceEmMemoria` (numpy) e `
 |---|---|---|
 | Validar o PDF | `ingestao/validar_pdf_bula.py` | Checagem de segurança antes de abrir: procura JavaScript, ações automáticas e arquivos embutidos (inclusive com nome ofuscado e dentro de streams comprimidos) e calcula o SHA-256 |
 | Extrair texto | `ingestao/extrair_pdf.py` | `pdfplumber`, texto por página |
-| Separar seções | `ingestao/separar_secoes.py` | Regex sobre os títulos padronizados pela ANVISA (indicações, contraindicações, interações, posologia, composição, características farmacológicas, entre outras). Guarda `\f` onde a página vira |
-| Montar a bula | `ingestao/processar_bula.py` | Gera `data/processed/bulas/<id>.json` validado pelo contrato `Bula` (Pydantic) |
+| Separar bulas | `ingestao/separar_secoes.py` | Um PDF pode trazer várias bulas (Tylalgin: gotas, comprimido e sachê). Cada uma termina na tabela "Histórico de Alteração", que é descartada, e a próxima começa em "MODELO DE BULA...". Lê também o código de versão impresso e o nº de registro de cada uma |
+| Separar seções | `ingestao/separar_secoes.py` | Regex sobre os títulos padronizados pela ANVISA, com as variações das bulas reais (singular, erro de digitação, rodapé colado no título). Remissão "(veja o item 8. POSOLOGIA...)" não abre seção; referências bibliográficas são puladas; hífen de palavra composta no fim da linha é mantido. Guarda `\f` onde a página vira |
+| Montar as bulas | `ingestao/processar_lote.py` | Lê `data/bulas_manifesto.json` e, antes de gravar, confere SHA-256 (o mesmo do `FONTES.md`), quantas bulas há no PDF e o registro impresso em cada uma. Gera `data/processed/bulas/<id>.json` pelo contrato `Bula`, com registro, forma farmacêutica e versão. `processar_bula.py` faz o mesmo para uma bula avulsa |
 | Dividir em trechos | `ingestao/gerar_chunks.py` | ~300 tokens com sobreposição de 50, sem misturar seções; cada trecho guarda a página em que começa. Tokens estimados em 3,3 caracteres por token |
 | Embeddings | `app/llm/embeddings.py` + cache | `bge-m3` (1024 dimensões). O texto embutido leva medicamento e seção na frente. Cache SQLite com chave `hash(modelo + texto)`, gravado a cada lote de 8: interromper e retomar não refaz nada |
 | Carregar o banco | `ingestao/carregar_banco.py` | `CREATE EXTENSION vector`, `create_all` e troca de `bulas` e `chunks` com `TRUNCATE` numa transação só; `consultas` não é tocada |
@@ -212,6 +214,9 @@ erDiagram
     text fabricante
     date data_versao
     text fonte_pdf
+    text numero_registro
+    text forma_farmaceutica
+    text versao
   }
   chunks {
     text chunk_id PK
@@ -279,7 +284,7 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 
 ### 1. Bulas reais
 
-Bulas do profissional de saúde dos 40 medicamentos do MVP (`data/medicamentos_mvp.json`), baixadas à mão de fontes oficiais e registradas em `data/FONTES.md`. Com elas, ajustar `separar_secoes` ao que cada fabricante escreve: variações de título, cabeçalho e rodapé repetidos, hifenização e tabelas.
+20 dos 40 medicamentos do MVP (`data/medicamentos_mvp.json`) já viraram 24 bulas em JSON. Falta gerar trechos e embeddings delas (`gerar_chunks`, ~2,5 s por trecho na CPU) e baixar à mão as 20 que faltam (dipirona, AAS, amoxicilina...), registrando cada uma em `data/FONTES.md` e no manifesto. Tabelas (ex.: doses por peso) ainda saem como texto corrido.
 
 ### 2. O que falta das rodadas e do esclarecimento
 
@@ -333,8 +338,10 @@ pip install -r backend/requirements-dev.txt
 pip install -e backend
 copy .env.example .env   # ajuste DB_PASSWORD; use DB_HOST=127.0.0.1
 
-# Ingestão de uma bula
-python -m ingestao.processar_bula data/raw/<bula>.pdf --medicamento "..." --principio-ativo "..." --fabricante "..." --data-versao AAAA-MM-DD
+# Ingestão das bulas do manifesto (PDFs em data/raw/bulas/, procedência em data/FONTES.md)
+python -m ingestao.processar_lote
+# ou uma bula avulsa:
+# python -m ingestao.processar_bula data/raw/<bula>.pdf --medicamento "..." --principio-ativo "..." --fabricante "..." --data-versao AAAA-MM-DD --registro 1.2345.6789 --forma "comprimido"
 python -m ingestao.gerar_chunks
 
 # Perguntar pelo terminal (usa os arquivos, sem banco)
@@ -367,6 +374,7 @@ farma-rag/
 ├── benchmark/                 # medição do ambiente, métricas, teste manual (perguntar.py)
 ├── data/
 │   ├── raw/                   # PDFs e CSV de origem (procedência em FONTES.md)
+│   ├── bulas_manifesto.json   # entrada do lote: PDF, hash, registro, uma "parte" por bula do PDF
 │   ├── processed/             # bulas JSON, chunks.jsonl, catálogo ANVISA (versionados)
 │   ├── cache/                 # embeddings em SQLite (fora do Git)
 │   └── benchmark/             # perguntas e resultados

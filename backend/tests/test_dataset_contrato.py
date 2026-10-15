@@ -76,3 +76,18 @@ def test_dataset_real_segue_o_contrato():
     if perguntas.exists():
         for item in json.loads(perguntas.read_text(encoding="utf-8")):
             PerguntaBenchmark.model_validate(item)
+
+
+def test_registro_anvisa_no_formato_do_csv():
+    base = json.loads((FIXTURES / "bula_exemplo.json").read_text(encoding="utf-8"))
+    assert Bula.model_validate({**base, "numero_registro": "1.0029.0007"}).numero_registro == "1.0029.0007"
+    for errado in ("100290007", "1.0029.0007.001-1", "1.29.7"):
+        with pytest.raises(ValidationError):
+            Bula.model_validate({**base, "numero_registro": errado})
+
+
+def test_bulas_processadas_seguem_o_contrato_com_registro_e_forma():
+    pasta = RAIZ / "data" / "processed" / "bulas"
+    bulas = [Bula.model_validate_json(p.read_text(encoding="utf-8")) for p in pasta.glob("*.json")]
+    for b in bulas:
+        assert b.numero_registro and b.forma_farmaceutica and b.versao, b.id

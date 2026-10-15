@@ -1,0 +1,109 @@
+{
+  "id": "kaodine-50-mg-ml-locao-cremosa-geolab",
+  "medicamento": "Kaodine 50 mg/mL loção cremosa",
+  "principio_ativo": "permetrina",
+  "nomes_comerciais": [
+    "Kaodine"
+  ],
+  "fabricante": "Geolab",
+  "tipo_bula": "profissional",
+  "data_versao": "2025-12-01",
+  "fonte_pdf": "data/raw/bulas/permetrina_kaodine-geolab_profissional.pdf",
+  "processado_em": "2026-10-15T15:30:17-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 7,
+      "pagina_fim": 7,
+      "texto": "MODELO DE BULA PARA O PROFISSIONAL DA SAÚDE Esta bula é continuamente atualizada. Favor proceder a sua leitura antes de utilizar o medicamento.\nKaodine® Permetrina FORMA FARMACÊUTICA E APRESENTAÇÃO:\nLoção cremosa em frasco plástico com 60mL USO EXTERNO - VIA TÓPICA.\nUSO ADULTO E PEDIÁTRICO."
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 7,
+      "pagina_fim": 7,
+      "texto": "Cada mL de loção contém 50mg de permetrina Excipientes: água purificada, álcool cetoestearílico, álcool etílico, AMP 95, essência, metilparabeno, óleo mineral, polissorbato 80, propilenoglicol, propilparabeno e quaternário de amônio."
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 7,
+      "pagina_fim": 7,
+      "texto": "Kaodine®: a permetrina a 5% (50 mg/g ou 49,75 mg/mL) é indicada para o tratamento de infestações por Sarcoptes Scabiei (escabiose)."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2. RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 7,
+      "pagina_fim": 7,
+      "texto": "Em 1986, a permetrina tópica foi introduzida e artigo publicado por Taplin e at. no jornaol da academia Americana de Dermatologia (Bigby, 2000).\nEm revisão sistemática publicada em 2003, Elgart menciona que desde quando tornou-se disponível, a permetrina tópica rapidamente tornou-se o tratamento de escolha na escabiose. Os motivos apontados para isso seriam a sua quase completa ausência de toxicidade e sua capacidade de permanecer na pele por vários dias após a aplicação tópica (Elgart, 2003).\nEm 2010, Strong e Johnstone realizaram nova revisão sistemática da literatura com o intuito de verificar a eficácia e segurança de drogas tópicas e sistemáticas para o tratamento da escabiose (Strong e Johnstone, 2007).\nA permetrina tópica mostrou-se eficaz que a ivermectina oral em 2 estudos envolvendo 140 pacientes. A permetrina tópica também mostrou - se ainda mais eficaz na redução do prurido persistente do que o lindano em 5 estudos com 753 pacientes. Ainda nesta revisão, os autores concluem que a permetrina tópica parece ser o tratamento mais eficaz para a escabiose (Elgart,2003).\n1. BIGBY, Michael. A systematic review of the treatment of scabies. Achives of Dermatology. 2000. v.136. p. 387- 389.\n2. ELGART, L. Mervyn. Cost-benefit analysis of ivermectin, permethrin and benzyl benzoate in the management of infantile and childhood scabies. Expert Opinion on Pharmacotherapy. 2003.v. 4(9) p. 1521-1524.\n3. STRONG, M.; JOHNSTONE, P. Interventions for treating scabies (Review). The Cochrane Library."
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 8,
+      "pagina_fim": 8,
+      "texto": "Kaodine® encerra como princípio ativo a permetrina, uma mistura de isômeros cis e trans de um piretróide sintético. A permetrina atua na membrana da célula nervosa do parasita, desregulando o canal de sódio, através do qual é regulada a polarização da membrana. A repolarização retardada e a paralisia do parasita são as consequências de sua ação.\nDados preliminares indicam que menos de 2% da quantidade aplicada é absorvida sistematicamente. A permetrina apresenta certa atividade residual por, aproximadamente, 14 dias. Sofre biotranformação rápida por reações de hidrólise, e a excreção principal é a renal.\nPropriedades farmacodinâmicas Mecanismo de ação Efeitos farmacodinâmicos A principal ação fisiológica em insetos (piolhos) expostos a permetrina é a indução de alterações eletroquímicas através das membranas das células excitáveis, levando a hiper-excitabilidade sensorial, descoordenação e prostração. Presume-se que o modo de ação contra aracnídeos (ácaros) seja semelhante.\nFarmacocinética Absorção Menos de 0,5% da permetrina aplicada é absorvida durante as primeiras 48 horas. Portanto, toxidade não é normalmente observada, uma vez que um adulto de 70 kg teria de consumir um total de 2640 g de produto com permetrina 5% p/p para atingir uma dose de LD50. (Elgart, 2003 ).\nDistribuição A distribuição da permetrina aplicada topicamente é principalmente limitada à pele, uma vez que uma quantidade muito pequena de permetrina á absorvida sistemicamente.\nMetabolismo Nos mamíferos, a permetrina é metabolizada por hidrólise do éster na pele e no fígado para produzir metabólitos inativos que são excretados principalmente na urina Eliminação Os principais metabólitos da permetrina são detectáveis na urina dentro de horas após uma aplicação do produto no corpo todo em voluntários saudáveis ou pacientes com escabiose. Os níveis mais elevados de excreção são detectados dentro das primeiras 48 horas, mas níveis muito baixos de metabólitos são ainda detectáveis na urina de alguns indivíduos 21 dias após o tratamento."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4. CONTRAINDICAÇÕES",
+      "pagina_inicio": 8,
+      "pagina_fim": 8,
+      "texto": "Kaodine® é contraindicado a pacientes com conhecida sensibilidade à permetrina ou que sejam sensíveis a outros piretróides sintéticos ou a piretrinas. Não é indicado também na presença de inflamação aguda do couro cabeludo."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 8,
+      "pagina_fim": 9,
+      "texto": "Kaodine® não deve entrar em contato com os olhos, membranas e mucosas, feridas ou queimaduras. Se entrar em contato com os olhos acidentalmente, lavar abundantemente com água. Havendo irritação, suspenda o uso.\nNão deve ser ingerido.\nAlgumas manifestações como o prurido, o eritema e o inchaço são provenientes da pediculose e estas podem se agravar temporariamente com o uso da permetrina.\nGravidez e amamentação:\nNão deve ser utilizado na gravidez ou no período de amamentação, a não ser que seja sob prescrição médica.\fEstudos em ratos não demonstraram tumorigenicidade e mutugenicidade em animais tratados com a permetrina. Quanto à carcionogencidade, houve aumento dos adenomas pulmonares, como também, aumento da incidência de carcinomas dos alvéolos pulmonares e de adenomas hepáticos benignos, em ratos, em estudos realizados com a permetrina.\nNão existem estudos bem controlados em mulheres grávidas ou lactantes. Desta forma, deve ser avaliada a relação risco – beneficio, quando a permetrina for utilizada nestas condições.\nCategoria B – Este medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião – dentista.\nCrianças: a permetrina 5% é segura e eficaz em crianças de dois meses de idade ou mais. A segurança e eficácia em crianças mais novas ainda não foram estabelecidas.\nPacientes idosos: não foram realizados estudos apropriados sobre os efeitos da permetrina a 5% na população geriátrica.\nNo entanto, não foram relatados problemas relacionados com o uso do produto em pacientes idosos.\nPara evitar a reinfestação, o paciente deve seguir as seguintes normas de higiene:\n• Artigos pessoais como lenços, chapéus,roupa de cama e outros devem ser lavados com água bem quente, lavados a seco ou conservados em uma bolsa plástica bem fechada, por aproximadamente duas semanas; pentes e escovas devem ser lavados em água bem quente por cinco a dez minutos.\n• Manter as unhas e os cabelos curtos e limpos.\n• Evitar o exagero no ato de se coçar e colocar luvas de proteção nas crianças.\n• Procurar descobrir possíveis portadores par evitar contato com eles ou seus objetos de uso.\n• Alertar responsáveis por instituições coletivas frequentadas pelo portador do parasita.\nHabilidade de realizar tarefas que requeiram julgamento, habilidades motoras ou cognitivas:\nÉ impossível que a permetrina tenha algum efeito sob a habilidade de dirigir ou utilizar máquinas.\nAte o momento, não há informações de que a permetrina possa causar doping. Em caso de dúvida,consulte o seu médico.\nAtenção: Contém álcool (etanol)."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 9,
+      "pagina_fim": 9,
+      "texto": "Não foram relatados casos de interações medicamentosas. O uso de Kaodine® em associação com outros medicamentos deve ser feito somente com supervisão de um médico."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 9,
+      "pagina_fim": 9,
+      "texto": "Número do lote e data de fabricação e validade: vise embalagem.\nNão use medicamento com prazo de validade vencido. Guarde-o em sua embalagem original.\nAntes de usar observe aspecto do medicamento.\nTODO MEDICAMENTO DEVE SER MANTIDO FORA DO ALCANCE DAS CRIANÇAS."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 9,
+      "pagina_fim": 11,
+      "texto": "Adultos e crianças:\nO produto deve ser aplicado na pele limpa, seca e fria. Se o paciente tiver tomado um banho quente antes do tratamento, deve-se aguardar que a pele resfrie antes de aplicar o produto. Massageie o produto na pele, desde a cabeça ate a sola dos pés prestando-se atenção especial entre os dedos das mãos e dos pés, sob as unhas das mãos e dos pés pulsos e axilas, nádegas e parte externa do órgão genital. Não aplicar sobre membranas mucosas, ou próximo dos olhos. A escabiose\fraramente infesta o couro cabeludo de adultos, embora o limite entre o couro cabeludo e s pele do pescoço, têmporas e nuca podem estar infestados em crianças e pacientes idosos. Usualmente, 30 ml são suficientes para um adulto médio.\nApós a aplicação, as roupas limpas devem ser vestidas.\nConsiderando a grande variabilidade na área de corpo e tipos de pele nas faixas etárias diferentes, utilizando formulação de permetrina a 5%, recomendações precisas de dosagem não são possíveis. Desta forma, a informação da dosagem na Tabela 1 consta apenas para orientação.\nTabela 1 – Guia de dosagem para aplicação de permetrina a 5% em diferentes faixas etárias Faixa etária Guia de dosagem suficiente para cobrir o corpo inteiro em apenas uma aplicação Adultos, idosos e crianças acima de 12 anos Até 30 gramas de produto. Se mais de 30 gramas é necessário para cobrir o corpo inteiro, não mais que 60 gramas deve ser usado em uma única aplicação Crianças de 6 – 12 anos Até 15 gramas de produto Crianças de 2 – 5 anos Até 7.5 gramas de produto O produto deve ser removido, através de lavagem com água depois de 8 a 14 horas. Bebês devem ter o couro cabeludo, nuca e têmporas tratadas.\nApós a aplicação o produto, as mãos devem ser lavadas antes de comer. O produto deve ser reaplicado nas mãos se elas forem lavadas dentro de 8 horas do tratamento.\nMantenha fora da vista e do alcance de crianças. Em todas as faixas etárias, cerca de 90% dos indivíduos são curados com uma aplicação do produto.\nOs pacientes podem apresentar prurido após o tratamento. Isto raramente é sinal de falha no tratamento e não é uma indicação para a reaplicação do produto.\nUma segunda aplicação pode ser necessária 7-10 dias após o primeiro tratamento, se as lesões originais não forem curadas, ou caso novas lesões na pele aparecem.\nCrianças - Dois anos de idade ou mais As crianças devem ser supervisionadas por um adulto ao aplicar o produto para garantir que o tratamento completo seja administrado. Use conforme instruído para adultos.\n- Com menos de dois anos de idade Não use o produto sem recomendação médica.\nIdosos Use conforme instruído para adultos, mas aplique o produto no corpo inteiro, incluindo o pescoço, a face, os ouvidos e o couro cabeludo. Evite a área perto dos olhos.\nOs pacientes com mais de 70 anos de idade devem ser tratados sob recomendação médica.\nNão há estudos dos efeitos de Kaodine® administrado por vias não recomendadas. Portanto, por segurança e para garantir a eficácia do medicamento, a administração do medicamento de ser somente por via tópica, conforme recomendado pelo médico.\nInsuficiência renal e/ou hepática\fNão é necessário ajuste da dose em pacientes com insuficiência renal e/ou hepática."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 11,
+      "pagina_fim": 11,
+      "texto": "Algumas reações adversas pouco frequentes ou raras (> 1/10.100 Le 000) foram relatadas,como queimação, prurido, dormência, eritema, exantema, sensação de picada, inchaço e formigamento com o uso de produtos à base de permetrina.\nEm casos de eventos adversos, notifique pelo Sistema VigiMed, disponível no Portal da Anvisa."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 11,
+      "pagina_fim": 11,
+      "texto": "Não há relatos de ingestão de produtos à base de permetrina. Se ocorrer, podem ser adotadas medidas gerais de suporte e lavagem gástrica.\nEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações."
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "DIZERES LEGAIS",
+      "pagina_inicio": 11,
+      "pagina_fim": 12,
+      "texto": "Registro 1.5423.0342 Registrado por:\nGeolab Indústria Farmacêutica S/A VP. 1B QD. 08-B Módulos 01 a 08 DAIA - Anápolis - GO CNPJ: 03.485.572/0001-04 Indústria Brasileira Produzido por:\nIFAL INDÚSTRIA E COMÉRCIO DE PRODUTOS FARMACÊUTICOS Ltda. Av.\nJosé Loureiro da Silva 1211 CEP 96784-072 - Camaquã - RS Indústria Brasileira CNPJ:00.376.959/0001-26 SAC: 0800 701 6080 Siga corretamente o modo de usar. Não desaparecendo os sintomas, procure orientação de um profissional de saúde.\fAnexo B"
+    }
+  ],
+  "numero_registro": "1.5423.0342",
+  "forma_farmaceutica": "loção cremosa",
+  "versao": "V.02_12/2025"
+}

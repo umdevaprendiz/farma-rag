@@ -1,0 +1,109 @@
+{
+  "id": "tylalgin-sachet-500-mg-geolab",
+  "medicamento": "Tylalgin Sachet 500 mg",
+  "principio_ativo": "paracetamol",
+  "nomes_comerciais": [
+    "Tylalgin"
+  ],
+  "fabricante": "Geolab",
+  "tipo_bula": "profissional",
+  "data_versao": "2022-05-01",
+  "fonte_pdf": "data/raw/bulas/paracetamol_tylalgin-geolab_profissional.pdf",
+  "processado_em": "2026-10-15T15:30:16-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 21,
+      "pagina_fim": 21,
+      "texto": "MODELO DE BULA PARA O PROFISSIONAL DE SAÚDE Esta bula é continuamente atualizada. Favor proceder a sua leitura antes de utilizar o medicamento.\nTylalgin Sachet paracetamol FORMA FARMACÊUTICA E APRESENTAÇÃO:\nPó para preparação extemporânea de 500mg/5g: Embalagem contendo 50* envelopes com 5g. Sabor mel e limão.\n*Embalagem múltipla USO ORAL USO ADULTO E PEDIÁTRICO ACIMA DE 12 ANOS"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 21,
+      "pagina_fim": 21,
+      "texto": "Cada envelope (5mg) de pó para solução contém:\nparacetamol..................................................................................................................................................................500mg Excipientes: ácido ascórbico, ácido cítrico, sacarina sódica, aspartamo, essência de limão, essência de mel, corante amarelo quinolina D&C nº 10, dióxido de silício e sacarose."
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 21,
+      "pagina_fim": 21,
+      "texto": "Tylalgin Sachet é destinado ao alívio da dor de cabeça, febre e dores no corpo, associados à gripe.\nA substância ativa de Tylalgin Sachet é o paracetamol, cuja atividade se faz sentir como analgésico pela elevação do limiar da dor e, como antipirético, através de ação no centro hipotalâmico que regula a temperatura."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2. RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 21,
+      "pagina_fim": 21,
+      "texto": "Foi realizado um estudo duplo-cego, controlado com placebo, a fim de avaliar a atividade antipirética do paracetamol em um comparativo em 30 pacientes do sexo masculino. Os pacientes receberam 4mg/kg de endotoxinas por via intravenosa, após pré-medicação por via oral de 1000 mg de ambas as drogas. Os picos de temperatura corporal foram de 38,5 °C ± 0,2 °C no grupo tratado com placebo, 37,6 °C ± 0,2 °C no grupo do paracetamol (p = 0,001 versus placebo), e 38,6 °C ± 0,2 °C no grupo tratado com o fármaco comparativo (p = 0,001 versus paracetamol; p = 0,570 versus placebo) 4 horas após a infusão de lipopolissacarídeos. Concluiu-se que o paracetamol apresentou atividade antipirética superior.1 Um estudo duplo-cego, randomizado, controlado com placebo avaliou a eficácia do efeito analgésico do paracetamol (1000mg) em um comparativo em 162 pacientes sofrendo de dor moderada a muito intensa, devido a uma cirurgia dentária. A intensidade e o alívio da dor foram avaliados em 30 minutos, uma hora e a cada hora subsequente durante 6 horas após a administração. O paracetamol foi significativamente melhor que o comparativo na diferença máxima de intensidade da dor (p < 0,05), no máximo alívio da dor obtida (p < 0,03) e de acordo com uma avaliação global (p < 0,02).2"
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 22,
+      "pagina_fim": 23,
+      "texto": "Propriedades Farmacodinâmicas O paracetamol, princípio ativo deste medicamento, é um analgésico e antitérmico não pertencente aos grupos dos opiáceos e salicilatos, clinicamente comprovado, que promove analgesia pela elevação do limiar da dor e antipirese através de ação no centro hipotalâmico que regula a temperatura. Seu efeito tem início 15 a 30 minutos após a administração oral e permanece por um período de 4 a 6 horas.\nPropriedades Farmacocinéticas Absorção: o paracetamol, administrado oralmente, é rapidamente e quase completamente absorvido no trato gastrintestinal, principalmente no intestino delgado. A absorção ocorre por transporte passivo. A biodisponibilidade relativa varia de 85% a 98%. Em indivíduos adultos as concentrações plasmáticas máximas ocorrem dentro de uma hora após a ingestão e variam de 7,7 a 17,6mcg/mL para uma dose única de 1000mg. As concentrações plasmáticas máximas no estado de equilíbrio após administração de doses de 1000mg a cada 6 horas, variam de 7,9 a 27,0mcg/mL. Através de informações agrupadas de farmacocinética provenientes de 5 estudos patrocinados pela companhia, com 59 crianças, idades entre 6 meses e 11 anos, foi encontrada a média para concentração plasmática máxima de 12.08 ±3.92ug/ml, sendo obtida com o tempo de 51 ± 39 min (média 35min) através de uma dose de 12.5mg/kg.\nEfeito dos alimentos: A absorção de paracetamol é mais rápida se você estiver em jejum. Embora as concentrações máximas sejam atrasadas quando o paracetamol é administrado com alimentos, a extensão da absorção não é afetada. O paracetamol pode ser administrado independentemente das refeições.\nDistribuição: o paracetamol parece ser amplamente distribuído aos tecidos orgânicos, exceto ao tecido gorduroso. Seu volume de distribuição aparente é de 0,7 a 1 litro/kg em crianças e adultos. Uma proporção relativamente pequena (10% a 25%) do paracetamol se liga às proteínas plasmáticas.\nMetabolismo: o paracetamol é metabolizado principalmente no fígado e envolve três principais vias: conjugação com glucoronídeo, conjugação com sulfato e oxidação através da via enzimática do sistema citocromo P450. A via oxidativa forma um intermediário reativo que é detoxificado por conjugação com glutationa para formar cisteína inerte e metabólitos mercaptopúricos. A principal isoenzima do sistema citocromo P450 envolvida in vivo parece ser a CYP2E1, embora a CYP1A2 e CYP3A4 tenham sido consideradas vias menos importantes com base nos dados microssomais in vitro. Subsequentemente verificou-se que tanto a via CYP1A2 quanto a CYP3A4 apresentam contribuição desprezível in vivo. Em adultos, a maior parte do paracetamol é conjugada com ácido glucorônico e em menor extensão com sulfato. Os metabólitos derivados do glucoronídeo, sulfato e glutationa são desprovidos de atividade biológica. Em recém-nascidos prematuros e a termo, e, em crianças de baixa idade, predomina o conjugado sulfato. Em adultos com disfunção hepática de diferentes graus de intensidade e etiologia, vários estudos sobre metabolismo demonstraram que a biotransformação do paracetamol é semelhante àquela de adultos sadios, mas um pouco mais lenta. A administração diária consecutiva de doses de 4g por dia induz glucoronidação (uma via não tóxica) em adultos sadios e com disfunção hepática, resultando essencialmente em depuração total aumentada do paracetamol no decorrer do tempo e acúmulo plasmático limitado.\nEliminação: em adultos a meia vida de eliminação do paracetamol é cerca de 2 a 3 horas e em crianças é cerca de 1,5 a 3 horas. Ela é aproximadamente uma hora mais longa em recém-nascidos e em pacientes cirróticos. O paracetamol é\feliminado do organismo sob a forma de conjugado glucoronídeo (45% a 60%) e conjugado sulfato (25% a 35%), tióis (5% a 10%), como metabólitos de cisteína e mercaptopurato e catecóis (3% a 6%), que são excretados na urina. A depuração renal do paracetamol inalterado é cerca de 3,5% da dose."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4. CONTRAINDICAÇÕES",
+      "pagina_inicio": 23,
+      "pagina_fim": 23,
+      "texto": "Tylalgin Sachet é contraindicado para pacientes alérgicos ao paracetamol (acetaminofeno) ou a qualquer componente do produto. Tylalgin Sachet não deve ser utilizado em pacientes com doença no fígado ou rins.\nEste medicamento é contra indicado para menores de 12 anos.\nÉ aconselhável cuidado na administração de paracetamol em pacientes com função hepática comprometida incluindo aqueles com doença hepática alcoólica não cirrótica. Os perigos de overdose são maiores naqueles com doença hepática alcoólica.\nNão use qualquer outro produto que contenha paracetamol."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 23,
+      "pagina_fim": 23,
+      "texto": "Interrompa o uso de Tylalgin Sachet e consulte seu médico caso apareça vermelhidão ou inchaço, a dor piore ou persista por mais de 10 dias, a febre piore ou persista por mais de 3 dias.\nO paracetamol pode causar hepatotoxicidade grave em alcoólatras crônicos, mesmo quando utilizado em dose terapêutica. Esta hepatotoxicidade pode ser causada pela indução do sistema microssomal hepático, resultando em aumento de metabólitos tóxicos, ou por quantidades reduzidas de glutationa, responsável pela conjugação dos metabólitos tóxicos.\nEste medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista.\nAtenção diabéticos: contém açúcar.\nAtenção fenilcetonúricos: contem fenilalanina.\nNão deve ser utilizado concomitantemente com álcool.\nNão use outro produto que contenha paracetamol.\nGravidez e Lactação CATEGORIA B: Este medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 23,
+      "pagina_fim": 24,
+      "texto": "Interações medicamento-medicamento Não se recomenda a ingestão de paracetamol com altas doses de barbitúricos, carbamazepina, hidantoína, rifampicina, sulfimpirazona. Pode ocorrer aumento do risco de sangramento no uso prolongado de paracetamol concomitantemente com medicamentos anticoagulantes como a varfarina.\nAdvertências relativas ao uso com varfarina: Informe ao seu médico se você estiver utilizando algum medicamento para afinar o sangue como a varfarina, o risco de hemorragia pode ser aumentado com o uso prolongado de paracetamol.\nInforme ao seu médico se você estiver utilizando algum outro medicamento (ex. anticonvulsivantes) que afete a função hepática e possa aumentar o risco de toxicidade do fígado pelo paracetamol.\nInterações medicamento-exame laboratorial O paracetamol pode interferir nos sistemas de medida da glicemia em fitas reagentes, diminuindo em até 20% os valores médios de glicose. Os resultados do teste da função pancreática utilizando a bentiromidaficam invalidados, a\fmenos que o uso de paracetamol seja interrompido 3 dias antes da realização do exame. Na determinação de ácido úrico sérico, o paracetamol pode produzir valores falsamente aumentados quando for utilizado o método do tungstato. O paracetamol pode produzir falsos resultados positivos na determinação qualitativa do ácido-5-hidroxi-indolacético quando for utilizado o reagente nitrozonaftol.\nInterações medicamento-alimento Se você consome 3 ou mais doses de bebida alcoólica diariamente, consulte médico para saber se pode usar este produto. O paracetamol é hepatotóxico em etilistas crônicos, podendo também ter sua hepatotoxicidade aumentada nos casos de ingestão concomitante ao álcool.\nAdvertências referente ao uso com álcool: o consumo de álcool afeta negativamente a função hepática e pode aumentar o risco de toxicidade no fígado com o uso de produtos que contenham paracetamol, especialmente após overdose.\nAdvertências de superdosagem: Tomar mais do que a dose recomendada pode causar sérios problemas de saúde. Em caso de superdosagem, procure socorro médico imediatamente. O rápido atendimento médico é crítico para adultos e crianças até mesmo se você não notar quaisquer sinais ou sintomas.\nInforme ao seu médico ou cirurgião-dentista se você está fazendo uso de algum outro medicamento.\nInforme ao seu médico se você tiver redução da função hepática conhecida, incluindo doença hepática alcoólica;\nou, se você tiver doença grave dos rins.\nNão existem recomendações especiais ou precauções sobre o uso do produto por pacientes idosos.\nMantenha longe do alcance das crianças."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 24,
+      "pagina_fim": 24,
+      "texto": "Tylalgin Sachet deve ser mantido em temperatura ambiente (15ºC a 30ºC), protegido da luz e umidade.\nPrazo de validade: 24 meses a partir da data de fabricação.\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\nTylalgin Sachet apresenta-se na forma de pó homogêneo, levemente amarelado, odor de limão e mel e isento de partículas estranhas.\nAntes de usar, observe o aspecto do medicamento. Caso ele esteja no prazo de validade e você observe alguma mudança no aspecto, consulte o farmacêutico para saber se poderá utilizá-lo.\nTODO MEDICAMENTO DEVE SER MANTIDO FORA DO ALCANCE DAS CRIANÇAS."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 24,
+      "pagina_fim": 25,
+      "texto": "Modo de usar Dissolver todo o conteúdo de um envelope em água quente ou chá quente. Não é necessário adicionar açúcar. Tomar enquanto estiver quente. Cada envelope constitui uma dose.\nPosologia De 18 anos ou mais: um envelope a cada 4 horas, conforme os sintomas persistirem. Não exceder 6 envelopes por dia.\nDe 12 a 18 anos: um envelope a cada 6 horas, conforme os sintomas persistirem. Não exceder 4 envelopes por dia.\nNão administrar a crianças abaixo de 12 anos de idade, a não ser sob orientação médica.\nSiga a orientação do seu médico, respeitando sempre os horários, as doses e a duração do tratamento.\nInterrompa o uso ou procure orientação médica se os sintomas persistirem ou piorarem.\fSiga corretamente o modo de usar. Em caso de dúvidas sobre este medicamento, procure orientação do farmacêutico. Não desaparecendo os sintomas, procure orientação de seu médico ou cirurgião-dentista."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 25,
+      "pagina_fim": 25,
+      "texto": "Pessoas alérgicas ao medicamento podem apresentar erupções cutâneas, urticária, eritema pigmentar fixo, angioedema, choque anafilático e discrasias sanguíneas.\nEm geral não são esperados efeitos adversos graves quando o medicamento for utilizado de acordo com as instruções contidas em bula.\nDoenças sanguíneas podem ocorrer muito raramente.\nReações de hipersensibilidade (ex: erupções cutâneas, urticária, anafilaxia) tem sido raramente relatadas.\nDistúrbios sanguíneos e do sistema linfático:\nMuito raramente têm sido relatadas discrasias sanguíneas (ex. trombocitopenia, agranulocitose, anemia hemolítica, neutropenia, leucopenia, pancitopenia) com o uso de paracetamol, porém não possuem necessariamente uma relação causal.\nDistúrbios do sistema imunológico:\nExistem raros relatos de reações de hipersensibilidade alérgica com o uso de paracetamol, incluindo reação anafilática.\nDistúrbios de pele e subcutâneos:\nHipersensibilidade incluindo erupções cutâneas e urticária podem ocorrer raramente com o uso de paracetamol.\nFrequência das reações adversas:\nReação comum (ocorre Reação Incomum (ocorre Reação Rara (ocorre Classificação por sistema entre 1% e 10% dos entre 0,1% e 1% dos entre 0,01% e 0,1% dos ou órgão pacientes que utilizara pacientes que utilizaram pacientes que utilizaram este medicamento) este medicamento) este medicamento) Trombocitopenia Agranulocitose Distúrbios sanguíneos e do Anemia Hemolítica sistema linfático Neutropenia Leucopenia Pancitopenia Distúrbios do sistema Hipersensibilidade Reação anafilática imunológico Distúrbios de pele e Urticaria subcutâneos Erupções cutâneas Informe ao seu médico, cirurgião-dentista ou farmacêutico o aparecimento de reações indesejáveis pelo uso do medicamento. Informe também a empresa através do seu serviço de atendimento ao consumidor.\nEm casos de eventos adversos, notifique ao Sistema de Notificações em Vigilância Sanitária – NOTIVISA, disponível em: http://www.anvisa.gov.br/hotsite/novisa/index.htm, ou para a Vigilância Sanitária Estadual ou Municipal."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 25,
+      "pagina_fim": 26,
+      "texto": "Os sinais e sintomas iniciais que se seguem à ingestão de uma grande quantidade de paracetamol, possivelmente hepatotóxica são: náuseas, vômitos, sudorese intensa e mal estar geral. Hipotensão arterial, arritmia cardíaca, icterícia, insuficiência hepática e renal também são observados.\fTratamento da Superdose: O estômago deve ser imediatamente esvaziado, seja por lavagem gástrica ou por indução ao vômito com xarope de ipeca. Deve-se providenciar, nos centros com metodologias e aparelhagem adequadas, a determinação dos níveis plasmáticos de paracetamol.\nIndependente da dose maciça de paracetamol referida deve-se administrar imediatamente o antídoto considerado eficaz, a N-acetilcisteína a 20%, desde que não tenha decorrido mais de 16 horas da ingestão.\nA N-acetilcisteína deve ser administrada por via oral na dose de ataque de 140mg/kg de peso, seguida a cada 4 horas por uma dose de manutenção de 70mg/kg de peso, até um máximo de 17 doses conforme a evolução do caso. A N-acetilcisteína a 20% deve ser administrada após a diluição a 5% em água, suco ou refrigerante preparado no momento da administração. Além da administração do antídoto, o paciente deve ser acompanhado com medidas gerais de suporte.\nApós a recuperação, não permanecem sequelas hepáticas.\nEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações.\nSiga corretamente o modo de usar, não desaparecendo os sintomas procure orientação médica."
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "DIZERES LEGAIS",
+      "pagina_inicio": 26,
+      "pagina_fim": 27,
+      "texto": "Registro M.S. nº 1.5423.0008 Farm. Resp.: Ronan Juliano Pires Faleiro - CRF-GO n° 3772 Geolab Indústria Farmacêutica S/A VP. 1B QD.08-B Módulos 01 a 08 DAIA - Anápolis – GO www.geolab.com.br CNPJ: 03.485.572/0001-04 Indústria Brasileira SAC: 0800 701 6080 Esta bula foi atualizada conforme Bula Padrão aprovada pela Anvisa em 05/08/2014.\fAnexo B"
+    }
+  ],
+  "numero_registro": "1.5423.0008",
+  "forma_farmaceutica": "pó para solução oral (sachê)",
+  "versao": "V.03_05/2022"
+}

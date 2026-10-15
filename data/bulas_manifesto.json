@@ -1,0 +1,231 @@
+{
+  "_aviso": "Entrada do lote (python -m ingestao.processar_lote). Procedência de cada PDF em data/FONTES.md. 'partes' = bulas dentro do PDF, na ordem em que aparecem. 'data_versao' vazia = tirada do código impresso pela Geolab (V.NN_MM/AAAA -> dia 01). 'medicamento' segue o que o PDF diz; 'nomes_comerciais' segue o CSV da ANVISA para o registro.",
+  "pasta": "data/raw/bulas",
+  "bulas": [
+    {
+      "arquivo": "losartana_cozaar_profissional.pdf",
+      "sha256": "1a3806e4b84063e665f4d8f8515dac84a40537a1c2b0734a28ce0bd2b20a6e84",
+      "fabricante": "Organon",
+      "numero_registro": "1.0029.0007",
+      "principio_ativo": "losartana potássica",
+      "nomes_comerciais": ["Cozaar"],
+      "partes": [
+        {"medicamento": "Cozaar 50 mg e 100 mg", "forma_farmaceutica": "comprimido revestido", "data_versao": "2025-04-24", "versao": "aprovada em 24/04/2025"}
+      ]
+    },
+    {
+      "arquivo": "desloratadina_desalex_profissional.pdf",
+      "sha256": "c9e0ee072f8739016c43df23b704c74ae2fbbe71c80aa93f5978f57657b9285b",
+      "fabricante": "Organon",
+      "numero_registro": "1.0029.0191",
+      "principio_ativo": "desloratadina",
+      "nomes_comerciais": ["Desalex"],
+      "nota": "Uma bula só para comprimido e xarope.",
+      "partes": [
+        {"medicamento": "Desalex 5 mg e 0,5 mg/mL", "forma_farmaceutica": "comprimido revestido e xarope", "data_versao": "2025-11-03", "versao": "histórico de 03/11/2025"}
+      ]
+    },
+    {
+      "arquivo": "enalapril_renitec_profissional.pdf",
+      "sha256": "5956e109861e27825c8279fcca2b39bba3aa4e589078c98b18e51d8adb875c0b",
+      "fabricante": "Organon",
+      "numero_registro": "1.0029.0031",
+      "principio_ativo": "maleato de enalapril",
+      "nomes_comerciais": ["Renitec"],
+      "partes": [
+        {"medicamento": "Renitec 5 mg, 10 mg e 20 mg", "forma_farmaceutica": "comprimido", "data_versao": "2025-05-01", "versao": "aprovada em 01/05/2025"}
+      ]
+    },
+    {
+      "arquivo": "acetilcisteina_cisteil-geolab_profissional.pdf",
+      "sha256": "c4211f5cd1c424366cc527db8f4063c980a75eaf4867d31ba1bcc5aa771e8aa9",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0140",
+      "principio_ativo": "acetilcisteína",
+      "nomes_comerciais": ["Cisteil"],
+      "nota": "O PDF se apresenta como genérico; no CSV o registro é do similar CISTEIL.",
+      "partes": [
+        {"medicamento": "Acetilcisteína 20 mg/mL e 40 mg/mL xarope", "forma_farmaceutica": "xarope"}
+      ]
+    },
+    {
+      "arquivo": "albendazol_albel-geolab_profissional.pdf",
+      "sha256": "f2dd8c4a7a2e5686ee4596d4905ef088ab0dd0e2908c2e04a1891bfc54b4ec71",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0323",
+      "principio_ativo": "albendazol",
+      "nomes_comerciais": ["Albel"],
+      "nota": "O PDF se apresenta como genérico; no CSV o registro é do similar ALBEL.",
+      "partes": [
+        {"medicamento": "Albendazol 400 mg mastigável", "forma_farmaceutica": "comprimido mastigável"}
+      ]
+    },
+    {
+      "arquivo": "ambroxol_generico-geolab_profissional.pdf",
+      "sha256": "3dceaac995836f0045de5b9dc685f84095f845ef0bc1f5eddde52540c3d148ea",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0067",
+      "principio_ativo": "cloridrato de ambroxol",
+      "nota": "Uma bula só para xarope adulto (6 mg/mL) e infantil (3 mg/mL).",
+      "partes": [
+        {"medicamento": "Cloridrato de ambroxol 6 mg/mL e 3 mg/mL xarope", "forma_farmaceutica": "xarope"}
+      ]
+    },
+    {
+      "arquivo": "metformina_generico-geolab_profissional.pdf",
+      "sha256": "80d8966c9e2165b190b6b2c73693a18018a2ad0cf84651f50da8efe5a52fbd39",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0270",
+      "principio_ativo": "cloridrato de metformina",
+      "partes": [
+        {"medicamento": "Cloridrato de metformina 850 mg", "forma_farmaceutica": "comprimido"}
+      ]
+    },
+    {
+      "arquivo": "colecalciferol_delumi-geolab_profissional.pdf",
+      "sha256": "861fe8aa5c03c7d9152929afbd2314332115976e5a723fece7c09226190486c1",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0302",
+      "principio_ativo": "colecalciferol",
+      "nomes_comerciais": ["Delumi"],
+      "nota": "Duas bulas no PDF, para concentrações diferentes.",
+      "partes": [
+        {"medicamento": "Delumi 5.000, 10.000 e 15.000 UI", "forma_farmaceutica": "comprimido revestido"},
+        {"medicamento": "Delumi 7.000 e 50.000 UI", "forma_farmaceutica": "comprimido revestido"}
+      ]
+    },
+    {
+      "arquivo": "diclofenaco-sodico_generico-geolab_profissional.pdf",
+      "sha256": "2cd9277351ea6d5158f7996e69c44c6585b649956b338a4018b43bd46d97f2c5",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0317",
+      "principio_ativo": "diclofenaco sódico",
+      "partes": [
+        {"medicamento": "Diclofenaco sódico 50 mg", "forma_farmaceutica": "comprimido revestido de liberação retardada"}
+      ]
+    },
+    {
+      "arquivo": "dexclorfeniramina_hystin-geolab_profissional.pdf",
+      "sha256": "19fe6878d0d77aa8cd7435fa6f3d3ec67bc1bd12fe0c392fb46cfb3915f8b1ac",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0012",
+      "principio_ativo": "maleato de dexclorfeniramina",
+      "nomes_comerciais": ["Hystin"],
+      "partes": [
+        {"medicamento": "Hystin 2 mg", "forma_farmaceutica": "comprimido"}
+      ]
+    },
+    {
+      "arquivo": "ibuprofeno_generico-geolab_profissional.pdf",
+      "sha256": "ffffa9683ecc7fe5edc7fdc6fb3eecb143cace76df7e097175739a9d3be6d1cc",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0333",
+      "principio_ativo": "ibuprofeno",
+      "partes": [
+        {"medicamento": "Ibuprofeno 400 mg cápsula mole", "forma_farmaceutica": "cápsula mole"}
+      ]
+    },
+    {
+      "arquivo": "loratadina_generico-geolab_profissional.pdf",
+      "sha256": "2d613f1b0b5f1b482ce0f52cbbf7d6920e4b908cf4f1f0efb2a220a2927ac5ac",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0336",
+      "principio_ativo": "loratadina",
+      "partes": [
+        {"medicamento": "Loratadina 10 mg", "forma_farmaceutica": "comprimido"}
+      ]
+    },
+    {
+      "arquivo": "acido-folico_folonin-geolab_profissional.pdf",
+      "sha256": "6a8badcfe84d5f67efba2572f9724a5b1a29582d8af031920ed086eaeaaeb803",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0142",
+      "principio_ativo": "ácido fólico",
+      "nomes_comerciais": ["Folonin"],
+      "partes": [
+        {"medicamento": "Folonin 5 mg", "forma_farmaceutica": "comprimido revestido"}
+      ]
+    },
+    {
+      "arquivo": "nimesulida_nisoflan-geolab_profissional.pdf",
+      "sha256": "12dc469d81b17bd8e21ca265d760f705e225f501cb9d22935e7b70a90427b665",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0013",
+      "principio_ativo": "nimesulida",
+      "nomes_comerciais": ["Nisoflan"],
+      "partes": [
+        {"medicamento": "Nisoflan 50 mg/mL gotas", "forma_farmaceutica": "suspensão oral gotas"}
+      ]
+    },
+    {
+      "arquivo": "omeprazol_omenax-geolab_profissional.pdf",
+      "sha256": "5e89e82527ef00135bb97858f5ed3d3eaf51e1e6d76b87f693951c98eea1e6e7",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0328",
+      "principio_ativo": "omeprazol",
+      "nomes_comerciais": ["Omenax"],
+      "partes": [
+        {"medicamento": "Omenax 20 mg", "forma_farmaceutica": "cápsula dura de liberação retardada"}
+      ]
+    },
+    {
+      "arquivo": "dexpantenol_pantodex-geolab_profissional.pdf",
+      "sha256": "38375b673a38c2d1da4c19eafa7c48277f15285e93d73585ff3c1ae7ea571b34",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0148",
+      "principio_ativo": "dexpantenol",
+      "nomes_comerciais": ["Pantodex"],
+      "partes": [
+        {"medicamento": "Pantodex 50 mg/g pomada", "forma_farmaceutica": "pomada"}
+      ]
+    },
+    {
+      "arquivo": "paracetamol_tylalgin-geolab_profissional.pdf",
+      "sha256": "549ad68fce6d24efe081280d224c0be80617ecf71f3236a97a1c431b6bbbb843",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0008",
+      "principio_ativo": "paracetamol",
+      "nomes_comerciais": ["Tylalgin"],
+      "nota": "Três bulas no PDF: gotas, comprimido e sachê.",
+      "partes": [
+        {"medicamento": "Tylalgin 200 mg/mL gotas", "forma_farmaceutica": "solução oral gotas"},
+        {"medicamento": "Tylalgin 750 mg", "forma_farmaceutica": "comprimido"},
+        {"medicamento": "Tylalgin Sachet 500 mg", "forma_farmaceutica": "pó para solução oral (sachê)"}
+      ]
+    },
+    {
+      "arquivo": "permetrina_kaodine-geolab_profissional.pdf",
+      "sha256": "e37ebcb43746fb2a699cddcbbfe4202ec0cf0a2c23484dd842b53b05a1d6ee0e",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0342",
+      "principio_ativo": "permetrina",
+      "nomes_comerciais": ["Kaodine"],
+      "nota": "Duas bulas no PDF: loção 10 mg/mL (piolho) e loção cremosa 50 mg/mL.",
+      "partes": [
+        {"medicamento": "Kaodine 10 mg/mL loção", "forma_farmaceutica": "loção"},
+        {"medicamento": "Kaodine 50 mg/mL loção cremosa", "forma_farmaceutica": "loção cremosa"}
+      ]
+    },
+    {
+      "arquivo": "tiamina_vitaum-geolab_profissional.pdf",
+      "sha256": "755146b41d86872e933ea740db59405cdceecb8b8307fe145d86a9a08bb22dc6",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0129",
+      "principio_ativo": "cloridrato de tiamina",
+      "nomes_comerciais": ["Vitaum"],
+      "partes": [
+        {"medicamento": "Vitaum 300 mg", "forma_farmaceutica": "comprimido revestido"}
+      ]
+    },
+    {
+      "arquivo": "fexofenadina_generico-vitamedic_profissional.pdf",
+      "sha256": "721c94b2ad1f99535e511918a33be933792319805d913629a1967af08d8c91a5",
+      "fabricante": "Vitamedic",
+      "numero_registro": "1.0392.0230",
+      "principio_ativo": "cloridrato de fexofenadina",
+      "partes": [
+        {"medicamento": "Cloridrato de fexofenadina 6 mg/mL suspensão oral", "forma_farmaceutica": "suspensão oral", "data_versao": "2026-03-13", "versao": "histórico de 13/03/2026"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,109 @@
+{
+  "id": "albendazol-400-mg-mastigavel-geolab",
+  "medicamento": "Albendazol 400 mg mastigável",
+  "principio_ativo": "albendazol",
+  "nomes_comerciais": [
+    "Albel"
+  ],
+  "fabricante": "Geolab",
+  "tipo_bula": "profissional",
+  "data_versao": "2025-03-01",
+  "fonte_pdf": "data/raw/bulas/albendazol_albel-geolab_profissional.pdf",
+  "processado_em": "2026-10-15T15:29:50-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 1,
+      "pagina_fim": 2,
+      "texto": "ALBENDAZOL Geolab Indústria Farmacêutica S/A Comprimido Mastigável 400mg\fMODELO DE BULA PARA O PROFISSIONAL DA SAÚDE Esta bula é continuamente atualizada. Favor proceder a sua leitura antes de utilizar o medicamento.\nalbendazol Medicamento genérico, Lei n° 9.787 de 1999.\nFORMA FARMACÊUTICA E APRESENTAÇÃO:\nComprimido mastigável de 400mg: Embalagem contendo 300 comprimidos.\nUSO ORAL USO ADULTO E PEDIÁTRICO ACIMA DE 2 ANOS"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Cada comprimido mastigável contém:\nalbendazol........................................................................................................................................................................400mg Excipientes: amido, amidoglicolato de sódio, aroma de baunilha, aroma de laranja, benzoato de sódio, celulose microcristalina, corante amarelo crepúsculo, dextrina, dióxido de silício, estearato de magnésio, laurilsulfato de sódio, maltodextrina, hipromelose, macrogol, povidona, sacarina sódica di-hidratada e sacarose."
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "O albendazol é um carbamato benzimidazólico com atividade anti-helmíntica e antiprotozoária indicado para o tratamento contra os seguintes parasitas intestinais e dos tecidos: Ascaris lumbricoides, Enterobius vermicularis, Necator americanus, Ancylostoma duodenale, Trichuris trichiura, Strongyloides stercoralis, Taenia spp. e Hymenolepis nana (somente nos casos de parasitismo a eles associado). São indicações ainda a opistorquíase (Opisthorchis viverrini) e a larva migrans cutânea, bem como a giardíase (Giardia lamblia, G. duodenalis, G. intestinalis) em crianças."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2. RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 2,
+      "pagina_fim": 3,
+      "texto": "O albendazol em dose única diária demonstrou eficácia de 100% no tratamento de ascaridíase e enterobíase, 92% no de ancilostomíase, 90% no de tricuríase e 97% no de giardíase em crianças. No tratamento contra Necator americanus a erradicação foi de 75%. A dose única diária utilizada por três dias consecutivos teve eficácia de 86% no tratamento da teníase e de 62% na estrongiloidíase.\n1) JAGOTA, SC. et al. Albendazole, a broad-spectrum anthelmintic, in the treatment of intestinal nematode and cestode infection: a multicenter study in 480 patients. Clin Ther, 8(2): 226-23, 1986.\n2) HORTON, J. Albendazole: a broad spectrum anthelminthic for treatment of individuals and populations. Curr Opin Infect Dis, 15(6): 599-608, 2002.\f3) DUTTA, AK. Et al. A randomised multicentre study to compare the safety and efficacy of albendazole and metronidazole in the treatment of giardiasis in children. Indian J Pediatr, 61(6): 689-693, 1994."
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Propriedades farmacodinâmicas Mecanismo de ação O albendazol possui atividade larvicida, ovicida e vermicida. Sua atividade anti-helmíntica ocorre por inibição da polimerização tubulínica, ocasionando alteração no nível de energia do helminto, incluindo o esgotamento da mesma, o que imobiliza os helmintos e posteriormente os mata.\nPropriedades farmacocinéticas Absorção No homem, após uma dose oral, o albendazol tem pequena absorção (menos de 5%).\nO efeito de albendazol no sistema farmacológico é aumentado se a dose for administrada com uma refeição rica em gorduras, pois aumenta a absorção em cerca de 5 vezes.\nDistribuição Após administração oral de dose única de 400mg do albendazol durante café da manhã, o metabólito ativo, sulfóxido de albendazol, atinge concentrações plasmáticas de 1,6 a 6,0 micromol/L.\nMetabolismo O albendazol sofre rapidamente um extenso metabolismo de primeira passagem no fígado, e geralmente não é detectado no plasma. O sulfóxido de albendazol é o metabólito primário, sendo a parte ativa na eficácia contra infecções dos tecidos sistêmicos.\nEliminação A meia-vida do albendazol no plasma é de 8,5 horas. O sulfóxido de albendazol e os seus metabolitos são eliminados principalmente na bile, com apenas pequena proporção eliminada pela urina.\nPaciente idoso Apesar de não ter sido estudada a farmacocinética do sulfóxido de albendazol em relação à idade, dados obtidos de 26 pacientes com cisto hidático (pacientes de até 79 anos) sugerem uma farmacocinética similar à de pacientes adultos saudáveis. O número de pacientes idosos tratados de doença hidática ou neurocisticercose é limitado, mas não se observaram problemas associados a populações mais idosas.\nInsuficiência renal/insuficiência hepática A farmacocinética do albendazol em pacientes com insuficiência renal e/ou hepática não foi estudada."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4. CONTRAINDICAÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "O albendazol não deve ser administrado durante a gravidez nem em mulheres que planejam engravidar. O albendazol é contraindicado para pacientes com conhecida hipersensibilidade a qualquer um dos componentes da fórmula.\nEste medicamento não deve ser usado por pessoas com síndrome de má-absorção de glicose-galactose.\nEste medicamento não deve ser usado por pessoas com insuficiência de sacarose-isomaltase."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Deve-se assegurar, antes de utilizar o produto, que não há possibilidade de gravidez para mulheres em idade fértil.\nRecomenda-se a administração de albendazol na primeira semana da menstruação ou após o resultado negativo de um teste de gravidez.\nO tratamento com albendazol pode revelar casos de neurocisticercose preexistente, principalmente em áreas com alta incidência de teníase. Os pacientes podem apresentar sintomas neurológicos, como convulsões, aumento da pressão intracraniana e sinais focais resultantes de uma reação inflamatória causada por morte do parasita no interior da massa encefálica. Os sintomas podem ocorrer logo após o tratamento; a terapia com esteroides e anticonvulsivantes deve ser iniciada imediatamente.\nO tratamento com albendazol tem sido associado a elevações das enzimas hepáticas. Estas elevações voltaram geralmente ao normal após a interrupção do tratamento. Foram também notificados casos de insuficiência hepática aguda e hepatite (vide item vide 9. REAÇÕES ADVERSAS). Monitorizar as enzimas hepáticas (transaminases) antes do início de cada ciclo de tratamento e, pelo menos, de 2 em 2 semanas durante o tratamento.\nSe as enzimas hepáticas excederem o dobro do limite superior do normal, deve considerar-se a interrupção do tratamento com albendazol com base nas circunstâncias individuais do paciente. O reinício do tratamento com albendazol em pacientes cujas enzimas hepáticas se normalizaram após a interrupção do tratamento é uma decisão individual que deve ter em conta o risco/benefício da continuação da utilização do albendazol. Efetuar frequentemente análises laboratoriais se o tratamento com albendazol for reiniciado.\nEfeitos sobre a capacidade de dirigir veículos e de operar máquinas Não há estudos para investigar os efeitos de albendazol na capacidade de dirigir veículos e de operar máquinas. Entretanto deve-se ter cuidado ao dirigir veículos ou operar máquinas considerando que “vertigem” após uso de albendazol foi reportado como Reação Adversa. (vide item 9. Reações Adversas) Gravidez e lactação O albendazol não deve ser administrado durante a gravidez nem a mulheres que podem estar grávidas ou pensam em engravidar (vide item 4. Contraindicações).\nNão se sabe se o albendazol ou seus metabólitos são excretados no leite materno. Dessa forma, albendazol não deve ser usado durante a amamentação, a não ser que os benefícios potenciais para a mãe justifiquem os possíveis riscos para o filho.\nCategoria C de risco na gravidez.\nEste medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista.\nUso criterioso no aleitamento ou na doação de leite humano.\nAtenção: Este medicamento contém derivados de soja.\nAtenção: Contém o corante amarelo crepúsculo que pode, eventualmente, causar reações alérgicas.\nAtenção: Deve ser usado com cautela por portadores de Diabetes.\nAtenção: Contém sacarose.\nEste produto contém benzoato de sódio, que pode causar reações alérgicas, como a asma, especialmente em pessoas alérgicas ao ácido acetilsalicílico."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 5,
+      "texto": "Houve relatos de aumento dos níveis plasmáticos do metabólito ativo do albendazol, responsável pela eficácia sistêmica do produto, com o uso de cimetidina, praziquantel e dexametasona. O ritonavir, a fenitoína, a carbamazepina e o fenobarbital\fpodem reduzir as concentrações plasmáticas do metabólito ativo do albendazol; sulfóxido de albendazol. A relevância clínica é desconhecida, mas pode resultar em diminuição da eficácia, especialmente no tratamento de infecções por helmintos. Para eficácia do tratamento, os pacientes devem ser monitorados e podem-se exigir regimes de doses alternativas ou terapias alternativas."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "O albendazol deve ser armazenado em temperatura ambiente (de 15°C a 30°C), protegido da umidade.\nPrazo de validade: 24 meses a partir da data de fabricação.\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\nCaracterísticas físicas e organolépticas O albendazol apresenta-se na forma de comprimido revestido oblongo, cor laranja, com leve odor de baunilha, sulcado em uma das faces.\nAntes de usar, observe o aspecto do medicamento.\nTODO MEDICAMENTO DEVE SER MANTIDO FORA DO ALCANCE DAS CRIANÇAS."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 5,
+      "pagina_fim": 6,
+      "texto": "Modo de uso Os comprimidos podem ser mastigados ou tomados com água. Algumas pessoas, particularmente crianças, podem ter dificuldade de engolir os comprimidos inteiros. Nesse caso, devem ser incentivadas a mastigar os comprimidos com um pouco de água. Alternativamente os comprimidos podem ser triturados.\nNenhum procedimento especial, como jejum ou uso de agente purgante, é necessário.\nPosologia Indicações Idade Dose Período Ascaris lumbricoides Adultos e crianças acima de 400 mg Necator americanus Dose única 2 anos de idade (1 comprimido de 400mg).\nTrichuris trichiura Enterobius vermicularis Adultos e crianças acima de 400 mg ** Dose única 2 anos de idade (1 comprimido de 400mg).\nAncylostoma duodenale Strongyloides stercoralis Adultos e crianças acima de 400 mg 1 dose por dia Taenia spp.\n2 anos de idade (1 comprimido de 400mg). durante 3 dias Hymenolepis nana * Giardíase Crianças de 2 a 12 anos de 400 mg 1 dose por dia (Giardia lamblia, G.\nidade (1 comprimido de 400mg). durante 5 dias duodenalis, G. intestinalis) Adultos e crianças acima de 400 mg 1 dose por dia Larva migrans cutânea 2 anos de idade (1 comprimido de 400mg). durante 1 a 3 dias Opistorquíase Adultos e crianças acima de 400 mg 2 doses por dia (Opisthorchis viverrini) 2 anos de idade (1 comprimido de 400mg). durante 3 dias\f* Em casos comprovados de contaminação por Hymenolepis nana, recomenda-se um segundo ciclo de tratamento em 10 a 21 dias. Se o paciente não apresentar melhora após três semanas, um segundo ciclo de tratamento pode ser necessário.\n**Com o objetivo de obter cura completa no caso de infestação pelo Enterobius vermicularis, deve-se prescrever medidas de higiene tanto para os pacientes quanto para os indivíduos que utilizam a moradia dos pacientes.\nPaciente idoso A experiência com pacientes de 65 anos ou mais é limitada. Os dados indicam que nenhum ajuste de dosagem é necessário, entretanto o albendazol deve ser usado com precaução em pacientes idosos com evidência de insuficiência hepática (vide item 3. CARACTERÍSTICAS FARMACOLÓGICAS, os itens Propriedades Farmacocinéticas e Insuficiência Hepática).\nInsuficiência renal Como a eliminação renal do albendazol e de seu metabólito primário, sulfóxido de albendazol, se mostra insignificante, é improvável que o clearance desses componentes seja alterado nesses pacientes.\nNenhum ajuste de dose é necessário, entretanto os pacientes com evidência de insuficiência renal devem ser monitorados cuidadosamente.\nInsuficiência hepática Como o albendazol é rapidamente metabolizado pelo fígado em seu metabólito primário farmacologicamente ativo – o sulfóxido de albendazol –, espera-se que, nos casos de insuficiência hepática, haja efeito significativo na farmacocinética do sulfóxido de albendazol. Pacientes que apresentam resultados anormais dos testes de função hepática (transaminases) devem ser cuidadosamente monitorados antes de iniciar terapia com albendazol.\nCrianças Devem ser observadas as mesmas precauções aplicadas aos adultos."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 6,
+      "pagina_fim": 7,
+      "texto": "Dados de diversos estudos clínicos foram usados para determinar a frequência das reações adversas muito comuns às raras.\nTodas as outras reações adversas (ou seja, as que ocorreram na proporção de <1/1.000) tiveram sua frequência determinada com o uso de dados pós-comercialização e mais relacionada com o número de relatos do que com a frequência real.\nTêm-se utilizado os seguintes parâmetros para classificação das reações adversas:\nMuito comuns: ≥1/10 Comuns: ≥1/100 e <1/10 Incomuns: ≥1/1.000 e <1/100 Raras: ≥1/10.000 e <1/1.000 Muito raras: <1/10.000 Desconhecidas: não pode ser estimado a partir dos dados disponíveis Reações incomuns (≥1/1.000 e <1/100): sintomas relacionados ao trato gastrintestinal superior (como dor epigástrica ou abdominal, náusea e vômito), diarreia, cefaleia, vertigens e leucopenia.\nReações raras (>1/10.000 e <1/1.000): reações de hipersensibilidade, que incluem “rash”, prurido e urticária; elevações das enzimas hepáticas.\nReações muito raras (<1/10.000): eritema multiforme, síndrome de Stevens-Johnson.\nDistúrbios hepatobiliares Desconhecidas: hepatite e insuficiência hepática aguda (vide item 5. ADVERTÊNCIAS E PRECAUÇÕES).\fEm casos de eventos adversos, notifique pelo Sistema VigiMed, disponível no Portal da Anvisa."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 7,
+      "pagina_fim": 7,
+      "texto": "Tratamento O manejo adicional deve ser feito de acordo com as indicações clínicas ou conforme recomendado pelo centro de controle de intoxicações local, quando disponível.\nEm caso de intoxicação, ligue para 0800 722 6001 se você precisar de mais orientações."
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "(dizeres legais sem título)",
+      "pagina_inicio": 7,
+      "pagina_fim": 8,
+      "texto": "VENDA SOB PRESCRIÇÃO DIZERES LEGAIS Registro 1.5423.0323 Registrado e Produzido por:\nGeolab Indústria Farmacêutica S/A CNPJ: 03.485.572/0001-04 VP. 1B QD.08-B MÓDULOS 01 A 08 - DAIA - ANÁPOLIS – GO www.geolab.com.br Indústria Brasileira SAC: 0800 701 6080 Esta bula foi atualizada conforme Bula Padrão aprovada pela Anvisa em 11/12/2024.\fAnexo B"
+    }
+  ],
+  "numero_registro": "1.5423.0323",
+  "forma_farmaceutica": "comprimido mastigável",
+  "versao": "V.03_03/2025"
+}

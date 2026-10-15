@@ -32,6 +32,9 @@ Sempre a versão do profissional de saúde, em `data/raw/bulas/`. Duas origens a
 
 Registrar aqui, por bula: nome, número de registro, data da versão e SHA-256.
 
+Depois de registrar aqui, acrescente o PDF em `data/bulas_manifesto.json` (mesmo SHA-256 e
+registro; um teste confere) e rode `python -m ingestao.processar_lote`.
+
 ### Lote 1 (baixado em 2026-10-14)
 
 Verificação feita **antes** de baixar:

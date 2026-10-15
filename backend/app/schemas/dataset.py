@@ -71,10 +71,19 @@ class Bula(BaseModel):
     nomes_comerciais: list[str] = Field(default_factory=list)
     fabricante: str
     tipo_bula: Literal["profissional", "paciente"]
+    # Dia 01 quando o fabricante só imprime mês/ano ("V.01_12/2025" -> 2025-12-01); ver `versao`.
     data_versao: date
     fonte_pdf: str
     processado_em: datetime
     secoes: list[SecaoBula]
+    # Registro na ANVISA ("1.0029.0007"), conferido contra o texto da bula na ingestão. Vai junto
+    # da fonte na resposta. Opcional só para as bulas de teste, anteriores ao campo.
+    numero_registro: str | None = Field(default=None, pattern=r"^\d\.\d{4}\.\d{4}$")
+    # Como o balconista diria ("comprimido", "solução oral gotas", "loção cremosa"): é o que
+    # diferencia duas bulas do mesmo princípio ativo (Tylalgin gotas x comprimido x sachê).
+    forma_farmaceutica: str | None = None
+    # Versão como o fabricante imprime ("V.01_12/2025", "aprovada em 24/04/2025").
+    versao: str | None = None
 
 
 class Chunk(BaseModel):

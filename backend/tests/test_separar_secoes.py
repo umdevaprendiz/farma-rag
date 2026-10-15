@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from ingestao.extrair_pdf import extrair_paginas
-from ingestao.separar_secoes import ESPERADAS, _titulo, separar_secoes
+from ingestao.separar_secoes import ESPERADAS, _titulo, separar_bulas, separar_secoes
 
 FIXTURES = Path(__file__).parent / "fixtures"
 
@@ -80,3 +80,76 @@ def test_texto_sem_titulo_vira_uma_secao_so():
     secoes = separar_secoes(["Texto qualquer sem título reconhecido."])
     assert [(s.secao, s.pagina_inicio) for s in secoes] == [("outras", 1)]
     assert separar_secoes(["", "   "]) == []
+
+
+@pytest.mark.parametrize("linha, secao", [
+    ("5. ADVERTÊNCIA E PRECAUÇÕES", "advertencias"),  # singular (Cisteil)
+    ("7. CUIDADOS DE ARMANEZAMENTO DO MEDICAMENTO", "armazenamento"),  # erro de digitação (Kaodine)
+    ("10. SUSPERDOSE", "superdose"),  # idem
+])
+def test_titulos_com_variacao_das_bulas_reais(linha, secao):
+    assert _titulo(linha)[1] == secao
+
+
+def test_remissao_quebrada_em_duas_linhas_nao_e_titulo():
+    # "...(veja o item 8." + "POSOLOGIA E MODO DE USAR)." abria a posologia no meio das advertências.
+    assert _titulo("POSOLOGIA E MODO DE USAR).") is None
+    assert _titulo("CONTRAINDICAÇÕES e 8. POSOLOGIA E MODO DE USAR).") is None
+
+
+def test_rodape_colado_sai_e_vira_a_versao():
+    partes = separar_bulas([
+        "V.14_02/2026MODELO DE BULA PARA O PROFISSIONAL DE SAÚDE\n4. CONTRAINDICAÇÕES\nNão use.\n"
+        "V.14_02/20265. ADVERTÊNCIA E PRECAUÇÕES\nCuidado.\nV. 03 12/2025Registro 1.5423.0140"
+    ])
+    assert len(partes) == 1
+    p = partes[0]
+    assert [s.secao for s in p.secoes] == ["outras", "contraindicacoes", "advertencias"]
+    assert p.versao == "V.14_02/2026" and p.registros == ["1.5423.0140"]
+    assert "V." not in " ".join(s.texto for s in p.secoes)
+
+
+def test_pdf_com_duas_bulas_separadas_pelo_historico():
+    paginas = [
+        "TYLALGIN\nV.05_05/2022MODELO DE BULA PARA O PROFISSIONAL DE SAÚDE\nFORMA FARMACÊUTICA E APRESENTAÇÃO:\n"
+        "Solução gotas de 200mg/mL\n1. INDICAÇÕES\nDor e febre.\n10. SUPERDOSE\nSuporte.\nRegistro M.S. nº 1.5423.0008",
+        "V.05_05/2022Anexo B\nHistórico de Alteração para a Bula\n15/06/2018 Notificação 9. Reações Adversas\n"
+        "V.04_05/2022MODELO DE BULA PARA O PROFISSIONAL DE SAÚDE\nFORMA FARMACÊUTICA E APRESENTAÇÃO:\n"
+        "Comprimido de 750mg\n1. INDICAÇÕES\nDor.",
+        "8. POSOLOGIA E MODO DE USAR\n1 comprimido.\nRegistro M.S. nº 1.5423.0008\nHistórico de Alteração da Bula\nlixo",
+    ]
+    gotas, comprimido = separar_bulas(paginas)
+    assert (gotas.versao, comprimido.versao) == ("V.05_05/2022", "V.04_05/2022")
+    assert (gotas.apresentacao, comprimido.apresentacao) == ("Solução gotas de 200mg/mL", "Comprimido de 750mg")
+    assert gotas.registros == comprimido.registros == ["1.5423.0008"]
+    assert [s.secao for s in comprimido.secoes] == ["outras", "indicacoes", "posologia"]
+    # as páginas continuam as do PDF, e a tabela do histórico não entra em nenhuma bula
+    assert (comprimido.secoes[1].pagina_inicio, comprimido.secoes[2].pagina_inicio) == (2, 3)
+    texto = " ".join(s.texto for p in (gotas, comprimido) for s in p.secoes)
+    assert "Notificação" not in texto and "lixo" not in texto
+    with pytest.raises(ValueError, match="2 bulas"):
+        separar_secoes(paginas)
+
+
+def test_referencias_bibliograficas_sao_puladas_ate_o_proximo_titulo():
+    secoes = separar_secoes([
+        "2. RESULTADOS DE EFICÁCIA\nReduziu a dor.\nReferências bibliográficas:\n1. Silva A. J Med 2001.\n"
+        "3. CARACTERÍSTICAS FARMACOLÓGICAS\nAge rápido.\nDIZERES LEGAIS\nSAC.\nREFERÊNCIAS BIBLIOGRÁFICAS\nZambon S.p.A."
+    ])
+    assert [(s.secao, s.texto) for s in secoes] == [
+        ("resultados_eficacia", "Reduziu a dor."), ("caracteristicas_farmacologicas", "Age rápido."), ("outras", "SAC."),
+    ]
+
+
+def test_hifen_de_palavra_composta_no_fim_da_linha_cola_na_proxima():
+    secoes = separar_secoes(["4. CONTRAINDICAÇÕES\nAlergia a outros anti-\nhistamínicos e uso do cirurgião-\ndentista."])
+    assert secoes[0].texto == "Alergia a outros anti-histamínicos e uso do cirurgião-dentista."
+
+
+def test_dizeres_legais_sem_titulo_saem_da_superdose():
+    secoes = separar_secoes([
+        "10. SUPERDOSE\nTratamento de suporte.\nVENDA SEM PRESCRIÇÃO MÉDICA\nRegistro M.S. nº 1.5423.0067\nCNPJ"
+    ])
+    assert [(s.secao, s.texto) for s in secoes] == [
+        ("superdose", "Tratamento de suporte."), ("outras", "VENDA SEM PRESCRIÇÃO MÉDICA Registro M.S. nº 1.5423.0067 CNPJ"),
+    ]

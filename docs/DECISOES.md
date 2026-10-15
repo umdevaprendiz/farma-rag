@@ -239,3 +239,38 @@ Decisões:
   chamam o cliente próprio (`app/llm/ollama.py`), que já usa JSON Schema no `format`.
   Dependência nova: `langgraph>=1.2,<2` (instalado 1.2.15; traz `langchain-core` e `langsmith`,
   que só envia algo se `LANGSMITH_TRACING` estiver ligado).
+
+## 17. Bulas reais: lote pelo manifesto, várias bulas por PDF, registro e forma (2026-10-15)
+Primeira ingestão das bulas reais (lote 1 de `FONTES.md`: 20 PDFs). `python -m ingestao.processar_lote`
+lê `data/bulas_manifesto.json` e grava 24 bulas em `data/processed/bulas/`.
+
+Encontrado nos PDFs e decidido:
+- **Um PDF pode ter mais de uma bula.** Tylalgin traz gotas, comprimido e sachê; Kaodine, loção
+  10 mg/mL e loção cremosa 50 mg/mL; Delumi, duas faixas de concentração. Cada bula termina na
+  tabela "Histórico de Alteração da Bula" (descartada: não é conteúdo clínico) e a próxima começa
+  em "MODELO DE BULA PARA O PROFISSIONAL...". Por isso o manifesto descreve as `partes` de cada
+  PDF, e o lote recusa o PDF se o número de bulas lidas não bater.
+- **O manifesto é a entrada do lote**, não 20 comandos à mão: arquivo, SHA-256, fabricante, registro,
+  princípio ativo (grafia do catálogo), nomes comerciais e, por parte, medicamento e forma. Nada é
+  gravado para um PDF cujo SHA-256 difere do `FONTES.md` (há teste que confere os dois) ou cujo
+  registro não aparece impresso na bula.
+- **`Bula` ganha `numero_registro`, `forma_farmaceutica` e `versao`** (opcionais só por causa das
+  bulas de teste). O registro é para a fonte completa na resposta (item "fonte em toda resposta");
+  a forma é o que vai permitir perguntar "gotas ou comprimido?" quando houver duas bulas do mesmo
+  princípio ativo. No banco, `carregar_banco` acrescenta as colunas com `ADD COLUMN IF NOT EXISTS`.
+- **Versão:** a Geolab imprime um código ("V.01_12/2025") colado no rodapé de cada página; ele vira
+  `versao`, e `data_versao` = dia 01 daquele mês. Organon e Vitamedic não imprimem código: a data vem
+  do manifesto (data de aprovação ou a mais recente do histórico).
+- **Nome:** `medicamento` segue o que o PDF diz. Cisteil e Albel se apresentam como "genérico" no PDF,
+  mas o registro impresso é o do similar com marca no CSV; a marca fica em `nomes_comerciais`.
+- **Ajustes no `separar_secoes`**, todos vistos nas bulas: rodapé colado no começo da linha
+  ("V.14_02/20265. ADVERTÊNCIA...") é retirado antes de procurar título; título no singular
+  ("ADVERTÊNCIA") e com erro de digitação da própria bula ("ARMANEZAMENTO", "SUSPERDOSE"); linha
+  com "(" ou terminando em ")" não é título (a remissão "(veja o item 8." + "POSOLOGIA E MODO DE
+  USAR)." abria a posologia no meio das advertências do Cozaar e do Omenax, e 4 seções sumiam);
+  "Referências bibliográficas" pula até o próximo título (15 dos 20 PDFs têm, a maioria no fim de
+  "Resultados de eficácia"); hífen no fim da linha é mantido e cola na linha seguinte (os 30 casos
+  medidos eram palavras compostas: "anti-histamínico", "observou-se"); bula sem o título "DIZERES
+  LEGAIS" (ambroxol) abre essa seção em "VENDA SEM PRESCRIÇÃO" / "Registro M.S." depois da superdose.
+- **Resultado:** as 24 bulas têm as 8 seções esperadas e o registro conferido. Limite conhecido:
+  tabelas (doses por peso, por exemplo) saem como texto corrido.

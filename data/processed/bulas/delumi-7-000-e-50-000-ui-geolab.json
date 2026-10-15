@@ -1,0 +1,109 @@
+{
+  "id": "delumi-7-000-e-50-000-ui-geolab",
+  "medicamento": "Delumi 7.000 e 50.000 UI",
+  "principio_ativo": "colecalciferol",
+  "nomes_comerciais": [
+    "Delumi"
+  ],
+  "fabricante": "Geolab",
+  "tipo_bula": "profissional",
+  "data_versao": "2025-12-01",
+  "fonte_pdf": "data/raw/bulas/colecalciferol_delumi-geolab_profissional.pdf",
+  "processado_em": "2026-10-15T15:29:56-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 12,
+      "pagina_fim": 12,
+      "texto": "MODELO DE BULA PARA O PROFISSIONAL DA SAÚDE Esta bula é continuamente atualizada. Favor proceder a sua leitura antes de utilizar o medicamento Delumi® colecalciferol (Vitamina D3) FORMA FARMACÊUTICA E APRESENTAÇÕES:\nDelumi® 7.000 U.I.\nEmbalagem contendo 8 e 30 comprimidos revestidos Delumi® 50.000 U.I.\nEmbalagem contendo 4 e 8 comprimidos revestidos USO ORAL USO ADULTO"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÕES:",
+      "pagina_inicio": 12,
+      "pagina_fim": 12,
+      "texto": "Delumi® 7.000 U.I.\nCada comprimido revestido contém:\nColecalciferol (vitamina D3) (equivalente a 7.000 U.I.).......................................................................70 mg Excipientes: celulose microcristalina, lactose, croscarmelose sódica, dióxido de sílicio, estearato de magnésio, álcool polivinílico, macrogol, talco, dióxido de titânio, amarelo crepúsculo laca de alumínio, amarelo de quinolina e água purificada.\nDelumi® 50.000 U.I.\nCada comprimido revestido contém:\nColecalciferol (vitamina D3) (equivalente a 50.000 U.I.)...................................................................500 mg Excipientes: celulose microcristalina, lactose, croscarmelose sódica, dióxido de sílicio, estearato de magnésio, álcool polivinílico, macrogol, talco, dióxido de titânio, vermelho allura 129 laca de alumínio e água purificada."
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 12,
+      "pagina_fim": 12,
+      "texto": "Delumi® (colecalciferol) é indicado para prevenção e tratamento de doenças crônicas osteometabólicas provocadas pelos níveis séricos deficientes (20 ng/ml) e insuficientes (entre 21 ng/ml e 29 ng/ml) de 25(OH)D, como osteoporose, osteomalácia, desmineralização óssea em mulheres pré e pós-menopausa e prevenção de quedas e fraturas em idosos."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2. RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 12,
+      "pagina_fim": 13,
+      "texto": "De acordo com HOLICK et al (2011) a concentração desejável de 25(OH)D é de no mínimo 30ng/mL.\fSendo assim, a concentração de 25(OH)D entre 21 e 29 ng/mL caracteriza a insuficiência de vitamina D, e a concentração inferior a 20 ng/mL caracteriza deficiência. Estima-se que 1 bilhão de pessoas ao redor do mundo apresentam deficiência ou insuficiência de vitamina D.\nQuando dosagens de 25(OH)D demonstrarem valores inferiores a 20ng/mL, faz-se necessária a dose de 1.000UI/dia a 2.000UI/dia até atingir o valor desejado, 7.000UI/semana durante 3 meses ou dose de ataque de 50.000UI/semana durante 2 meses. O tempo de uso pode variar conforme o período em que os níveis de 25(OH)D forem alcançados. Em casos de dosagens de 25(OH)D acima de 20ng/mL e abaixo de 30ng/mL, doses de 50.000UI por mês ou 100.000UI a cada 2 meses, durante 4 meses, demonstraram ser eficazes. Para valores séricos acima de 30ng/mL a dose de manutenção de 50.000UI/mês durante 4 meses foi eficaz. É importante realizar a monitorização dos níveis de 25(OH)D.\nDiversos estudos têm proposto esquemas diferentes de doses e o aspecto mais importante parece ser a dose cumulativa e não sua frequência. O estudo realizado por TAKACS et al (2016) comparou 3 posologias em adultos com deficiência de vitamina D (25(OH)D < 20ng/mL): 1000UI/dia, 7.000UI/semana, 30.000UI/mês e comprovou que os 3 grupos de tratamento apresentaram aumento semelhante dos níveis séricos de 25(OH)D, demonstrando perfis de segurança e eficácia iguais."
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 14,
+      "pagina_fim": 14,
+      "texto": "A vitamina D3 atua regulando positivamente a homeostasia do cálcio. É essencial para promover a absorção e utilização do cálcio e fosfato, e para calcificação adequada dos ossos.\nA vitamina D3, o paratôrmonio e a calcitonina são os principais reguladores da concentração de cálcio no plasma. O mecanismo de ação da vitamina D3 para manter as concentrações de cálcio e fosfato normais é facilitar a absorção destes íons no intestino delgado, potencializando sua mobilização nos ossos e diminuindo sua excreção renal.\nEsses processos servem para manter as concentrações de cálcio e fosfato no plasma em níveis ideais, essenciais para a atividade neuromuscular normal, mineralização dos ossos e outras funções dependentes do cálcio.\nO colecalciferol (vitamina D3) é um metabólito da 7-deidrocolesterol que, ativado pelos raios-ultravioleta B (UVB), se transforma em pré-vitamina D3 que, por sua vez é metabolizada em colecalciferol. Este é incorporado nos quilomícrons e transportado pelo sistema linfático para a circulação venosa onde se liga à proteína ligadora de vitamina D, que transporta o colecalciferol para o fígado, onde é convertida a 25-hidroxivitamina (25(OH)D). Esta forma é biologicamente inativa e precisa ser convertida nos rins pela 25-hidroxivitamina D 1α-hidroxilase à sua forma ativa, a 1,25-dihidroxivitamina D (1,25(OH) D).\n2 A vitamina D está implicada em uma série de vias metabólicas, sendo encontrados receptores da vitamina D (RVD) em praticamente todos os tecidos.\nO início da ação da vitamina D após a ingestão de uma dose ocorre entre o período de 10 a 24 horas.\nReferência:\n- HOLICK, M. Vitamin D Deficiency. The New England Journal of Medicine 357;3 (2007) 266-281.\n- PETERS, B.S.E.; MARTINI, L.A. Funções plenamente reconhecidas de nutrientes VitaminaD. International Life Sciences Institute: 2ª ed. 2014.\n- SMITH, H.S.; PAPPAGALLO, M. Essential Pain Pharmacology: The Prescriber’s Guide. Cambridge University Press, 2012."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4. CONTRAINDICAÇÕES",
+      "pagina_inicio": 14,
+      "pagina_fim": 14,
+      "texto": "Delumi® (colecalciferol) não deve ser utilizado em pacientes que apresentam hipersensibilidade aos componentes da fórmula. É contraindicado também em pacientes que apresentam hipervitaminose D (excesso de vitamina D) e elevadas taxas de cálcio (hipercalcemia)."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 14,
+      "pagina_fim": 14,
+      "texto": "Em caso de hipervitaminose D, recomenda-se administrar dieta com baixa quantidade de cálcio, grandes quantidades de líquidos e se necessário glicocorticóides (como a hicrocortisona, prednisona)."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 15,
+      "pagina_fim": 15,
+      "texto": "Informe seu médico caso você utilize antiácidos que contenham magnésio, pois o uso concomitante com vitamina D pode resultar em hipermagnesemia. Não se recomenda o uso simultâneo de vitamina D e calcifediol, devido ao efeito aditivo e aumento do potencial tóxico.\nPreparações que contenham cálcio em doses elevadas podem provocar hipercalcemia.\nO uso de diuréticos tiazídicos (hidroclorotiazida, clortalidona) quando usados concomitantemente com vitamina D aumentam o risco de hipercalcemia.\nO uso concomitante à fenobarbital ou fenitoína pode ocasionar redução da atividade da vitamina D.\nAs substâncias colestiramina e colestipol podem reduzir a absorção de Vitaminas lipossoluvéis.\nAs estatinas (atorvastatina, lovastatina e sinvastatina) podem reduzir a síntese de vitamina D.\nNão há restrições específicas quanto à ingestão simultânea de alimentos."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 15,
+      "pagina_fim": 16,
+      "texto": "Delumi® deve ser armazenado em temperatura ambiente (de 15°C e 30°C). Proteger da luz e da umidade.\nPrazo de validade: 24 meses a partir da data de fabricação.\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\nDelumi® 7.000 U.I. apresenta-se como comprimido circular semiabaulado liso com coloração amarelada.\nDelumi® 50.000 U.I. apresenta-se como comprimido oblongo semiabaulado liso com coloração vermelha.\fAntes de usar, observe o aspecto do medicamento. Caso ele esteja no prazo de validade e você observe alguma mudança no aspecto, consulte o farmacêutico para saber se poderá utilizá-lo.\nTodo medicamento deve ser mantido fora do alcance das crianças."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 16,
+      "pagina_fim": 16,
+      "texto": "USO ORAL Para pacientes com concentração de 25(OH)D acima de 30 ng/ml:\n- Delumi® 7.000 UI Administrar 1 comprimido por semana, durante 3 meses ou até atingir o valor desejado.\n- Delumi® 50.000 UI Administrar 1 comprimido por mês durante 4 meses ou até atingir o valor desejado.\nPara pacientes com concentração de 25(OH)D acima de 20 ng/ml e abaixo de 30 ng/ml:\n- Delumi® 50.000 UI Administrar 1 comprimido por mês ou 2 comprimidos a cada 2 meses, durante 4 meses ou até atingir valor desejado.\nPara pacientes com concentração de 25(OH)D abaixo de 20 ng/ml:\n- Delumi® 7.000UI: Ingerir, por via oral, 01 comprimido ao dia durante seis a oito semanas ou até atingir o valor desejado.\n- Delumi® 50.000UI: Ingerir, por via oral, 01 comprimido por semana durante seis a oito semanas ou até atingir o valor desejado.\nEsclarecemos que a resposta ao tratamento com vitamina D é muito variável. Portanto o médico pode prescrever diferentes posologias, dependendo da doença, das características individuais de cada paciente, do nível sérico de 25(OH)D encontrado e da resposta ao tratamento.\nEste medicamento não deve ser partido, aberto ou mastigado."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 16,
+      "pagina_fim": 16,
+      "texto": "Os efeitos adversos e a toxicidade associada a este medicamento estão relacionados à sua ingestão em quantidade excessiva. Estudos indicam que doses superiores a 50.000 UI/dia de vitamina D durante vários meses causam intoxicação, levando a concentrações séricas de 25 (OH)D superiores a 150 ng/mL (374 nmol/L).\nOs sintomas clínicos de excesso de vitamina D são resultado de hipercalcemia e incluem: letargia, confusão, irritabilidade, depressão, alucinações e em casos extremos, estupor e coma. Sintomas gastrointestinais também podem ocorrer como anorexia, naúsea, vômito, constipação, poliúria e cólica renal."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 17,
+      "pagina_fim": 17,
+      "texto": "Na ocorrência de superdosagem, a administração do produto deve ser imediatamente interrompida, devendo o paciente procurar o médico para que este possa orientá-lo com relação às medidas a serem tomadas. A intoxicação por vitamina D ocorre quando altas doses foram ingeridas inadvertida ou intencionalmente. Em um estudo a administração de 10.000UI de vitamina D por dia durante cinco meses não indicou sinais de toxicidade.\nReferência:\n- HOLICK, M.F.; BINKLEY, N.C.; BISCHOFF-FERRARI, A. H.; GORDON, C. M.; HANLEY, D. A.; HEANEY, R.\nP.; MURAD, H.; WEAVER, C. M. Evaluation, Treatment, and Prevention of Vitamin D Deficiency: an Endocrine Society Clinical Practice Guideline. J Clin Endocrinol Metab, (2011), 96 (7): 1911-1930.\nEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações."
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "DIZERES LEGAIS",
+      "pagina_inicio": 17,
+      "pagina_fim": 18,
+      "texto": "Registro 1.5423.0302 Registrado e Produzido por:\nGeolab Indústria Farmacêutica S/A CNPJ: 03.485.572/0001-04 VP. 1B QD.08-B MÓDULOS 01 A 08 - DAIA - ANÁPOLIS – GO www.geolab.com.br Indústria Brasileira SAC: 0800 701 6080 VENDA SOB PRESCRIÇÃO Esta bula foi aprovada pela Anvisa em 12/12/2025.\fAnexo B"
+    }
+  ],
+  "numero_registro": "1.5423.0302",
+  "forma_farmaceutica": "comprimido revestido",
+  "versao": "V.03_12/2025"
+}

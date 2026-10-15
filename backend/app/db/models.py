@@ -38,6 +38,9 @@ class Bula(Base):
     fabricante: Mapped[str] = mapped_column(Text)
     data_versao: Mapped[date] = mapped_column(Date)
     fonte_pdf: Mapped[str] = mapped_column(Text)
+    numero_registro: Mapped[str | None] = mapped_column(Text)
+    forma_farmaceutica: Mapped[str | None] = mapped_column(Text)
+    versao: Mapped[str | None] = mapped_column(Text)
 
 
 class Chunk(Base):
