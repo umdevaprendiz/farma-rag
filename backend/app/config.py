@@ -15,12 +15,12 @@ class Settings(BaseSettings):
     embed_modelo: str = "bge-m3"
     embed_dim: int = 1024
 
-    # PostgreSQL. O banco é montado a partir de partes: DB_HOST é "localhost" nos scripts
+    # PostgreSQL. O banco é montado a partir de partes: DB_HOST é "127.0.0.1" nos scripts
     # rodados no host (ingestão, benchmark) e "db" dentro do Docker Compose.
     db_user: str = "farmarag"
     db_password: str = "senha"
     db_name: str = "farmarag"
-    db_host: str = "localhost"
+    db_host: str = "127.0.0.1"  # não "localhost": ver .env.example
     db_port: int = 5432
 
     top_k: int = 3
