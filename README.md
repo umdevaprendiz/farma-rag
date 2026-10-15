@@ -59,12 +59,13 @@ NÃO ENCONTREI: não tenho a bula desse medicamento
 | Ingestão: PDF/TXT → JSON por seção → trechos → embeddings com cache | ✅ pronto, testado só com bula inventada | `ingestao/processar_bula.py`, `ingestao/gerar_chunks.py` |
 | Busca vetorial em memória (numpy) | ✅ pronto | `app/db/busca_vetorial.py` |
 | Busca vetorial no PostgreSQL + pgvector | ✅ pronto, testado contra o numpy | `app/db/busca_pgvector.py`, `ingestao/carregar_banco.py` |
-| Geração com saída estruturada + validação de citações | ✅ pronto (uma tentativa) | `app/services/rag.py`, `app/services/citacoes.py` |
+| Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citacoes.py` |
+| Agente em grafo (LangGraph, 7 nós, rodadas 0 a 3) | ✅ pronto, testado com LLM falso e com a bula de teste | `app/services/grafo.py` |
 | Teste manual pelo terminal | ✅ pronto | `python -m benchmark.perguntar` |
 | Testes automáticos | ✅ 114 testes (7 precisam do PostgreSQL de pé) | `backend/tests/` |
 | Bulas reais dos 40 medicamentos do MVP | ⏳ próximo passo | `data/raw/`, `data/medicamentos_mvp.json` |
-| Checagem de fundamentação e rodadas 1 a 3 | 📐 desenhado | [`docs/DECISOES.md`](docs/DECISOES.md), seção 14 |
-| Perguntas de esclarecimento (rodada 0) | 📐 desenhado | seção 14 |
+| Checagem de fundamentação (números, doses, termos) | ✅ pronto | `app/services/fundamentacao.py` |
+| Perguntas de esclarecimento (rodada 0) | 🟡 sem nome reconhecido: pronto; forma farmacêutica ambígua: falta `forma` na bula | `app/services/grafo.py` |
 | Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metricas.py` |
 | API FastAPI | 🟡 contratos prontos, endpoints não | `app/schemas/api.py` |
 | Frontend React | ⬜ não iniciado | |
@@ -87,7 +88,7 @@ flowchart LR
   end
 
   subgraph RUN["Consulta"]
-    CLI["benchmark/perguntar.py"] --> RAG["rag.responder"]
+    CLI["benchmark/perguntar.py"] --> RAG["rag.responder<br/>grafo LangGraph"]
     RAG --> ACV["Acervo<br/>(bulas + trechos + catálogo)"]
     ACV --> MEM["IndiceEmMemoria<br/>numpy"]
     RAG --> OLL["Ollama<br/>bge-m3 + qwen2.5:1.5b"]
@@ -104,7 +105,7 @@ flowchart LR
 ```mermaid
 flowchart LR
   UI["Frontend React<br/>(Vite)"] -- "HTTP /api/v1" --> API["FastAPI<br/>container backend"]
-  API --> RAG["rag.responder<br/>rodadas 0 a 3"]
+  API --> RAG["rag.responder<br/>grafo LangGraph, rodadas 0 a 3"]
   RAG --> BV["BuscaPgvector"]
   BV --> PG[("PostgreSQL + pgvector<br/>bulas, chunks, consultas")]
   RAG --> OLL["Ollama nativo<br/>host.docker.internal:11434"]
@@ -127,40 +128,41 @@ A busca fica atrás do `Protocol` `BuscaVetorial`. `IndiceEmMemoria` (numpy) e `
 | Embeddings | `app/llm/embeddings.py` + cache | `bge-m3` (1024 dimensões). O texto embutido leva medicamento e seção na frente. Cache SQLite com chave `hash(modelo + texto)`, gravado a cada lote de 8: interromper e retomar não refaz nada |
 | Carregar o banco | `ingestao/carregar_banco.py` | `CREATE EXTENSION vector`, `create_all` e troca de `bulas` e `chunks` com `TRUNCATE` numa transação só; `consultas` não é tocada |
 
-### 2. Consulta
+### 2. Consulta: o agente em grafo (LangGraph)
+
+`rag.responder` executa um grafo de 7 nós (`app/services/grafo.py`). Só 2 chamam o LLM; os caminhos são decididos nas arestas condicionais, em código. Cada chamada ao LLM custa 30–45 s nesta CPU, então as rodadas são **adaptativas**: uma nova só começa se a anterior falhou e se ainda cabe no orçamento de tempo.
 
 ```mermaid
-sequenceDiagram
-  autonumber
-  participant U as Usuário
-  participant R as rag.responder
-  participant D as medicamentos.detectar
-  participant B as BuscaVetorial
-  participant O as Ollama
-  participant V as validar_saida
-
-  U->>R: pergunta (+ filtro opcional de princípio ativo)
-  R->>D: detectar nomes contra o catálogo
-  alt só medicamentos sem bula indexada
-    D-->>R: nao_indexados
-    R-->>U: nao_encontrada (medicamento_nao_indexado), sem LLM
-  else indexados ou nenhum nome reconhecido
-    R->>O: embed(pergunta) com bge-m3
-    R->>B: top_k trechos, k dividido entre os princípios ativos
-    B-->>R: trechos + score de cosseno
-    Note over R: descarta abaixo de LIMIAR_SIMILARIDADE (se calibrado)
-    R->>O: chat com JSON Schema {status, afirmacoes[{texto, trecho}]}
-    O-->>R: JSON
-    R->>V: monta "frase [n]." e confere as citações
-    alt citações válidas
-      R-->>U: respondida + fontes marcadas como citadas
-    else modelo disse nao_encontrada
-      R-->>U: nao_encontrada (sem_contexto)
-    else JSON quebrado ou citação inválida
-      R-->>U: erro SAIDA_INVALIDA / CITACAO_INVALIDA (502)
-    end
-  end
+flowchart TD
+  S((início)) --> EN["entender<br/>detectar + seção da pergunta<br/>(sem LLM)"]
+  EN -- "nenhum nome e sem filtro" --> ES["esclarecer<br/>opções de medicamento"]
+  EN -- "só não indexados /<br/>filtro desconhecido" --> FI
+  EN -- "medicamento claro" --> BU["buscar<br/>rodada 1: top_k<br/>rodada 2+: seção da pergunta,<br/>trechos novos primeiro"]
+  BU -- "nenhum trecho" --> FI
+  BU --> GE["gerar<br/>JSON {status, afirmacoes}<br/>(LLM)"]
+  GE --> VA{"validar<br/>citações + fundamentação<br/>(sem LLM)"}
+  VA -- "falhou e cabe outra rodada" --> BU
+  VA -- "recusou com trechos da seção errada<br/>(só na rodada 1)" --> BU
+  VA -- "passou na rodada 3" --> VL{"verificar_llm<br/>cada afirmação: sim/não<br/>(LLM)"}
+  VA -- "passou / recusou / sem rodadas" --> FI
+  VL --> FI
+  ES --> FI["finalizar<br/>Resultado"]
+  FI --> E((fim))
 ```
+
+| Nó | LLM | O que faz |
+|---|---|---|
+| `entender` | não | Detecta o medicamento (ou aplica o filtro) e infere as seções da pergunta (`services/intencao.py`: "gravidez" → contraindicações e advertências, "dose" → posologia…) |
+| `esclarecer` | não | Nenhum medicamento reconhecido: devolve `precisa_esclarecimento` com as opções; o reenvio vem com o filtro escolhido |
+| `buscar` | não (embedding, 1 vez só) | Rodada 1: top_k por semelhança. Rodadas seguintes: trechos das seções indicadas, os ainda não usados primeiro |
+| `gerar` | **sim** | Geração com JSON Schema. Da rodada 2 em diante, uma observação genérica diz o que falhou (sem repetir a afirmação errada, que o modelo copiaria) |
+| `validar` | não | `validar_saida` + checagem de fundamentação (`services/fundamentacao.py`): todo número tem de estar no trecho citado, todo número com unidade de dose com a mesma unidade, e a maioria dos termos da frase também |
+| `verificar_llm` | **sim** | Só na rodada 3: "o trecho diz isso? sim/não" por afirmação. Pode usar um modelo maior (`LLM_MODELO_VERIFICACAO`) sem deixar a pergunta comum mais lenta |
+| `finalizar` | não | Monta o `Resultado` com as rodadas, cada tentativa e o motivo de cada reprovação |
+
+Nenhuma resposta não verificada sai do grafo: se as rodadas acabam (`RODADAS_MAX=3`) ou o tempo acaba (`ORCAMENTO_S=150`), a resposta é **erro 502 com a explicação de cada rodada**. Na prática a maioria das perguntas termina na rodada 1, com uma chamada ao LLM.
+
+**Por que não "rodar 3 vezes e comparar":** com temperatura 0,1 as três saídas saem quase iguais, então concordância não prova correção (o erro sistemático se repete), e a latência triplicaria sempre.
 
 Detalhes que importam:
 
@@ -177,8 +179,9 @@ Cada falha tem código próprio e status HTTP definido (`app/schemas/api.py`):
 |---|---|---|
 | `MEDICAMENTO_NAO_ENCONTRADO` | 404 | Filtro com princípio ativo sem bula indexada |
 | `ENTRADA_INVALIDA` | 422 | Pergunta fora de 5–500 caracteres, filtro vazio, mais de 3 medicamentos |
-| `SAIDA_INVALIDA` | 502 | O modelo devolveu JSON quebrado |
-| `CITACAO_INVALIDA` | 502 | Citação para trecho não enviado ou incoerente |
+| `SAIDA_INVALIDA` | 502 | O modelo devolveu JSON quebrado até a última rodada |
+| `CITACAO_INVALIDA` | 502 | Citação para trecho não enviado ou incoerente até a última rodada |
+| `RESPOSTA_NAO_VERIFICADA` | 502 | Nenhuma rodada passou na fundamentação ou na verificação; a mensagem explica cada rodada |
 | `OLLAMA_INDISPONIVEL` / `BANCO_INDISPONIVEL` | 503 | Dependência fora do ar |
 | `TEMPO_ESGOTADO` | 504 | Passou de `TIMEOUT_LLM_S` |
 
@@ -251,7 +254,8 @@ erDiagram
 |---|---|---|
 | RAG | Chunking por seção com sobreposição, embeddings multilíngues (`bge-m3`), similaridade de cosseno, filtro por metadado (princípio ativo), divisão do top-k entre entidades, citação por trecho | `ingestao/gerar_chunks.py`, `app/db/`, `app/services/rag.py` |
 | LLM local | Ollama, modelo de 1,5B em CPU, saída restrita por JSON Schema (*structured output*), engenharia de prompt para modelo pequeno, medição de tokens/s | `app/llm/ollama.py`, `benchmark/medir_ambiente.py` |
-| Confiabilidade | Recusa antes do LLM, validação determinística das citações, catálogo de erros com HTTP próprio, desenho de verificação em rodadas adaptativas | `app/services/citacoes.py`, `app/schemas/api.py`, `docs/DECISOES.md` §14 |
+| Confiabilidade | Recusa antes do LLM, validação determinística das citações, checagem de fundamentação (números, doses e termos no trecho citado), verificação por LLM só na última rodada, catálogo de erros com HTTP próprio | `app/services/citacoes.py`, `app/services/fundamentacao.py`, `app/schemas/api.py` |
+| Agentes | LangGraph: estado tipado (`TypedDict`), nós com responsabilidade única, decisões em arestas condicionais determinísticas, laço de rodadas com limite e orçamento de tempo, modelo diferente por nó | `app/services/grafo.py`, `docs/DECISOES.md` §16 |
 | Banco vetorial | PostgreSQL 17 + pgvector, coluna `vector(1024)`, operador `<=>`, decisão consciente de não usar HNSW, carga transacional com `TRUNCATE` | `app/db/busca_pgvector.py`, `ingestao/carregar_banco.py` |
 | Python | Pydantic v2 e pydantic-settings para contratos e configuração, `typing.Protocol` para interfaces, dataclasses, numpy, SQLAlchemy 2 tipado (`Mapped`), psycopg 3, `urllib` para o cliente HTTP | `backend/app/` |
 | Processamento de texto | Extração de PDF (`pdfplumber`), separação de seções por regex, normalização de nomes, tolerância a erro de digitação, rastreio de página com `\f` | `ingestao/`, `app/services/medicamentos.py` |
@@ -277,60 +281,14 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 
 Bulas do profissional de saúde dos 40 medicamentos do MVP (`data/medicamentos_mvp.json`), baixadas à mão de fontes oficiais e registradas em `data/FONTES.md`. Com elas, ajustar `separar_secoes` ao que cada fabricante escreve: variações de título, cabeçalho e rodapé repetidos, hifenização e tabelas.
 
-### 2. Verificação em rodadas
+### 2. O que falta das rodadas e do esclarecimento
 
-Hoje a validação garante que a citação existe, não que a frase está sustentada pelo trecho: uma resposta inventada com citação válida passa. Cada chamada ao LLM custa 30–45 s nesta CPU, então as rodadas são **adaptativas**: só existe uma nova tentativa se a anterior falhar.
+- **Forma farmacêutica ambígua** (diclofenaco sódico comprimido × gel): o nó `esclarecer` já existe, mas a bula ainda não tem o campo `forma`. Entra com as bulas reais.
+- **Histórico das rodadas no banco**: `consultas` ganha `rodadas`, `tentativas` (JSON) e `consulta_origem_id` (UUID, sem FK), gravados pela API.
+- **"Não ajudou, explique de outro jeito"**: o balconista pede outra explicação; o grafo entra direto em `buscar` com os trechos já mostrados excluídos e passa pelas mesmas validações. Não precisa de nó novo.
+- O esclarecimento só pergunta sobre medicamento, forma farmacêutica ou seção. **Nunca** pergunta dado do paciente (idade, gestação, doenças), por causa da LGPD e da regra "não personaliza conduta". No máximo 1 por pergunta: o reenvio já vem com o filtro.
 
-```mermaid
-flowchart TD
-  P["Pergunta"] --> R0{"Rodada 0, sem LLM<br/>detectar + catálogo"}
-  R0 -- "só não indexados" --> NI["nao_encontrada<br/>medicamento_nao_indexado"]
-  R0 -- "nenhum nome e sem filtro,<br/>ou nome ambíguo" --> ESC["precisa_esclarecimento<br/>pergunta + opções"]
-  R0 -- "medicamento claro" --> R1
-
-  R1["Rodada 1<br/>busca top_k + geração JSON"] --> V1{"validar_saida +<br/>checagem de fundamentação"}
-  V1 -- "passou" --> OK["respondida"]
-  V1 -- "falhou" --> R2
-
-  R2["Rodada 2<br/>nova busca: filtro pela seção inferida,<br/>trechos diferentes dos já usados,<br/>modelo informado do que falhou"] --> V2{"mesma verificação"}
-  V2 -- "passou" --> OK
-  V2 -- "falhou" --> R3
-
-  R3["Rodada 3<br/>última geração + verificação por LLM<br/>(cada afirmação está nos trechos? sim/não)"] --> V3{"bateu?"}
-  V3 -- "sim" --> OK
-  V3 -- "não" --> E502["erro 502<br/>mensagem explicando o que falhou"]
-
-  OK --> H[("consultas<br/>registra cada tentativa")]
-  E502 --> H
-```
-
-**Checagem de fundamentação (determinística, sem LLM):** todo número, dose e unidade da resposta tem de aparecer literalmente nos trechos citados, e a maioria dos termos-chave também. É barata, explicável e pega o erro mais perigoso em bula, que é dose ou intervalo errado.
-
-**Por que não "rodar 3 vezes e comparar":** com temperatura 0,1 as três saídas saem quase iguais, então concordância não prova correção (o erro sistemático se repete), e a latência triplicaria sempre.
-
-Limites: `RODADAS_MAX=3` e `ORCAMENTO_S` (tempo total, ex. 150 s). Nunca devolve resposta não verificada.
-
-### 3. Perguntas de esclarecimento
-
-Quando o nome é ambíguo (ex.: diclofenaco sódico × gel) ou nenhum medicamento é reconhecido, o sistema pergunta de volta em vez de arriscar. A API continua sem estado: o frontend reenvia a pergunta com o filtro escolhido.
-
-```mermaid
-sequenceDiagram
-  participant F as Frontend
-  participant A as API
-  F->>A: POST /api/v1/perguntas {"pergunta": "diclofenaco pode na gravidez?"}
-  A-->>F: 200 {status: precisa_esclarecimento,<br/>esclarecimento: {motivo, pergunta, opcoes[]}}
-  Note over F: mostra botões:<br/>"Diclofenaco sódico (comprimido)" / "Diclofenaco gel"
-  F->>A: POST /api/v1/perguntas {pergunta, principios_ativos: [...],<br/>consulta_origem_id}
-  A-->>F: 200 {status: respondida, resposta, fontes}
-```
-
-- No máximo **1** esclarecimento por pergunta, para não entrar em laço.
-- Só pergunta sobre medicamento, forma farmacêutica ou seção. **Nunca** pergunta dado do paciente (idade, gestação, doenças), por causa da LGPD e da regra "não personaliza conduta".
-
-Mudanças de contrato decorrentes: `status` ganha `precisa_esclarecimento`; `consultas` ganha `rodadas`, `tentativas` (JSON) e `consulta_origem_id` (UUID, sem FK).
-
-### 4. Benchmark próprio
+### 3. Benchmark próprio
 
 ```mermaid
 flowchart LR
@@ -343,7 +301,7 @@ flowchart LR
 
 As 10 perguntas sem resposta calibram o `LIMIAR_SIMILARIDADE`, que hoje está vazio de propósito. Perguntas de interação têm duas âncoras e só contam se as duas forem recuperadas.
 
-### 5. API
+### 4. API
 
 FastAPI sob `/api/v1`, com os contratos Pydantic já escritos em `app/schemas/api.py`, `BuscaPgvector` no lugar do índice em memória e cada consulta gravada em `consultas` + `consulta_fontes`.
 
@@ -355,7 +313,7 @@ FastAPI sob `/api/v1`, com os contratos Pydantic já escritos em `app/schemas/ap
 | `GET /api/v1/historico?limite=20&pagina=1` | Consultas recentes |
 | `GET /api/v1/historico/{consulta_id}` | Consulta completa com as fontes (snapshot) |
 
-### 6. Frontend e entrega
+### 5. Frontend e entrega
 
 Tela em React com a resposta, citações `[n]` clicáveis que abrem o trecho, fontes ao lado, aviso de medicamento não indexado, botões de esclarecimento e histórico. Depois: Docker Compose completo, resultados do benchmark publicados aqui e um vídeo curto de demonstração.
 
@@ -403,7 +361,7 @@ farma-rag/
 │   │   ├── db/                # models SQLAlchemy, BuscaVetorial, IndiceEmMemoria, BuscaPgvector
 │   │   ├── llm/               # cliente do Ollama (chat + embed) e cálculo de embeddings
 │   │   ├── schemas/           # contratos do dataset e da API, catálogo de erros
-│   │   └── services/          # acervo, detecção de medicamentos, citações, rag.responder
+│   │   └── services/          # acervo, detecção, citações, fundamentação, rag (peças) e grafo (agente LangGraph)
 │   └── tests/                 # pytest + fixtures (bula inventada "Exemplol")
 ├── ingestao/                  # PDF -> JSON -> trechos -> embeddings -> banco; catálogo ANVISA
 ├── benchmark/                 # medição do ambiente, métricas, teste manual (perguntar.py)

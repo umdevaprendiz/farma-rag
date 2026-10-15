@@ -12,6 +12,9 @@ class Settings(BaseSettings):
 
     ollama_url: str = "http://localhost:11434"
     llm_modelo: str = "qwen2.5:1.5b"
+    # Modelo do nó verificar_llm (só roda na rodada 3). Vazio = o mesmo de LLM_MODELO.
+    # Permite um modelo maior só onde ele pesa pouco no tempo total.
+    llm_modelo_verificacao: str | None = None
     embed_modelo: str = "bge-m3"
     embed_dim: int = 1024
 
@@ -32,6 +35,13 @@ class Settings(BaseSettings):
     num_ctx: int = 4096
     num_predict: int = 250
     timeout_llm_s: int = 120
+
+    # Rodadas de verificação (docs/DECISOES.md, seção 14). Uma nova rodada só começa se a
+    # anterior falhou e se ainda cabe no orçamento de tempo da pergunta.
+    rodadas_max: int = 3
+    orcamento_s: int = 150
+    # Fração mínima dos termos de cada afirmação que precisa aparecer no trecho citado.
+    fundamentacao_min_termos: float = 0.6
 
     cors_origens: str = "http://localhost:5173"
     medicamentos_conhecidos: str = "data/medicamentos_conhecidos.txt"

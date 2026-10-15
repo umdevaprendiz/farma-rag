@@ -9,3 +9,6 @@ psycopg[binary]>=3.2
 pgvector>=0.3
 numpy>=1.26
 httpx>=0.27
+# Orquestração do agente em grafo (services/grafo.py). Só o grafo: o Ollama é chamado pelo
+# cliente próprio (app/llm/ollama.py), sem langchain-ollama.
+langgraph>=1.2,<2

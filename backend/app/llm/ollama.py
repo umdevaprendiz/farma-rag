@@ -64,11 +64,14 @@ def embed(textos: list[str], s: Settings | None = None) -> list[list[float]]:
     return vetores
 
 
-def chat(sistema: str, usuario: str, formato: dict | str = "json", s: Settings | None = None) -> RespostaLLM:
-    """`formato`: "json" ou um JSON Schema (o Ollama restringe a saída a ele)."""
+def chat(
+    sistema: str, usuario: str, formato: dict | str = "json", s: Settings | None = None, modelo: str | None = None
+) -> RespostaLLM:
+    """`formato`: "json" ou um JSON Schema (o Ollama restringe a saída a ele).
+    `modelo`: vazio = LLM_MODELO."""
     s = s or get_settings()
     corpo = {
-        "model": s.llm_modelo,
+        "model": modelo or s.llm_modelo,
         "messages": [{"role": "system", "content": sistema}, {"role": "user", "content": usuario}],
         "stream": False,
         "format": formato,

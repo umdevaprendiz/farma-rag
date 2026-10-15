@@ -15,6 +15,8 @@ class CodigoErro(str, Enum):
     ENTRADA_INVALIDA = "ENTRADA_INVALIDA"
     SAIDA_INVALIDA = "SAIDA_INVALIDA"
     CITACAO_INVALIDA = "CITACAO_INVALIDA"
+    # Nenhuma rodada produziu resposta sustentada pelos trechos (fundamentação ou verificação).
+    RESPOSTA_NAO_VERIFICADA = "RESPOSTA_NAO_VERIFICADA"
     OLLAMA_INDISPONIVEL = "OLLAMA_INDISPONIVEL"
     BANCO_INDISPONIVEL = "BANCO_INDISPONIVEL"
     TEMPO_ESGOTADO = "TEMPO_ESGOTADO"
@@ -25,6 +27,7 @@ HTTP_POR_CODIGO: dict[CodigoErro, int] = {
     CodigoErro.ENTRADA_INVALIDA: 422,
     CodigoErro.SAIDA_INVALIDA: 502,
     CodigoErro.CITACAO_INVALIDA: 502,
+    CodigoErro.RESPOSTA_NAO_VERIFICADA: 502,
     CodigoErro.OLLAMA_INDISPONIVEL: 503,
     CodigoErro.BANCO_INDISPONIVEL: 503,
     CodigoErro.TEMPO_ESGOTADO: 504,
@@ -70,9 +73,25 @@ class FonteOut(BaseModel):
     score: float
 
 
+class OpcaoOut(BaseModel):
+    rotulo: str
+    principios_ativos: list[str]
+
+
+class EsclarecimentoOut(BaseModel):
+    """O frontend mostra as opções e reenvia a pergunta com o filtro escolhido."""
+
+    motivo: Literal["medicamento_nao_reconhecido"]
+    pergunta: str
+    opcoes: list[OpcaoOut]
+
+
 class RespostaOut(BaseModel):
     consulta_id: UUID
-    status: Literal["respondida", "nao_encontrada"]
+    status: Literal["respondida", "nao_encontrada", "precisa_esclarecimento"]
+    # Só preenchido quando status = precisa_esclarecimento.
+    esclarecimento: EsclarecimentoOut | None = None
+    rodadas: int = 0
     # Só preenchido quando status = nao_encontrada.
     motivo: Literal["sem_contexto", "medicamento_nao_indexado"] | None = None
     resposta: str | None

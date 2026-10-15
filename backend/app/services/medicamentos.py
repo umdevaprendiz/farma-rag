@@ -3,7 +3,7 @@
 Três resultados possíveis por pergunta:
 - medicamentos indexados encontrados -> busca filtrada por eles;
 - só medicamentos conhecidos, mas sem bula indexada -> nao_encontrada, sem chamar o LLM;
-- nenhum medicamento reconhecido -> segue sem filtro e o limiar de similaridade decide.
+- nenhum medicamento reconhecido -> o grafo pede esclarecimento (services/grafo.py, nó esclarecer).
 """
 
 import difflib

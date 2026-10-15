@@ -147,8 +147,10 @@ maioria dos termos-chave também. Passou = responde.
 da pergunta; trechos diferentes dos já usados) + geração, informando ao modelo o que falhou.
 
 **Rodada 3 (só se a 2 falhou).** Última tentativa, com verificação por LLM ("cada afirmação está
-nos trechos? sim/não"). Se não bater, `nao_encontrada` com `motivo = resposta_nao_verificada`.
-Nunca devolve resposta não verificada. Cada tentativa fica registrada em `consultas`.
+nos trechos? sim/não"). Se não bater, **erro 502 `RESPOSTA_NAO_VERIFICADA` com mensagem explicando
+o que falhou em cada rodada** (decisão do usuário em 2026-10-13; antes estava
+`nao_encontrada`/`resposta_nao_verificada`). Nunca devolve resposta não verificada. Cada tentativa
+fica registrada em `consultas`. Implementado como grafo do LangGraph: ver seção 16.
 
 Por que não "rodar 3 vezes e comparar": com temperatura 0,1 as três saídas saem quase iguais, então
 concordância não prova correção (o erro sistemático se repete), e triplica a latência sempre.
@@ -160,10 +162,10 @@ O frontend mostra botões e reenvia a pergunta com o filtro escolhido e `consult
 O sistema só pergunta sobre medicamento, forma farmacêutica ou seção; **nunca** por dado do
 paciente (idade, gestação, doenças), por causa da LGPD e da regra "não personaliza".
 
-Mudanças de contrato decorrentes (a implementar na etapa 3/5): `status` ganha
-`precisa_esclarecimento`; `motivo` ganha `resposta_nao_verificada`; `consultas` ganha `rodadas`
-(int), `tentativas` (JSON) e `consulta_origem_id` (UUID, sem FK); env `RODADAS_MAX=3` e
-`ORCAMENTO_S` (tempo total, ex. 150 s).
+Mudanças de contrato decorrentes: `status` ganha `precisa_esclarecimento` e `CodigoErro` ganha
+`RESPOSTA_NAO_VERIFICADA` (502), já feitos; env `RODADAS_MAX=3` e `ORCAMENTO_S=150`, já feitos.
+Falta, com a API: `consultas` ganha `rodadas` (int), `tentativas` (JSON) e `consulta_origem_id`
+(UUID, sem FK).
 
 ## 15. Fluxo de ponta a ponta por arquivos, para teste manual (2026-10-13)
 Do PDF à resposta sem banco, API ou tela. Da raiz, com `pip install -e backend` feito (ou
@@ -196,7 +198,44 @@ Decisões tomadas ao implementar:
   em jejum [2]") numa pergunta sobre armazenamento, e a validação de citações deixou passar.
 - Cliente do Ollama com `urllib` (biblioteca padrão), síncrono.
 
-**Limites de hoje:** uma tentativa só (as rodadas da seção 14 entram por cima); ainda **sem a
-checagem de fundamentação** da rodada 1, então uma resposta inventada com citação válida passa;
-testado só com a bula inventada de `backend/tests/fixtures/bula_exemplo.txt`; a leitura de PDF
-(`pdfplumber`) ainda não rodou nesta máquina, porque depende do Python 3.12 (seção 12).
+**Limites de hoje:** testado só com a bula inventada de `backend/tests/fixtures/bula_exemplo.txt`;
+a leitura de PDF (`pdfplumber`) ainda não rodou nesta máquina, porque depende do Python 3.12
+(seção 12). As rodadas e a checagem de fundamentação entraram em 2026-10-15 (seção 16).
+
+## 16. Agente em grafo com LangGraph (2026-10-15)
+Pedido do usuário: o agente decidir melhor o que fazer quando a resposta é fraca, em vez de uma
+tentativa só. A seção 14 virou um grafo de **7 nós** (`app/services/grafo.py`): `entender`,
+`esclarecer`, `buscar`, `gerar`, `validar`, `verificar_llm`, `finalizar`. `rag.responder`
+continua sendo a porta de entrada, com o mesmo `Resultado` (mais `rodadas` e `tentativas`).
+
+Decisões:
+- **Só 2 nós chamam o LLM** (`gerar` e `verificar_llm`). As decisões ficam nas arestas
+  condicionais (`depois_de_*`), em código. Motivo: 30-45 s por chamada nesta CPU, e o qwen2.5:1.5b
+  não é confiável para escolher caminho; o `detectar()` determinístico já faz isso melhor. Nada
+  de roteador, planejador ou reescritor de pergunta por LLM.
+- **Seção da pergunta sem LLM** (`services/intencao.py`): palavras-gatilho por seção. A rodada 1
+  não usa (busca só por semelhança, como antes); da rodada 2 em diante a busca fica nas seções
+  indicadas, com os trechos ainda não usados primeiro. Os já usados continuam elegíveis: o trecho
+  certo pode ter vindo na rodada 1 e o erro ter sido do modelo.
+- **Recusa do modelo também pode gerar nova rodada**, uma vez: se a pergunta indica seção e nenhum
+  trecho enviado era dela, a recusa é falha de busca, não falta de informação.
+- **Checagem de fundamentação** (`services/fundamentacao.py`): todo número da afirmação tem de
+  estar no trecho citado, e número com unidade de dose (mg, mL, gotas, %, °C…) com a mesma unidade;
+  pelo menos `FUNDAMENTACAO_MIN_TERMOS` (0,6, arredondado para baixo, mínimo 1) dos termos de 4+
+  letras também, comparando pelos 5 primeiros caracteres para aceitar flexão. Números por extenso
+  no trecho ("uma vez") valem como dígito. Conservadora: paráfrase demais reprova e custa uma rodada.
+- **A observação para a próxima rodada é genérica** ("trouxe informação que não está nos trechos"),
+  sem repetir a afirmação errada: o modelo pequeno copia o que estiver no prompt.
+- **Verificação por LLM só na rodada 3**, uma chave `aN: "sim"|"nao"` por afirmação no JSON Schema
+  (todas obrigatórias, o modelo não pula nenhuma). `LLM_MODELO_VERIFICACAO` permite um modelo maior
+  só nesse nó, que roda pouco: é o jeito de ganhar capacidade sem deixar a pergunta comum mais lenta.
+- **Orçamento de tempo:** nova rodada só se `gasto + gasto/rodadas <= ORCAMENTO_S`.
+- **Esclarecimento:** por ora só "nenhum medicamento reconhecido e sem filtro"; as opções são os
+  princípios ativos indexados. Antes desse caso a busca rodava sem filtro. A ambiguidade de forma
+  farmacêutica precisa do campo `forma` na bula.
+- **Erro do Ollama não gera nova rodada**: fora do ar ou tempo esgotado não se resolve tentando de
+  novo dentro da mesma pergunta.
+- **Sem checkpointer e sem `langchain-ollama`**: a API continua sem estado (seção 14) e os nós
+  chamam o cliente próprio (`app/llm/ollama.py`), que já usa JSON Schema no `format`.
+  Dependência nova: `langgraph>=1.2,<2` (instalado 1.2.15; traz `langchain-core` e `langsmith`,
+  que só envia algo se `LANGSMITH_TRACING` estiver ligado).

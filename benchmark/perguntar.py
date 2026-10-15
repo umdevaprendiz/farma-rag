@@ -4,8 +4,9 @@ Uso (da raiz):
   python -m benchmark.perguntar "Losartana pode com ibuprofeno?"
   python -m benchmark.perguntar            (modo conversa: uma pergunta por linha, vazio sai)
 
-Mostra a resposta, os trechos usados (com a nota de semelhança) e os tempos. Quando o modelo
-devolve algo inválido, mostra o erro e a saída crua.
+Mostra a resposta, os trechos usados (com a nota de semelhança), as rodadas e os tempos. Quando
+nenhuma rodada passa na verificação, mostra o erro e a saída crua da última. No modo conversa,
+um pedido de esclarecimento deixa escolher o medicamento e refaz a pergunta com ele.
 """
 
 import sys
@@ -26,6 +27,10 @@ def mostrar(r: Resultado) -> None:
 
     if r.status == "respondida":
         print(f"\nRESPOSTA\n{r.resposta}")
+    elif r.status == "precisa_esclarecimento":
+        print(f"\nPRECISO SABER: {r.esclarecimento.pergunta}")
+        for i, opcao in enumerate(r.esclarecimento.opcoes, start=1):
+            print(f"  {i}. {opcao.rotulo}")
     elif r.status == "nao_encontrada":
         motivo = {
             "medicamento_nao_indexado": "não tenho a bula desse medicamento",
@@ -44,6 +49,10 @@ def mostrar(r: Resultado) -> None:
         texto = c.texto if len(c.texto) <= MAX_TRECHO else c.texto[:MAX_TRECHO] + "..."
         print(f" {'*' if f.citado else ' '}[{f.posicao}] {c.medicamento} | {ROTULO_SECAO[c.secao]} | p. {c.pagina} "
               f"| bula de {f.data_versao:%d/%m/%Y} | semelhança {f.score:.2f}\n     {texto}")
+    if len(r.tentativas) > 1 or any(t.falha for t in r.tentativas):
+        print(f"\nRODADAS ({r.rodadas})")
+        for t in r.tentativas:
+            print(f"  {t.rodada}. {t.resultado}" + (f": {t.falha}" if t.falha else ""))
     if r.tempos_s:
         tempos = ", ".join(f"{nome} {valor:.1f} s" for nome, valor in r.tempos_s.items())
         print(f"\nTempo: {tempos}" + (f" | prompt de {r.prompt_tokens} tokens" if r.prompt_tokens else ""))
@@ -68,7 +77,14 @@ def main() -> None:
             break
         if not pergunta:
             break
-        mostrar(responder(pergunta, acervo, s=s))
+        r = responder(pergunta, acervo, s=s)
+        mostrar(r)
+        if r.status == "precisa_esclarecimento":
+            # Como o frontend vai fazer: reenvia a mesma pergunta com o filtro escolhido.
+            escolha = input("\nNúmero da opção (vazio pula): ").strip()
+            if escolha.isdigit() and 1 <= int(escolha) <= len(r.esclarecimento.opcoes):
+                filtro = r.esclarecimento.opcoes[int(escolha) - 1].principios_ativos
+                mostrar(responder(pergunta, acervo, filtro, s=s))
 
 
 if __name__ == "__main__":
