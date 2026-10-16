@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     db_timeout_s: int = 5
 
     top_k: int = 3
+    # Pergunta sem medicamento indexado: busca em todas as bulas, um trecho por princípio ativo.
+    # Cada trecho é uma opção na resposta ("melhor remédio pra dor de cabeça").
+    top_k_geral: int = 4
     limiar_similaridade: float | None = None
     chunk_tokens: int = 300
     chunk_sobreposicao: int = 50

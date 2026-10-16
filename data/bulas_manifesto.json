@@ -226,6 +226,17 @@
       "partes": [
         {"medicamento": "Cloridrato de fexofenadina 6 mg/mL suspensão oral", "forma_farmaceutica": "suspensão oral", "data_versao": "2026-03-13", "versao": "histórico de 13/03/2026"}
       ]
+    },
+    {
+      "arquivo": "dipirona_dorageo-geolab_profissional.pdf",
+      "sha256": "9962db94406f0835a09a4c0d539c64cbfe83ae446852f02e323229cd20940793",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0350",
+      "principio_ativo": "dipirona monoidratada",
+      "nomes_comerciais": ["Dorageo"],
+      "partes": [
+        {"medicamento": "Dorageo 1 g", "forma_farmaceutica": "comprimido"}
+      ]
     }
   ]
 }

@@ -71,7 +71,8 @@ def test_resposta_com_citacao_por_frase(acervo, modelo):
     chamadas = modelo("interacoes", _resposta(
         ("Pode reduzir o efeito anti-hipertensivo.", 1), ("Pode piorar a função renal", 1),
     ))
-    r = rag.responder("Exemplol pode com ibuprofeno?", acervo, s=S)
+    # Sem o nome do outro remédio: com ele, a resposta é a frase da bula, sem o LLM (test_extrato).
+    r = rag.responder("Exemplol tem interações?", acervo, s=S)
     assert r.status == "respondida"
     assert r.resposta == "Pode reduzir o efeito anti-hipertensivo [1]. Pode piorar a função renal [1]."
     assert r.principios_ativos == ["maleato de exemplina"]
@@ -79,16 +80,41 @@ def test_resposta_com_citacao_por_frase(acervo, modelo):
     assert len(r.fontes) == 2 and not r.fontes[1].citado
     assert r.fontes[0].data_versao == date(2025, 3, 15)
     assert "[1] Exemplol 50 mg | Interações medicamentosas | página 2" in chamadas[0]
-    assert chamadas[0].endswith("PERGUNTA: Exemplol pode com ibuprofeno?")
+    assert chamadas[0].endswith("PERGUNTA: Exemplol tem interações?")
     assert (r.rodadas, [t.resultado for t in r.tentativas]) == (1, ["aprovada"])
     assert "OBSERVAÇÃO" not in chamadas[0]
 
 
-def test_medicamento_sem_bula_nao_chama_o_modelo(acervo, monkeypatch):
-    monkeypatch.setattr(ollama, "embed", lambda *a, **k: pytest.fail("não devia buscar"))
+def test_remedio_sem_bula_busca_nas_bulas_que_falam_dele(acervo, modelo):
+    acervo.catalogo = Catalogo.montar(list(acervo.bulas.values()), ["captopril", "ibuprofeno"])
+    chamadas = modelo("interacoes", _resposta(
+        ("A bula do Exemplol diz que o uso com anti-inflamatórios como o ibuprofeno pode piorar a função renal", 1),
+    ))
+    r = rag.responder("Ibuprofeno faz mal para os rins?", acervo, s=S)
+    assert (r.status, r.medicamentos_nao_indexados, r.principios_ativos) == ("respondida", ["ibuprofeno"], [])
+    assert [f.chunk.secao for f in r.fontes] == ["interacoes"]  # o único trecho que fala de ibuprofeno
+    assert "OBSERVAÇÃO: Não há trechos da bula de ibuprofeno. Não atribua a ele" in chamadas[0]
+
+
+def test_remedio_sem_bula_que_nenhuma_bula_cita_nem_chama_o_modelo(acervo, modelo):
+    chamadas = modelo("interacoes", _resposta(("Algo", 1)))
     r = rag.responder("Captopril pode com álcool?", acervo, s=S)
-    assert (r.status, r.motivo, r.medicamentos_nao_indexados) == ("nao_encontrada", "medicamento_nao_indexado", ["captopril"])
-    assert r.fontes == [] and r.rodadas == 0
+    assert (r.status, r.motivo, r.fontes, chamadas) == ("nao_encontrada", "medicamento_nao_indexado", [], [])
+
+
+def test_assunto_que_nenhuma_bula_trata_nao_chama_o_modelo(acervo, modelo):
+    chamadas = modelo("indicacoes", _resposta(("O Exemplol é indicado para hipertensão", 1)))
+    r = rag.responder("Estou tonto, qual o melhor medicamento?", acervo, s=S)
+    # Só as indicações valem, e nenhuma fala de tontura (a do Exemplol está em reações adversas).
+    assert (r.status, r.motivo, r.fontes, chamadas) == ("nao_encontrada", "sem_contexto", [], [])
+
+
+def test_resposta_que_e_so_o_nome_do_remedio_reprova(acervo, modelo):
+    chamadas = modelo("indicacoes", _resposta(("Exemplol 50 mg", 1)), _resposta(("O Exemplol é indicado para o tratamento da hipertensão arterial", 1)))
+    r = rag.responder("Qual o melhor remédio para pressão alta?", acervo, s=S)
+    assert (r.status, r.rodadas, len(chamadas)) == ("respondida", 2, 2)
+    assert "só o nome do medicamento" in r.tentativas[0].falha
+    assert grafo.DICA_SO_NOME in chamadas[1]  # o aviso diz o que corrigir, não o genérico
 
 
 def test_mistura_segue_com_o_indexado_e_avisa_do_outro(acervo, modelo):
@@ -97,16 +123,62 @@ def test_mistura_segue_com_o_indexado_e_avisa_do_outro(acervo, modelo):
     assert r.status == "respondida" and r.medicamentos_nao_indexados == ["captopril"]
 
 
-def test_sem_medicamento_pede_esclarecimento_sem_buscar(acervo, monkeypatch, modelo):
-    monkeypatch.setattr(ollama, "embed", lambda *a, **k: pytest.fail("não devia buscar"))
+def test_sem_medicamento_responde_com_a_busca_em_todas_as_bulas(acervo, modelo):
+    chamadas = modelo("posologia", _resposta(("A dose máxima do Exemplol é de 100 mg uma vez ao dia", 1)))
     r = rag.responder("Qual a dose máxima por dia?", acervo, s=S)
-    assert r.status == "precisa_esclarecimento" and r.esclarecimento.motivo == "medicamento_nao_reconhecido"
-    assert [o.rotulo for o in r.esclarecimento.opcoes] == ["maleato de exemplina (Exemplol 50 mg)"]
+    assert (r.status, r.principios_ativos, r.esclarecimento) == ("respondida", [], None)
+    assert [f.chunk.secao for f in r.fontes] == ["posologia"] and "OBSERVAÇÃO" not in chamadas[0]
 
-    # O reenvio com a opção escolhida passa pelo filtro e responde.
-    modelo("posologia", _resposta(("A dose máxima é de 100 mg uma vez ao dia", 1)))
-    r = rag.responder("Qual a dose máxima por dia?", acervo, r.esclarecimento.opcoes[0].principios_ativos, s=S)
-    assert r.status == "respondida"
+
+@pytest.fixture
+def dois_remedios(monkeypatch):
+    """Exemplol e Outrol (mesmo texto, princípios ativos diferentes), com um eixo por trecho.
+    Devolve `apontar(pesos)`: a "pergunta" fica parecida com cada (princípio ativo, seção) pelo peso."""
+    bulas = [
+        montar_bula(FIXTURES / "bula_exemplo.txt", nome, ativo, "Laboratório Teste", date(2025, 3, 15), [nome.split()[0]])
+        for nome, ativo in [("Exemplol 50 mg", "maleato de exemplina"), ("Outrol 10 mg", "ácido outrínico")]
+    ]
+    chunks = [c for b in bulas for c in gerar_chunks(b, 300, 50)]
+    indice = IndiceEmMemoria([c.chunk_id for c in chunks], [c.principio_ativo for c in chunks], np.eye(len(chunks)))
+    acervo = Acervo({b.id: b for b in bulas}, {c.chunk_id: c for c in chunks}, indice, Catalogo.montar(bulas, []))
+    monkeypatch.setattr(ollama, "chat", lambda *a, **k: ollama.RespostaLLM(
+        json.dumps(_resposta(("O potássio no sangue deve ser monitorado", 1))), 1, 1, 0, 0))
+
+    def apontar(pesos: dict[tuple[str, str], float]) -> Acervo:
+        vetor = np.full(len(chunks), 0.01)
+        for (ativo, secao), peso in pesos.items():
+            vetor[next(i for i, c in enumerate(chunks) if c.principio_ativo == ativo and c.secao == secao)] = peso
+        monkeypatch.setattr(ollama, "embed", lambda textos, s=None: [vetor.tolist()])
+        return acervo
+
+    return apontar
+
+
+EXEMPLINA, OUTRINICO = "maleato de exemplina", "ácido outrínico"
+
+
+def test_busca_geral_um_trecho_por_remedio_e_so_os_que_falam_do_assunto(dois_remedios):
+    acervo = dois_remedios({
+        (EXEMPLINA, "advertencias"): 1.0,  # "...monitorar a creatinina e o potássio no sangue"
+        (EXEMPLINA, "interacoes"): 0.9,  # também fala de potássio, mas é o 2º do mesmo remédio
+        (OUTRINICO, "interacoes"): 0.5,
+        (OUTRINICO, "advertencias"): 0.4,
+        (EXEMPLINA, "reacoes_adversas"): 2.0,  # o mais parecido, mas não fala de potássio
+    })
+    r = rag.responder("Que remédio pode alterar o potássio no sangue?", acervo, s=S)
+    assert [(f.posicao, f.chunk.principio_ativo, f.chunk.secao) for f in r.fontes] == [
+        (1, EXEMPLINA, "advertencias"), (2, OUTRINICO, "interacoes"),
+    ]
+
+
+def test_busca_geral_fica_na_secao_da_pergunta(dois_remedios):
+    acervo = dois_remedios({
+        (EXEMPLINA, "resultados_eficacia"): 2.0,  # fala de "pressão arterial", mas não é indicação
+        (EXEMPLINA, "indicacoes"): 1.0,
+        (OUTRINICO, "indicacoes"): 0.5,
+    })
+    r = rag.responder("Qual o melhor remédio para pressão alta?", acervo, s=S)
+    assert [(f.chunk.principio_ativo, f.chunk.secao) for f in r.fontes] == [(EXEMPLINA, "indicacoes"), (OUTRINICO, "indicacoes")]
 
 
 def test_recusa_sem_secao_indicada_vale_na_primeira_rodada(acervo, modelo):
@@ -131,7 +203,7 @@ def test_numero_sem_fonte_reprova_e_a_rodada_2_corrige(acervo, modelo):
         _resposta(("A dose máxima é de 200 mg uma vez ao dia", 1)),
         _resposta(("A dose máxima é de 100 mg uma vez ao dia", 1)),
     )
-    r = rag.responder("Qual a dose máxima de Exemplol?", acervo, s=S)
+    r = rag.responder("Como tomar o Exemplol?", acervo, s=S)
     assert (r.status, r.rodadas) == ("respondida", 2)
     assert r.resposta == "A dose máxima é de 100 mg uma vez ao dia [1]."
     primeira = r.tentativas[0]
@@ -146,7 +218,7 @@ def test_rodada_3_passa_pela_verificacao_do_llm(acervo, modelo):
     certa = _resposta(("A dose máxima é de 100 mg uma vez ao dia", 1))
     modelo("posologia", errada, errada, certa, verificacao={"a1": "sim"})
     s = Settings(_env_file=None, top_k=2, llm_modelo_verificacao="modelo-maior")
-    r = rag.responder("Qual a dose máxima de Exemplol?", acervo, s=s)
+    r = rag.responder("Como tomar o Exemplol?", acervo, s=s)
     assert (r.status, r.rodadas) == ("respondida", 3)
     assert [t.resultado for t in r.tentativas] == ["reprovada", "reprovada", "aprovada"]
     assert r.tentativas[2].verificacao_bruta == '{"a1": "sim"}'
@@ -159,7 +231,7 @@ def test_verificacao_negada_vira_502_com_explicacao(acervo, modelo):
     errada = _resposta(("A dose máxima é de 300 mg", 1))
     certa = _resposta(("A dose máxima é de 100 mg uma vez ao dia", 1))
     modelo("posologia", errada, errada, certa, verificacao={"a1": "nao"})
-    r = rag.responder("Qual a dose máxima de Exemplol?", acervo, s=S)
+    r = rag.responder("Como tomar o Exemplol?", acervo, s=S)
     assert (r.status, r.codigo_erro, r.resposta) == ("erro", CodigoErro.RESPOSTA_NAO_VERIFICADA, None)
     assert r.detalhe_erro.startswith("Nenhuma resposta passou na verificação em 3 rodada(s) (limite de rodadas).")
     assert "rodada 1: afirmação 1, trecho [1]: '300 mg' não está no trecho" in r.detalhe_erro
@@ -174,14 +246,14 @@ def test_verificacao_negada_vira_502_com_explicacao(acervo, modelo):
 ])
 def test_saida_invalida_em_todas_as_rodadas_vira_erro_com_a_saida_crua(acervo, modelo, saida, codigo):
     chamadas = modelo("posologia", saida)
-    r = rag.responder("Qual a dose de Exemplol?", acervo, s=S)
+    r = rag.responder("Como tomar o Exemplol?", acervo, s=S)
     assert (r.status, r.codigo_erro, r.resposta, r.rodadas) == ("erro", codigo, None, 3)
     assert r.saida_bruta and len(chamadas) == 3 and not modelo.verificacoes
 
 
 def test_orcamento_esgotado_nao_abre_outra_rodada(acervo, modelo):
     chamadas = modelo("posologia", _resposta(("A dose máxima é de 300 mg", 1)))
-    r = rag.responder("Qual a dose de Exemplol?", acervo, s=Settings(_env_file=None, top_k=2, orcamento_s=0))
+    r = rag.responder("Como tomar o Exemplol?", acervo, s=Settings(_env_file=None, top_k=2, orcamento_s=0))
     assert (r.status, r.codigo_erro, r.rodadas, len(chamadas)) == ("erro", CodigoErro.RESPOSTA_NAO_VERIFICADA, 1, 1)
     assert "(orçamento de 0 s)" in r.detalhe_erro
 
@@ -191,7 +263,7 @@ def test_ollama_fora_do_ar(acervo, monkeypatch):
         raise ollama.OllamaError(CodigoErro.OLLAMA_INDISPONIVEL, "fora do ar")
 
     monkeypatch.setattr(ollama, "embed", cair)
-    r = rag.responder("Qual a dose de Exemplol?", acervo, s=S)
+    r = rag.responder("Como tomar o Exemplol?", acervo, s=S)
     assert (r.status, r.codigo_erro) == ("erro", CodigoErro.OLLAMA_INDISPONIVEL)
 
 
@@ -205,7 +277,7 @@ def test_filtro_aceita_nome_comercial_e_recusa_desconhecido(acervo, modelo):
 
 def test_abaixo_do_limiar_nao_chama_o_modelo(acervo, modelo):
     chamadas = modelo("posologia", {"status": "respondida", "afirmacoes": []})
-    r = rag.responder("Qual a dose de Exemplol?", acervo, s=Settings(_env_file=None, limiar_similaridade=1.5))
+    r = rag.responder("Como tomar o Exemplol?", acervo, s=Settings(_env_file=None, limiar_similaridade=1.5))
     assert (r.status, r.motivo, r.fontes, chamadas) == ("nao_encontrada", "sem_contexto", [], [])
 
 

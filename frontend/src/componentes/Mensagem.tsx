@@ -69,9 +69,23 @@ function Resposta({ vista: v, aoEscolherOpcao }: RespostaProps) {
   const abrir = (posicao: number | null) =>
     setAtiva((a) => (posicao === null ? null : { posicao, vez: (a?.vez ?? 0) + 1 }));
 
+  const classes = v.semBula.filter((n) => v.classes[n]).map((n) => `${n}: ${v.classes[n]}`);
   return (
     <>
-      {v.semBula.length > 0 && v.status === "respondida" && (
+      {v.continuacao && (
+        <p className="meta">
+          Continuando a pergunta anterior{v.principios.length > 0 ? ` (sobre ${emLista(v.principios)})` : ""}.
+        </p>
+      )}
+
+      {v.alergiaA && v.status === "respondida" && (
+        <p className="nota-aviso">
+          Alternativas a <strong>{v.alergiaA}</strong> pelas bulas do acervo. Antes de trocar, confira na bula de cada
+          uma as contraindicações por alergia (hipersensibilidade), inclusive a alergia cruzada.
+        </p>
+      )}
+
+      {v.semBula.length > 0 && v.status === "respondida" && !v.alergiaA && (
         <p className="nota-aviso">
           {v.semBula.length === 1 ? "A bula de " : "As bulas de "}
           <strong>{emLista(v.semBula)}</strong>
@@ -88,16 +102,24 @@ function Resposta({ vista: v, aoEscolherOpcao }: RespostaProps) {
         </p>
       )}
 
+      {classes.length > 0 && (
+        <p className="meta" title="Classe terapêutica no registro de medicamentos da ANVISA (dados abertos)">
+          Para que serve, pelo registro na ANVISA: {classes.join("; ")}.
+        </p>
+      )}
+
       {v.status === "precisa_esclarecimento" && v.esclarecimento && (
         <div className="esclarecimento">
           <p className="resposta-texto">{v.esclarecimento.pergunta}</p>
-          <div className="opcoes">
-            {v.esclarecimento.opcoes.map((o) => (
-              <button key={o.rotulo} type="button" onClick={() => aoEscolherOpcao(o)}>
-                {o.rotulo}
-              </button>
-            ))}
-          </div>
+          {v.esclarecimento.opcoes.length > 0 && (
+            <div className="opcoes">
+              {v.esclarecimento.opcoes.map((o) => (
+                <button key={o.rotulo} type="button" onClick={() => aoEscolherOpcao(o)}>
+                  {o.rotulo}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -114,7 +136,9 @@ function Resposta({ vista: v, aoEscolherOpcao }: RespostaProps) {
 
       {(v.status === "respondida" || v.status === "nao_encontrada") && (
         <p className="meta">
-          {v.rodadas} rodada{v.rodadas === 1 ? "" : "s"} · {duracao(v.latenciaMs)}
+          {v.extrativa
+            ? `Frases copiadas da bula, sem resumo do modelo · ${duracao(v.latenciaMs)}`
+            : `${v.rodadas} rodada${v.rodadas === 1 ? "" : "s"} · ${duracao(v.latenciaMs)}`}
         </p>
       )}
     </>

@@ -32,7 +32,8 @@ export interface Opcao {
 }
 
 export interface Esclarecimento {
-  motivo: "medicamento_nao_reconhecido";
+  // opcoes vazio (remedio_da_alergia): a pessoa responde no chat.
+  motivo: "medicamento_nao_reconhecido" | "remedio_da_alergia";
   pergunta: string;
   opcoes: Opcao[];
 }
@@ -46,6 +47,11 @@ export interface Resposta {
   resposta: string | null;
   fontes: Fonte[];
   medicamentos_nao_indexados: string[];
+  classes_terapeuticas: Record<string, string>; // remédio sem bula -> classe no registro da ANVISA
+  principios_ativos: string[]; // os usados na busca
+  continuacao: boolean; // usou a pergunta anterior da conversa
+  alergia_a: string | null; // a resposta traz alternativas a este remédio
+  extrativa: boolean; // frases copiadas da bula, sem o modelo de linguagem
   modelo: string;
   latencia_ms: number;
 }
@@ -112,11 +118,13 @@ export interface PerguntaIn {
 export class ErroApi extends Error {
   readonly codigo: CodigoErro | "API_FORA_DO_AR";
   readonly status: number;
+  readonly consultaId: string | null; // a consulta gravada, quando a pergunta chegou à API
 
-  constructor(codigo: CodigoErro | "API_FORA_DO_AR", mensagem: string, status: number) {
+  constructor(codigo: CodigoErro | "API_FORA_DO_AR", mensagem: string, status: number, consultaId: string | null = null) {
     super(mensagem);
     this.codigo = codigo;
     this.status = status;
+    this.consultaId = consultaId;
   }
 }
 
@@ -135,7 +143,7 @@ async function pedir<T>(caminho: string, init?: RequestInit): Promise<T> {
     const erro = corpo?.erro;
     // Sem corpo de ErroOut: quem respondeu foi o proxy do Vite, com a API desligada.
     if (!erro) throw new ErroApi("API_FORA_DO_AR", FORA_DO_AR, r.status);
-    throw new ErroApi(erro.codigo, erro.mensagem, r.status);
+    throw new ErroApi(erro.codigo, erro.mensagem, r.status, corpo?.consulta_id ?? null);
   }
   return corpo as T;
 }

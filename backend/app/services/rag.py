@@ -15,18 +15,25 @@ from app.schemas.dataset import ROTULO_SECAO, Chunk
 from app.services.acervo import Acervo
 
 SISTEMA = (
-    "Você responde perguntas de profissionais de farmácia consultando bulas. "
+    "Você responde perguntas de profissionais de farmácia sobre medicamentos consultando bulas. "
     "Use SOMENTE os trechos numerados enviados; não use conhecimento próprio. "
-    "Responda em português, em até 4 frases curtas. Não recomende dose nem conduta para um "
-    "paciente específico. Devolva só JSON: "
+    "Responda em português, em até 4 frases curtas, sempre dizendo de qual medicamento é cada "
+    "informação; cada frase diz o que o trecho diz, nunca só o nome do medicamento. "
+    "Responda toda pergunta com o que os trechos dizem: se ela pede o melhor remédio "
+    "para um sintoma, diga quais medicamentos dos trechos são indicados para ele (os trechos não "
+    "dizem qual é o melhor); se fala de alergia a um remédio, diga o que os trechos dizem sobre "
+    "hipersensibilidade e quais medicamentos dos trechos servem para o mesmo uso. Devolva só JSON: "
     '{"status": "respondida" ou "nao_encontrada", "afirmacoes": [{"texto": uma frase da resposta, '
     '"trecho": número do trecho de onde ela saiu}]}. '
-    'Se os trechos não respondem à pergunta, devolva "status": "nao_encontrada" e "afirmacoes": [].'
+    'Só devolva "status": "nao_encontrada" e "afirmacoes": [] se nenhum trecho tiver relação com a pergunta.'
 )
 # Lições do teste de 2026-10-13 com o qwen2.5:1.5b:
 # - ele não escreve "[1]" dentro do texto, mesmo pedindo; por isso cada frase vem num objeto com
 #   o seu trecho, e o "[n]" é montado aqui (ver _para_saida);
 # - exemplo de resposta pronta no prompt é copiado como se fosse a resposta. Não coloque.
+# 2026-10-16 (pedido do usuário: responder qualquer pergunta sobre remédio, com base nas bulas): saiu
+# "não recomende dose nem conduta para um paciente específico", e a recusa ficou só para trechos sem
+# relação nenhuma com a pergunta.
 
 
 def formato(n_trechos: int) -> dict:
@@ -80,9 +87,22 @@ class Opcao:
 
 @dataclass(frozen=True)
 class Esclarecimento:
-    motivo: Literal["medicamento_nao_reconhecido"]
+    """`opcoes` vazio = resposta livre: a pessoa responde no chat, e a resposta volta com a
+    pergunta anterior (ver Anterior)."""
+
+    motivo: Literal["medicamento_nao_reconhecido", "remedio_da_alergia"]
     pergunta: str
     opcoes: list[Opcao]
+
+
+@dataclass(frozen=True)
+class Anterior:
+    """A pergunta anterior da mesma conversa, carregada do histórico pela API. A API continua sem
+    estado: quem diz qual é a anterior é a tela (consulta_origem_id)."""
+
+    pergunta: str
+    principios_ativos: list[str]  # os usados na busca dela (detectados, herdados ou do filtro)
+    pediu_esclarecimento: bool  # terminou perguntando algo de volta: a nova é a resposta
 
 
 @dataclass
@@ -101,24 +121,36 @@ class Resultado:
     tentativas: list[Tentativa] = field(default_factory=list)
     tempos_s: dict[str, float] = field(default_factory=dict)  # somados entre as rodadas
     prompt_tokens: int = 0  # somados entre as rodadas
+    continuacao: bool = False  # usou a pergunta anterior (remédio herdado ou resposta a esclarecimento)
+    alergia_a: str | None = None  # remédio da alergia: a resposta traz alternativas a ele
+    extrativa: bool = False  # a resposta são frases copiadas da bula, sem o LLM (services/extrato.py)
 
 
-def montar_prompt(pergunta: str, fontes: list[Fonte], observacao: str | None = None) -> str:
+def montar_prompt(
+    pergunta: str, fontes: list[Fonte], observacao: str | None = None, anterior: str | None = None
+) -> str:
+    """`anterior`: a pergunta anterior da conversa, quando esta continua dela ("e para criança?")."""
     trechos = "\n\n".join(
         f"[{f.posicao}] {f.chunk.medicamento} | {ROTULO_SECAO[f.chunk.secao]} | página {f.chunk.pagina}\n{f.chunk.texto}"
         for f in fontes
     )
     extra = f"\n\nOBSERVAÇÃO: {observacao}" if observacao else ""
-    return f"TRECHOS:\n{trechos}{extra}\n\nPERGUNTA: {pergunta}"
+    antes = f"\n\nPERGUNTA ANTERIOR: {anterior}" if anterior else ""
+    return f"TRECHOS:\n{trechos}{extra}{antes}\n\nPERGUNTA: {pergunta}"
 
 
 def responder(
-    pergunta: str, acervo: Acervo, principios_ativos: list[str] | None = None, s: Settings | None = None
+    pergunta: str,
+    acervo: Acervo,
+    principios_ativos: list[str] | None = None,
+    s: Settings | None = None,
+    anterior: Anterior | None = None,
 ) -> Resultado:
-    """`principios_ativos` vazio = detectar o medicamento na própria pergunta."""
+    """`principios_ativos` vazio = detectar o medicamento na própria pergunta.
+    `anterior`: a pergunta anterior da conversa, se a tela mandou."""
     from app.services.grafo import executar  # o grafo importa as peças deste módulo
 
-    return executar(pergunta, acervo, principios_ativos, s)
+    return executar(pergunta, acervo, principios_ativos, s, anterior)
 
 
 def afirmacoes(bruto: str) -> list[tuple[str, int]]:

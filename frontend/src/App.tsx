@@ -56,6 +56,12 @@ export function App() {
 
   async function perguntar(entrada: PerguntaIn, textoDoUsuario: string) {
     if (ocupado) return;
+    // A última resposta da conversa vai junto: a pergunta nova pode continuar dela ("e para
+    // criança?") ou responder a um "a alergia é a qual remédio?". "Nova pergunta" zera a conversa.
+    const ultima = [...mensagens].reverse().find((m) => m.autor === "assistente" && !m.carregando);
+    if (!entrada.consulta_origem_id && ultima?.autor === "assistente" && !ultima.carregando && ultima.vista.consultaId) {
+      entrada = { ...entrada, consulta_origem_id: ultima.vista.consultaId };
+    }
     const id = crypto.randomUUID();
     setAberta(null);
     setOcupado(true);

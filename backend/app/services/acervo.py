@@ -22,7 +22,7 @@ from app.db.busca_pgvector import BuscaPgvector
 from app.db.busca_vetorial import BuscaVetorial, IndiceEmMemoria
 from app.llm.embeddings import CacheEmbeddings
 from app.schemas.dataset import ROTULO_SECAO, Bula, Chunk
-from app.services.medicamentos import Catalogo, carregar_catalogo_anvisa, carregar_conhecidos
+from app.services.medicamentos import Catalogo, carregar_catalogo_anvisa, carregar_conhecidos, normalizar
 
 
 class AcervoIncompletoError(Exception):
@@ -83,12 +83,13 @@ def carregar_dataset(s: Settings) -> tuple[list[Bula], list[Chunk], np.ndarray]:
     return bulas, chunks, np.stack(vetores)
 
 
-def _catalogo(bulas: list[BulaDoAcervo], s: Settings) -> Catalogo:
+def _catalogo(bulas: list[BulaDoAcervo], chunks: list[Chunk], s: Settings) -> Catalogo:
     return Catalogo.montar(
         bulas,
         carregar_conhecidos(s.medicamentos_conhecidos),
         carregar_catalogo_anvisa(s.catalogo_anvisa),
         carregar_conhecidos(s.aliases_ignorados),
+        vocabulario={palavra for c in chunks for palavra in normalizar(c.texto).split(" ")},
     )
 
 
@@ -109,7 +110,7 @@ class Acervo:
             indice=IndiceEmMemoria(
                 [c.chunk_id for c in chunks], [c.principio_ativo for c in chunks], matriz
             ),
-            catalogo=_catalogo(bulas, s),
+            catalogo=_catalogo(bulas, chunks, s),
         )
 
     @classmethod
@@ -135,5 +136,5 @@ class Acervo:
             bulas={b.id: b for b in bulas},
             chunks={c.chunk_id: c for c in chunks},
             indice=BuscaPgvector(engine),
-            catalogo=_catalogo(bulas, s),
+            catalogo=_catalogo(bulas, chunks, s),
         )

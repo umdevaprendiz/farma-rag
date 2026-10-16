@@ -40,9 +40,10 @@ def gravar(
     consulta = Consulta(
         pergunta=entrada.pergunta,
         principios_ativos_filtro=entrada.principios_ativos,
+        principios_ativos=r.principios_ativos,
         resposta=r.resposta,
         status=r.status,
-        motivo=r.motivo,
+        motivo=r.motivo or (r.esclarecimento.motivo if r.esclarecimento else None),
         codigo_erro=r.codigo_erro.value if r.codigo_erro else None,
         mensagem_erro=r.detalhe_erro,
         modelo=modelo,

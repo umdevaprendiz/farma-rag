@@ -26,27 +26,28 @@ Três regras definem o projeto e moldam o código:
 | Regra | Como o código garante |
 |---|---|
 | Só responde com base nas bulas indexadas | O prompt recebe apenas os trechos recuperados; o JSON Schema da saída só aceita números de trechos que foram enviados |
-| Toda frase traz a fonte (medicamento, seção, página, data da versão) | O modelo devolve afirmações `{texto, trecho}`; o marcador `[n]` é montado no código e `validar_saida` recusa citação inexistente |
-| Prefere "não encontrei" a inventar | Detecção do medicamento antes do LLM, limiar de similaridade e status `nao_encontrada` como resultado válido, não como erro |
+| Toda frase traz a fonte (medicamento, fabricante, registro, seção, página, data da versão) | O modelo devolve afirmações `{texto, trecho}`; o marcador `[n]` é montado no código; `validar_saida` recusa citação inexistente e a checagem de fundamentação recusa frase que não está no trecho, frase que é só o nome do remédio e frase sobre um remédio citando a bula de outro |
+| Responde qualquer pergunta sobre remédio, sempre com o que as bulas dizem | Sem remédio na pergunta ("melhor remédio pra dor de cabeça", "tenho alergia, posso tomar outro?"), **busca híbrida** em todas as bulas: semelhança, seção que a pergunta indica, palavra do assunto no trecho ("tonto" → tontura, vertigem) e um trecho por medicamento. Se nenhuma bula fala do assunto, "não encontrei", sem chamar o LLM |
 
 Tudo roda na própria máquina com [Ollama](https://ollama.com), sem API paga e sem nuvem. O hardware de desenvolvimento é só CPU (i5-10210U, 16 GB, sem GPU NVIDIA), e isso pesa em quase todas as decisões de latência.
 
-Exemplo real, com a bula de um medicamento inventado usada nos testes:
+Exemplo real (24 bulas reais, qwen2.5:1.5b na CPU, 2026-10-16):
 
 ```text
-> Exemplol pode ser usado junto com ibuprofeno?
+> Qual o melhor remédio pra dor de cabeça?
 
-RESPOSTA
-O uso com anti-inflamatórios não esteroidais, como o ibuprofeno, pode reduzir o efeito
-anti-hipertensivo da exemplina e piorar a função renal [1].
+O ibuprofeno 400 mg cápsulas moles está indicado no alívio temporário da febre e de dores de leve
+a moderada intensidade como cefaleia tensional, lombalgia, dor muscular, enxaqueca [...] [1].
+Este medicamento é indicado, em adultos, para a redução da febre e o alívio temporário de dores
+leves a moderadas, tais como: dores associadas a resfriados comuns, dor de cabeça [...] [2].
 
-TRECHOS ENVIADOS AO MODELO (* = citado na resposta)
- *[1] Exemplol 50 mg | Interações medicamentosas | p. 2 | bula de 15/03/2025 | semelhança 0.71
-  [2] Exemplol 50 mg | Contraindicações | p. 2 | bula de 15/03/2025 | semelhança 0.61
-  [3] Exemplol 50 mg | Indicações | p. 1 | bula de 15/03/2025 | semelhança 0.59
+FONTES
+ [1] Ibuprofeno 400 mg cápsula mole | Indicações | p. 2  | Geolab · Reg. ANVISA 1.5423.0333 · bula de 01/10/2025
+ [2] Tylalgin 750 mg                | Indicações | p. 12 | Geolab · Reg. ANVISA 1.5423.0008 · bula de 01/05/2022
+ 2 rodadas · 38,8 s
 
-> Dipirona pode ser usada na gravidez?
-NÃO ENCONTREI: não tenho a bula desse medicamento
+> Estou tonto, qual o melhor medicamento?
+Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala disso.   (2 s, sem LLM)
 ```
 
 ## Estado atual
@@ -60,15 +61,18 @@ NÃO ENCONTREI: não tenho a bula desse medicamento
 | Busca vetorial em memória (numpy) | ✅ pronto | `app/db/busca_vetorial.py` |
 | Busca vetorial no PostgreSQL + pgvector | ✅ pronto, testado contra o numpy | `app/db/busca_pgvector.py`, `ingestao/carregar_banco.py` |
 | Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citacoes.py` |
-| Agente em grafo (LangGraph, 7 nós, rodadas 0 a 3) | ✅ pronto, testado com LLM falso e com a bula de teste | `app/services/grafo.py` |
+| Agente em grafo (LangGraph, 6 nós, rodadas 1 a 3) | ✅ pronto, testado com LLM falso e com o LLM real nas 24 bulas | `app/services/grafo.py` |
 | Teste manual pelo terminal | ✅ pronto | `python -m benchmark.perguntar` |
-| Testes automáticos | ✅ 177 testes em ~11 s (24 precisam do PostgreSQL de pé e rodam num schema temporário) | `backend/tests/` |
-| Bulas reais: 20 PDFs → 24 bulas em JSON, com registro ANVISA e forma farmacêutica | ✅ 20 de 40 medicamentos (faltam trechos e embeddings) | `data/bulas_manifesto.json`, `data/processed/bulas/` |
-| Checagem de fundamentação (números, doses, termos) | ✅ pronto | `app/services/fundamentacao.py` |
-| Perguntas de esclarecimento (rodada 0) | 🟡 sem nome reconhecido: pronto; forma farmacêutica ambígua: falta `forma` na bula | `app/services/grafo.py` |
+| Testes automáticos | ✅ 230 testes em ~12 s (os de banco rodam num schema temporário) | `backend/tests/` |
+| Bulas reais: 21 PDFs → 25 bulas, 906 trechos com embedding, no banco; tabela de interações lida como tabela | ✅ 21 de 40 medicamentos | `data/bulas_manifesto.json`, `data/processed/bulas/`, `ingestao/extrair_pdf.py` |
+| Checagem de fundamentação (números, doses, termos, "só o nome" não vale, remédio certo) e de assunto (a resposta responde à pergunta) | ✅ pronto | `app/services/fundamentacao.py`, `app/services/intencao.py` |
+| Pergunta sem remédio ou com remédio sem bula: busca híbrida em todas as bulas, um trecho por medicamento | ✅ pronto, testado com o LLM real | `app/services/grafo.py`, `app/services/intencao.py` |
+| Conversa: pergunta seguinte ("e para criança?"), alergia com pergunta de volta e alternativas da mesma classe | ✅ pronto, testado com o LLM real | `app/services/grafo.py`, `app/services/intencao.py` |
+| Respostas copiadas da bula, sem LLM (dose, interação entre remédios citados, alternativas na alergia) | ✅ pronto | `app/services/extrato.py` |
+| Para que serve o remédio sem bula: classe terapêutica do registro na ANVISA | ✅ pronto | `app/services/medicamentos.py` |
 | Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metricas.py` |
 | API FastAPI: 5 endpoints, histórico de toda consulta | ✅ pronta, testada com LLM falso e no servidor (perguntas sem LLM) | `app/main.py`, `app/api/`, `app/services/historico.py` |
-| Frontend React | ⬜ não iniciado | |
+| Frontend React (Vite + TypeScript) em formato de chat: conversa, citações clicáveis, fontes em chips, histórico na lateral | ✅ pronto, conferido no navegador com o LLM real e com o simulado | `frontend/` |
 
 ## Arquitetura
 
@@ -136,14 +140,13 @@ A busca fica atrás do `Protocol` `BuscaVetorial`. `IndiceEmMemoria` (numpy) e `
 
 ### 2. Consulta: o agente em grafo (LangGraph)
 
-`rag.responder` executa um grafo de 7 nós (`app/services/grafo.py`). Só 2 chamam o LLM; os caminhos são decididos nas arestas condicionais, em código. Cada chamada ao LLM custa 30–45 s nesta CPU, então as rodadas são **adaptativas**: uma nova só começa se a anterior falhou e se ainda cabe no orçamento de tempo.
+`rag.responder` executa um grafo de 6 nós (`app/services/grafo.py`). Só 2 chamam o LLM; os caminhos são decididos nas arestas condicionais, em código. Cada chamada ao LLM custa 30–45 s nesta CPU, então as rodadas são **adaptativas**: uma nova só começa se a anterior falhou e se ainda cabe no orçamento de tempo.
 
 ```mermaid
 flowchart TD
   S((início)) --> EN["entender<br/>detectar + seção da pergunta<br/>(sem LLM)"]
-  EN -- "nenhum nome e sem filtro" --> ES["esclarecer<br/>opções de medicamento"]
-  EN -- "só não indexados /<br/>filtro desconhecido" --> FI
-  EN -- "medicamento claro" --> BU["buscar<br/>rodada 1: top_k<br/>rodada 2+: seção da pergunta,<br/>trechos novos primeiro"]
+  EN -- "filtro desconhecido" --> FI
+  EN -- "com ou sem medicamento" --> BU["buscar<br/>com medicamento: top_k na bula dele,<br/>rodada 2+: seção da pergunta<br/>sem: todas as bulas, seção da pergunta,<br/>1 trecho por medicamento"]
   BU -- "nenhum trecho" --> FI
   BU --> GE["gerar<br/>JSON {status, afirmacoes}<br/>(LLM)"]
   GE --> VA{"validar<br/>citações + fundamentação<br/>(sem LLM)"}
@@ -151,18 +154,16 @@ flowchart TD
   VA -- "recusou com trechos da seção errada<br/>(só na rodada 1)" --> BU
   VA -- "passou na rodada 3" --> VL{"verificar_llm<br/>cada afirmação: sim/não<br/>(LLM)"}
   VA -- "passou / recusou / sem rodadas" --> FI
-  VL --> FI
-  ES --> FI["finalizar<br/>Resultado"]
+  VL --> FI["finalizar<br/>Resultado"]
   FI --> E((fim))
 ```
 
 | Nó | LLM | O que faz |
 |---|---|---|
 | `entender` | não | Detecta o medicamento (ou aplica o filtro) e infere as seções da pergunta (`services/intencao.py`: "gravidez" → contraindicações e advertências, "dose" → posologia…) |
-| `esclarecer` | não | Nenhum medicamento reconhecido: devolve `precisa_esclarecimento` com as opções; o reenvio vem com o filtro escolhido |
-| `buscar` | não (embedding, 1 vez só) | Rodada 1: top_k por semelhança. Rodadas seguintes: trechos das seções indicadas, os ainda não usados primeiro |
-| `gerar` | **sim** | Geração com JSON Schema. Da rodada 2 em diante, uma observação genérica diz o que falhou (sem repetir a afirmação errada, que o modelo copiaria) |
-| `validar` | não | `validar_saida` + checagem de fundamentação (`services/fundamentacao.py`): todo número tem de estar no trecho citado, todo número com unidade de dose com a mesma unidade, e a maioria dos termos da frase também |
+| `buscar` | não (embedding, 1 vez só) | Com medicamento indexado: rodada 1 top_k por semelhança na bula dele; rodadas seguintes, trechos das seções indicadas, os ainda não usados primeiro. Sem medicamento indexado (nenhum nome, ou só remédio sem bula): **busca geral**, todas as bulas, só nas seções indicadas e um trecho por princípio ativo (`TOP_K_GERAL=4`), para a resposta trazer as opções |
+| `gerar` | **sim** | Geração com JSON Schema. Da rodada 2 em diante, uma observação genérica diz o que falhou (sem repetir a afirmação errada, que o modelo copiaria). Se a pergunta cita remédio sem bula, a observação avisa que não há trechos dele, para o modelo não atribuir a ele o que a bula de outro diz |
+| `validar` | não | `validar_saida` + checagem de fundamentação (`services/fundamentacao.py`): todo número tem de estar no trecho citado, todo número com unidade de dose com a mesma unidade, a maioria dos termos da frase também, algum termo além do nome do remédio tem de estar no texto do trecho, e remédio citado na frase tem de ser o do trecho ou aparecer nele |
 | `verificar_llm` | **sim** | Só na rodada 3: "o trecho diz isso? sim/não" por afirmação. Pode usar um modelo maior (`LLM_MODELO_VERIFICACAO`) sem deixar a pergunta comum mais lenta |
 | `finalizar` | não | Monta o `Resultado` com as rodadas, cada tentativa e o motivo de cada reprovação |
 
@@ -223,6 +224,23 @@ FastAPI em `app/main.py`, rotas em `app/api/rotas.py`, documentação interativa
 - **A resposta sai do snapshot gravado**: as fontes do `POST` são as mesmas que o histórico mostra depois, com fabricante, nº de registro, seção (chave e rótulo), página, data da bula e `citado`. Os trechos consultados e não citados também vêm.
 - **Sobe sem o banco**: com o PostgreSQL fora do ar, a API sobe, responde 503 `BANCO_INDISPONIVEL` e tenta de novo a cada requisição. `DB_TIMEOUT_S` (5 s) corta a espera de ~130 s que o Windows faz por conexão.
 - **Endpoints síncronos** (`def`): o FastAPI roda cada um numa thread à parte, e a pergunta espera o Ollama por dezenas de segundos.
+
+### 6. Frontend
+
+React 19 + TypeScript, servido pelo Vite (`frontend/`), em `http://127.0.0.1:5173`. Formato de chat, como Claude e ChatGPT, e nenhuma biblioteca além do React:
+
+- **Conversa**: a pergunta em balão, a resposta ao lado do ícone, com cada `[n]` clicável. Embaixo, as fontes em chips (medicamento e seção); o clique abre o trecho inteiro da bula com fabricante, nº de registro, página, data e se foi usado na resposta. Caixa de mensagem que cresce com o texto (Enter envia, Shift+Enter quebra a linha) e tela inicial com sugestões de pergunta. Sem filtro de medicamento: o sistema acha o remédio na pergunta ou busca em todas as bulas.
+- **Estados** dentro da conversa: pensando (com os segundos contando: na CPU leva de 10 a 45 s), não encontrada (com os trechos consultados), aviso de remédio sem bula no acervo, esclarecimento (botões, para a ambiguidade de forma farmacêutica) e erro com título claro. No 502, cada rodada que falhou vira um item da lista.
+- **Barra lateral**: "Nova pergunta" e o histórico agrupado em Hoje, Ontem, Últimos 7 dias e Anteriores; o clique abre a consulta como estava na hora. No celular, a barra vira menu.
+- **Saúde**: o rodapé da barra mostra se API, banco e Ollama estão no ar (conferido a cada 30 s), e uma faixa no topo da conversa lista o que falta.
+- Em desenvolvimento, o Vite repassa `/api` para a API (`127.0.0.1:8000`): mesma origem, sem depender de CORS. Tema claro e escuro, pelo sistema operacional.
+
+### 7. Conversa e respostas copiadas da bula
+
+- **Pergunta seguinte**: a tela manda a última resposta (`consulta_origem_id`) e a API busca a pergunta anterior no histórico, sem guardar estado. "E para criança?" continua sobre o remédio da anterior; "e com varfarina?" junta o remédio novo com o anterior; "qual o melhor remédio para tosse?" é assunto novo.
+- **Alergia**: "tenho alergia a um remédio, tem outro?" pergunta de volta qual é. Com o nome, a resposta traz a contraindicação por hipersensibilidade da bula dele e as alternativas da **mesma classe terapêutica no registro da ANVISA** (dipirona → ibuprofeno e paracetamol). A tela lembra de conferir a alergia cruzada.
+- **Frases da bula, sem o LLM**: em pergunta de dose (uma frase da posologia por apresentação), em interação entre remédios citados e nas alternativas, a resposta são as frases da bula como estão escritas (na tabela de interações, a linha inteira). Saem em 2 a 5 s, sem o modelo juntar linhas erradas.
+- **Para que serve**: remédio sem bula no acervo vem com a classe terapêutica do registro na ANVISA ("dipirona: analgésicos não narcóticos").
 
 ## Modelo de dados
 
@@ -305,13 +323,16 @@ erDiagram
 | Avaliação | Gabarito por âncora (frase da bula) em vez de `chunk_id`, para comparar tamanhos de trecho; métricas de recall@k e recusa correta | `benchmark/metricas.py` |
 | API | FastAPI com *lifespan*, injeção de dependência, todo erro no mesmo formato (handlers próprios, inclusive para a validação de entrada), endpoints síncronos para chamada bloqueante, CORS, OpenAPI gerado | `app/main.py`, `app/api/` |
 | Testes | pytest, LLM substituído por falso, teste de equivalência numpy × pgvector, API testada com `TestClient` contra banco real num schema temporário isolado (`schema_translate_map`), *skip* automático sem banco | `backend/tests/` |
+| Frontend | React 19 com hooks, TypeScript estrito com tipos espelhando os contratos da API, estados de carregamento e erro, citações clicáveis ligadas às fontes, tema claro/escuro por variáveis CSS, layout responsivo, dependências fixadas e instaladas sem scripts | `frontend/src/` |
 | Engenharia | Configuração 100% por `.env`, dataset versionado no Git, Docker Compose, cache reprodutível, registro escrito de decisões | `.env.example`, `docker-compose.yml`, `docs/DECISOES.md` |
 
 ## Decisões e aprendizados
 
 O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo que mudou ao implementar, e por quê, está em [`docs/DECISOES.md`](docs/DECISOES.md), que **vale mais que o PDF**. Os pontos principais:
 
-- **Detectar o medicamento antes de chamar o modelo.** Perguntar sobre um remédio sem bula indexada é o caso mais comum, e a resposta certa ("não tenho essa bula") é instantânea, sem os 30 s de geração.
+- **Toda pergunta tem resposta das bulas.** Antes, pergunta sem nome de remédio voltava com "sobre qual medicamento?" e remédio sem bula com "não tenho essa bula". No uso real isso pareceu "não respondeu nada": agora as duas buscam em todas as bulas, na seção que a pergunta indica, e a resposta diz de qual medicamento é cada informação.
+- **Quando a resposta é uma frase da bula, copiar em vez de gerar.** O modelo de 1,5B juntou a linha do clopidogrel com a da varfarina ("deve ser evitado", quando a bula manda monitorar o INR). Copiada, a resposta sai certa e em 2 s.
+- **Busca por semelhança sempre acha alguma coisa.** "Estou tonto" trazia as indicações do paracetamol. Na busca em todas as bulas, o trecho precisa ter a palavra do assunto (tontura, vertigem); sem isso, "não encontrei" é a resposta certa.
 - **Modelo pequeno não cita de forma confiável dentro do texto.** Pedindo `[1]` no meio da frase, o qwen2.5:1.5b citou só na lista e 5 de 5 respostas certas foram recusadas. Pedindo afirmações separadas e montando o `[n]` no código, 7 de 7 passaram.
 - **Nenhum exemplo de resposta no prompt.** O modelo copiou o exemplo ("Deve ser tomado em jejum [2]") numa pergunta sobre armazenamento, e a validação de citações deixou passar.
 - **O dataset em arquivo é a fonte da verdade.** Bulas e trechos em JSON versionado; banco e cache são derivados.
@@ -322,11 +343,11 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 
 ### 1. Bulas reais
 
-20 dos 40 medicamentos do MVP (`data/medicamentos_mvp.json`) já viraram 24 bulas em JSON. Falta gerar trechos e embeddings delas (`gerar_chunks`, ~2,5 s por trecho na CPU) e baixar à mão as 20 que faltam (dipirona, AAS, amoxicilina...), registrando cada uma em `data/FONTES.md` e no manifesto. Tabelas (ex.: doses por peso) ainda saem como texto corrido.
+21 dos 40 medicamentos do MVP (`data/medicamentos_mvp.json`) viraram 25 bulas, com trechos e embeddings no banco (a dipirona entrou no lote 2). As 19 restantes (AAS, amoxicilina, loperamida...) não têm bula do profissional em site oficial aberto: ficam para download manual no Bulário Eletrônico, com a verificação de segurança de `data/FONTES.md` antes de entrar no manifesto. A tabela de interações já é lida como tabela; as outras (ex.: doses por peso) ainda saem como texto corrido.
 
 ### 2. O que falta das rodadas e do esclarecimento
 
-- **Forma farmacêutica ambígua** (diclofenaco sódico comprimido × gel): o nó `esclarecer` já existe, mas a bula ainda não tem o campo `forma`. Entra com as bulas reais.
+- **Forma farmacêutica ambígua** (Tylalgin gotas × comprimido × sachê): a bula já tem `forma_farmaceutica`, e o contrato `precisa_esclarecimento` continua na API e na tela; falta o nó que pergunta (o antigo `esclarecer`, que perguntava o medicamento, saiu em 2026-10-16).
 - **"Não ajudou, explique de outro jeito"**: o balconista pede outra explicação; o grafo entra direto em `buscar` com os trechos já mostrados excluídos e passa pelas mesmas validações. Não precisa de nó novo.
 - O esclarecimento só pergunta sobre medicamento, forma farmacêutica ou seção. **Nunca** pergunta dado do paciente (idade, gestação, doenças), por causa da LGPD e da regra "não personaliza conduta". No máximo 1 por pergunta: o reenvio já vem com o filtro.
 
@@ -343,13 +364,13 @@ flowchart LR
 
 As 10 perguntas sem resposta calibram o `LIMIAR_SIMILARIDADE`, que hoje está vazio de propósito. Perguntas de interação têm duas âncoras e só contam se as duas forem recuperadas.
 
-### 4. Frontend e entrega
+### 4. Entrega
 
-Tela em React com a resposta, citações `[n]` clicáveis que abrem o trecho, fontes ao lado, aviso de medicamento não indexado, botões de esclarecimento e histórico. Depois: Docker Compose completo, resultados do benchmark publicados aqui e um vídeo curto de demonstração.
+Docker Compose completo (serviço do frontend), resultados do benchmark publicados aqui e um vídeo curto de demonstração.
 
 ## Como rodar
 
-Requisitos: Python 3.12, [Ollama](https://ollama.com) e Docker (só para o banco).
+Requisitos: Python 3.12, [Ollama](https://ollama.com), Docker (só para o banco) e Node 24 (só para o frontend).
 
 ```powershell
 # Modelos
@@ -377,8 +398,14 @@ docker compose up -d db
 python -m ingestao.carregar_banco
 uvicorn app.main:app --app-dir backend --reload   # http://127.0.0.1:8000/docs
 
+# Frontend (outro terminal; npm ci instala exatamente o package-lock.json, sem scripts)
+cd frontend
+npm.cmd ci
+npm.cmd run dev    # http://127.0.0.1:5173 (no PowerShell, npm.cmd: ver DECISOES §19)
+
 # Testes
 pytest
+cd frontend; npm.cmd run build   # confere os tipos (tsc) e gera o build
 ```
 
 > No Windows, use `DB_HOST=127.0.0.1`, não `localhost`: o `localhost` tenta o IPv6 primeiro e cada conexão espera ~130 s. Se já houver um PostgreSQL nativo na 5432, publique o container em outra porta (`DB_PORT=5433`).
@@ -405,6 +432,8 @@ farma-rag/
 │   ├── processed/             # bulas JSON, chunks.jsonl, catálogo ANVISA (versionados)
 │   ├── cache/                 # embeddings em SQLite (fora do Git)
 │   └── benchmark/             # perguntas e resultados
+├── frontend/                  # React + TypeScript (Vite): tela de chat
+│   └── src/                   # api.ts (cliente e tipos), conversa.ts (modelo da conversa), App.tsx, componentes/, estilo.css
 ├── docs/DECISOES.md           # correções à especificação, com motivo
 ├── docker-compose.yml         # pgvector/pgvector:pg17 + backend
 └── FarmaRAG.pdf               # especificação original

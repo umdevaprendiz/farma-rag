@@ -10,6 +10,7 @@ import difflib
 import json
 import re
 import unicodedata
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from functools import cached_property
 from pathlib import Path
@@ -22,7 +23,8 @@ _SAIS = {
     "de", "da", "do", "e", "cloridrato", "dicloridrato", "maleato", "sulfato", "fumarato",
     "succinato", "tartarato", "acetato", "citrato", "nitrato", "mesilato", "fosfato", "besilato",
     "bromidrato", "hidrobrometo", "brometo", "butilbrometo", "sodico", "sodica", "potassico",
-    "potassica", "calcico", "dietilamonio", "arginina", "micronizado", "micronizada",
+    "potassica", "calcico", "calcica", "magnesico", "magnesica", "dietilamonio", "arginina", "micronizado", "micronizada",
+    "bissulfato", "hemifumarato", "bitartarato", "hemitartarato", "tosilato", "hiclato", "oxalato", "trometamol",
     "microgranulados", "monoidratado", "monoidratada", "hidratado", "hidratada", "tri", "di",
     "tetra", "hepta", "triidratado", "heptaidratado", "heptaidratada", "anidro", "anidra",
 }
@@ -74,6 +76,12 @@ def _aliases(nome: str, principio_ativo: bool = True) -> set[str]:
     return aliases
 
 
+def formas_do_nome(nome: str) -> set[str]:
+    """Como o princípio ativo pode aparecer escrito num texto, já normalizado
+    ("cloridrato de loperamida" -> {"cloridrato de loperamida", "loperamida"})."""
+    return _aliases(nome)
+
+
 def _serve(alias: str, ignorar: set[str]) -> bool:
     """Alias tirado do catálogo da ANVISA sem revisão humana: curto ou genérico vira falso positivo."""
     return (
@@ -100,6 +108,16 @@ class Catalogo:
     # Marcas vindas do catálogo da ANVISA: só casam escritas certo. Marca imita sintoma
     # ("INTESTIN"), e tolerar erro de digitação faria "intestino" virar loperamida.
     so_exato: set[str] = field(default_factory=set)
+    # Palavras que aparecem no texto das bulas: são palavras de verdade, não erro de digitação de
+    # um nome ("cefaleia" ficava a 0,88 de "cefalexina" e a pergunta virava sobre o antibiótico).
+    vocabulario: set[str] = field(default_factory=set)
+    # alias -> classe terapêutica no registro da ANVISA ("dipirona" -> "ANALGESICOS NAO NARCOTICOS").
+    # É o que se sabe de um remédio sem bula no acervo: para que ele serve, por fonte oficial.
+    classes: dict[str, str] = field(default_factory=dict)
+
+    def classe_de(self, nome: str) -> str | None:
+        """Classe terapêutica mais registrada para o princípio ativo (sem acento, como no CSV)."""
+        return next((self.classes[a] for a in sorted(_aliases(nome), key=len, reverse=True) if a in self.classes), None)
 
     @cached_property
     def max_palavras(self) -> int:
@@ -121,8 +139,10 @@ class Catalogo:
         conhecidos: Iterable[str] = (),
         anvisa: Iterable[dict] = (),
         ignorados: Iterable[str] = (),
+        vocabulario: Iterable[str] = (),
     ) -> "Catalogo":
-        """`anvisa`: itens de catalogo_anvisa.jsonl; `ignorados`: aliases do catálogo a descartar.
+        """`anvisa`: itens de catalogo_anvisa.jsonl; `ignorados`: aliases do catálogo a descartar;
+        `vocabulario`: palavras (normalizadas) do texto das bulas, que nunca são erro de digitação.
 
         Do catálogo entram, para os indexados, as marcas de produtos só com aquele princípio
         ativo; para os demais, só o princípio ativo (marca curta ou ambígua, como "CORUS" ou
@@ -140,7 +160,11 @@ class Catalogo:
         ignorar = {normalizar(i) for i in ignorados}
         marcas: dict[str, set[str]] = {}  # alias de marca -> princípios indexados que a usam
         outros: dict[str, dict] = {}  # nome do produto -> item que NÃO é de princípio indexado
+        contagem_classes: dict[str, Counter] = defaultdict(Counter)  # alias -> classe -> nº de registros
         for item in anvisa:
+            if not item["associacao"] and item.get("classe_terapeutica"):
+                for alias in _aliases(item["principios_ativos"][0]):
+                    contagem_classes[alias][item["classe_terapeutica"]] += item.get("n_registros", 1)
             ativo = None if item["associacao"] else por_chave.get(chave_principio(item["principios_ativos"][0]))
             if ativo is None:
                 outros[normalizar(item["nome_produto"])] = item
@@ -174,7 +198,8 @@ class Catalogo:
         for nome in outros:
             if nome not in indexados and _contem(nome.split(" "), indexados, max_palavras):
                 nao_indexados.setdefault(nome, nome)
-        return cls(indexados, nao_indexados, so_exato)
+        classes = {alias: c.most_common(1)[0][0] for alias, c in contagem_classes.items()}
+        return cls(indexados, nao_indexados, so_exato, set(vocabulario), classes)
 
 
 def carregar_conhecidos(caminho: str | Path) -> list[str]:
@@ -201,7 +226,9 @@ class Deteccao:
     nao_indexados: list[str]  # nomes conhecidos sem bula indexada
 
 
-def detectar(pergunta: str, catalogo: Catalogo) -> Deteccao:
+def detectar(pergunta: str, catalogo: Catalogo, tolerar_erros: bool = True) -> Deteccao:
+    """`tolerar_erros`: aceitar erro de digitação leve no nome. Sim para a pergunta do balconista;
+    não para o texto do modelo (fundamentacao.py), que escreve os nomes certo."""
     tokens = normalizar(pergunta).split(" ")
     indexados: set[str] = set()
     nao_indexados: set[str] = set()
@@ -223,8 +250,8 @@ def detectar(pergunta: str, catalogo: Catalogo) -> Deteccao:
         else:
             n = 1
             # Erro de digitação: só em palavra longa que não é, ela mesma, um nome conhecido
-            # ("prednisona" não pode virar "prednisolona").
-            if len(tokens[i]) >= _MIN_ALIAS_FUZZY:
+            # ("prednisona" não pode virar "prednisolona") nem uma palavra das bulas ("cefaleia").
+            if tolerar_erros and len(tokens[i]) >= _MIN_ALIAS_FUZZY and tokens[i] not in catalogo.vocabulario:
                 for alias in difflib.get_close_matches(
                     tokens[i], catalogo.candidatos_fuzzy, n=1, cutoff=_CUTOFF_FUZZY
                 ):

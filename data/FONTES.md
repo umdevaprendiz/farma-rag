@@ -81,6 +81,28 @@ mais recente da tabela de histórico de alteração. Conferir ao rodar `processa
 | `tiamina_vitaum-geolab_profissional.pdf` | Vitaum (cloridrato de tiamina) | 1.5423.0129 | [Geolab](https://www.geolab.com.br/wp-content/uploads/2021/05/bula_1768592730965.pdf) | V03_05/2025 | `755146b41d86872e933ea740db59405cdceecb8b8307fe145d86a9a08bb22dc6` |
 | `fexofenadina_generico-vitamedic_profissional.pdf` | cloridrato de fexofenadina (genérico) | 1.0392.0230 | [Vitamedic](https://www.vitamedic.ind.br/wp-content/uploads/2023/08/cloridrato-de-fexofenadina-bula-profissional.pdf) | histórico: 13/03/2026 | `721c94b2ad1f99535e511918a33be933792319805d913629a1967af08d8c91a5` |
 
+### Lote 2 (baixado em 2026-10-16)
+
+Mesma verificação do lote 1, refeita para este lote:
+- antes de baixar: geolab.com.br no registro.br em nome de 03.485.572/0001-04 (Geolab, desde 2001),
+  o mesmo CNPJ do detentor no CSV; link da página do produto e da página de bulas da Geolab, sem
+  redirecionamento; TLS válido; Google Safe Browsing sem alerta (status 1); `application/pdf`;
+- download com limite de 20 MB numa pasta de quarentena vazia, fora do projeto; começa com `%PDF-1.7`;
+- depois: Windows Defender (assinaturas 1.461.52.0, de 2026-10-15) sem ameaças;
+  `validar_pdf_bula.py` sem conteúdo ativo (107 objetos, todos legíveis); texto de bula do
+  profissional ("Resultados de eficácia"), uma bula só, registro impresso 1.5423.0350 `Ativo` no CSV
+  (DORAGEO, dipirona monoidratada, similar).
+
+Pesquisados e recusados neste lote: o link "Bula para Profissional" da dipirona genérica da Geolab
+aponta para `Bula-do-paciente-dipirona-50mg_mL.pdf` (bula do paciente); escopolamina e nafazolina da
+Geolab só existem em associação (Espaslit DUO, Colírio Geolab, Ocutil); Diprin e Vitacin Kids não
+têm bula no site. A Cimed (domínio cimedremedios.com.br, mesmo CNPJ do detentor) só publica a bula
+do paciente. O site de bulas da Prati-Donaduzzi é um aplicativo sem link direto para o PDF.
+
+| Arquivo | Produto (princípio ativo) | Registro | Origem | Versão | SHA-256 |
+|---|---|---|---|---|---|
+| `dipirona_dorageo-geolab_profissional.pdf` | Dorageo 1 g comprimido (dipirona monoidratada) | 1.5423.0350 | [Geolab](https://www.geolab.com.br/wp-content/uploads/2024/08/bula_1787252112501.pdf) | V.03_03/2026 | `9962db94406f0835a09a4c0d539c64cbfe83ae446852f02e323229cd20940793` |
+
 ## Catálogo derivado (versionado no Git)
 
 `data/processed/catalogo_anvisa.jsonl` + `catalogo_anvisa.meta.json`, gerados por

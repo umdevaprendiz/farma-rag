@@ -118,7 +118,9 @@ def test_medicamentos(cliente):
 
 def test_resposta_com_fontes_fica_no_historico_igual(cliente, modelo, engine):
     modelo("interacoes", _resposta(("Pode reduzir o efeito anti-hipertensivo", 1)))
-    r = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol pode com ibuprofeno?"})
+    # Sem segundo remédio na pergunta: vai pelo LLM (com outro remédio citado, a resposta é a frase
+    # da bula: ver test_interacao_vem_da_frase_da_bula_sem_llm).
+    r = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol tem interação medicamentosa?"})
     assert r.status_code == 200
     corpo = r.json()
     assert (corpo["status"], corpo["rodadas"], corpo["modelo"]) == ("respondida", 1, "qwen2.5:1.5b")
@@ -137,15 +139,14 @@ def test_resposta_com_fontes_fica_no_historico_igual(cliente, modelo, engine):
     assert [t["resultado"] for t in tentativas] == ["aprovada"] and tentativas[0]["saida_bruta"]
 
 
-def test_esclarecimento_e_reenvio_ligados_no_historico(cliente, modelo):
-    modelo("posologia", _resposta(("A dose máxima é de 100 mg uma vez ao dia", 1)))
+def test_pergunta_sem_remedio_responde_e_o_reenvio_fica_ligado(cliente, modelo):
+    modelo("posologia", _resposta(("A dose máxima do Exemplol é de 100 mg uma vez ao dia", 1)))
     primeira = cliente.post("/api/v1/perguntas", json={"pergunta": "Qual a dose máxima por dia?"}).json()
-    assert primeira["status"] == "precisa_esclarecimento" and primeira["fontes"] == []
-    opcao = primeira["esclarecimento"]["opcoes"][0]
-    assert opcao == {"rotulo": "maleato de exemplina (Exemplol 50 mg)", "principios_ativos": ["maleato de exemplina"]}
+    assert (primeira["status"], primeira["esclarecimento"]) == ("respondida", None)  # busca em todas as bulas
+    assert primeira["fontes"][0]["rotulo_secao"] == "Posologia e modo de usar"
 
     reenvio = cliente.post("/api/v1/perguntas", json={
-        "pergunta": "Qual a dose máxima por dia?", "principios_ativos": opcao["principios_ativos"],
+        "pergunta": "Qual a dose máxima por dia?", "principios_ativos": ["maleato de exemplina"],
         "consulta_origem_id": primeira["consulta_id"],
     }).json()
     assert reenvio["status"] == "respondida"
@@ -156,7 +157,7 @@ def test_esclarecimento_e_reenvio_ligados_no_historico(cliente, modelo):
 
 def test_rodadas_esgotadas_dao_502_explicado_e_ficam_no_historico(cliente, modelo):
     chamadas = modelo("posologia", _resposta(("A dose máxima é de 200 mg uma vez ao dia", 1)))
-    r = cliente.post("/api/v1/perguntas", json={"pergunta": "Qual a dose máxima de Exemplol?"})
+    r = cliente.post("/api/v1/perguntas", json={"pergunta": "Como tomar o Exemplol?"})
     assert _erro(r) == (502, "RESPOSTA_NAO_VERIFICADA") and len(chamadas) == 3
     mensagem = r.json()["erro"]["mensagem"]
     assert "3 rodada(s)" in mensagem and "rodada 1: " in mensagem
@@ -178,11 +179,11 @@ def test_ollama_fora_do_ar_da_503_e_fica_no_historico(cliente, monkeypatch):
     assert cliente.get("/api/v1/historico").json()["itens"][0]["status"] == "erro"
 
 
-def test_medicamento_sem_bula_responde_sem_chamar_o_modelo(cliente, monkeypatch):
-    monkeypatch.setattr(ollama, "embed", lambda *a, **k: pytest.fail("não devia buscar"))
+def test_remedio_sem_bula_que_nenhuma_bula_cita(cliente, modelo):
+    modelo("interacoes", RECUSA)
     corpo = cliente.post("/api/v1/perguntas", json={"pergunta": "Captopril pode com álcool?"}).json()
-    assert (corpo["status"], corpo["motivo"], corpo["medicamentos_nao_indexados"]) == (
-        "nao_encontrada", "medicamento_nao_indexado", ["captopril"],
+    assert (corpo["status"], corpo["motivo"], corpo["medicamentos_nao_indexados"], corpo["fontes"]) == (
+        "nao_encontrada", "medicamento_nao_indexado", ["captopril"], [],
     )
 
 
@@ -201,8 +202,8 @@ def test_entrada_invalida_da_422_no_formato_de_erro(cliente, corpo, campo):
     assert _erro(r) == (422, "ENTRADA_INVALIDA") and r.json()["erro"]["mensagem"].startswith(f"{campo}: ")
 
 
-def test_historico_paginado_do_mais_recente(cliente, monkeypatch):
-    monkeypatch.setattr(ollama, "embed", lambda *a, **k: pytest.fail("não devia buscar"))
+def test_historico_paginado_do_mais_recente(cliente, modelo):
+    modelo("interacoes", RECUSA)
     for i in range(3):
         cliente.post("/api/v1/perguntas", json={"pergunta": f"Captopril pergunta {i}"})
     pagina1 = cliente.get("/api/v1/historico", params={"limite": 2}).json()
@@ -216,6 +217,11 @@ def test_historico_paginado_do_mais_recente(cliente, monkeypatch):
 def test_consulta_que_nao_existe_da_404(cliente):
     r = cliente.get("/api/v1/historico/00000000-0000-0000-0000-000000000000")
     assert _erro(r) == (404, "CONSULTA_NAO_ENCONTRADA")
+
+
+def test_raiz_leva_para_a_documentacao(cliente):
+    r = cliente.get("/", follow_redirects=False)
+    assert (r.status_code, r.headers["location"]) == (307, "/docs")
 
 
 def test_cors_libera_o_frontend(cliente):
@@ -233,3 +239,57 @@ def test_banco_fora_do_ar_da_503_e_a_api_sobe_mesmo_assim(monkeypatch):
         corpo = cliente.get("/api/v1/saude").json()
         assert (corpo["status"], corpo["banco"]) == ("degradado", False)
         assert "127.0.0.1:1" in corpo["problemas"][0]
+
+
+def test_pergunta_seguinte_herda_o_remedio_da_anterior(cliente, modelo):
+    modelo("posologia", _resposta(("A dose máxima do Exemplol é de 100 mg uma vez ao dia", 1)))
+    primeira = cliente.post("/api/v1/perguntas", json={"pergunta": "Como tomar o Exemplol?"}).json()
+    assert (primeira["principios_ativos"], primeira["continuacao"]) == (["maleato de exemplina"], False)
+
+    seguinte = cliente.post("/api/v1/perguntas", json={
+        "pergunta": "E qual a dose inicial?", "consulta_origem_id": primeira["consulta_id"],
+    }).json()
+    assert (seguinte["status"], seguinte["principios_ativos"], seguinte["continuacao"]) == (
+        "respondida", ["maleato de exemplina"], True,
+    )
+
+
+def test_alergia_pergunta_o_remedio_e_a_resposta_vem_no_chat(cliente, modelo):
+    modelo("contraindicacoes", _resposta(("O Exemplol é contraindicado para pacientes com hipersensibilidade à exemplina", 1)))
+    pergunta = cliente.post("/api/v1/perguntas", json={"pergunta": "Tenho alergia a um remédio, tem outro?"}).json()
+    assert pergunta["status"] == "precisa_esclarecimento"
+    assert (pergunta["esclarecimento"]["motivo"], pergunta["esclarecimento"]["opcoes"]) == ("remedio_da_alergia", [])
+
+    resposta = cliente.post("/api/v1/perguntas", json={
+        "pergunta": "Exemplol", "consulta_origem_id": pergunta["consulta_id"],
+    }).json()
+    assert (resposta["status"], resposta["alergia_a"], resposta["continuacao"]) == ("respondida", "maleato de exemplina", True)
+    assert resposta["fontes"][0]["rotulo_secao"] == "Contraindicações"
+
+
+def test_remedio_sem_bula_vem_com_a_classe_terapeutica_da_anvisa(cliente, modelo):
+    modelo("interacoes", RECUSA)
+    corpo = cliente.post("/api/v1/perguntas", json={"pergunta": "Dipirona pode para criança?"}).json()
+    # O catálogo real (data/processed/catalogo_anvisa.jsonl) diz para que a dipirona serve.
+    assert corpo["classes_terapeuticas"] == {"dipirona": "ANALGESICOS NAO NARCOTICOS"}
+
+
+def test_interacao_vem_da_frase_da_bula_sem_llm(cliente, monkeypatch, modelo):
+    modelo("interacoes", RECUSA)
+    monkeypatch.setattr(ollama, "chat", lambda *a, **k: pytest.fail("a frase vem da bula, sem o LLM"))
+    corpo = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol pode ser usado com ibuprofeno?"}).json()
+    assert (corpo["status"], corpo["extrativa"], corpo["modelo"]) == ("respondida", True, "frases da bula (sem LLM)")
+    assert corpo["resposta"] == (
+        "O uso com anti-inflamatórios não esteroidais, como o ibuprofeno, pode reduzir o efeito "
+        "anti-hipertensivo da exemplina e piorar a função renal [1]."
+    )
+
+
+def test_erro_traz_o_id_da_consulta_para_a_conversa_continuar(cliente, monkeypatch):
+    def fora(textos, s=None):
+        raise ollama.OllamaError(CodigoErro.OLLAMA_INDISPONIVEL, "Ollama fora do ar")
+
+    monkeypatch.setattr(ollama, "embed", fora)
+    corpo = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol pode com álcool?"}).json()
+    assert corpo["erro"]["codigo"] == "OLLAMA_INDISPONIVEL"
+    assert cliente.get(f"/api/v1/historico/{corpo['consulta_id']}").json()["status"] == "erro"

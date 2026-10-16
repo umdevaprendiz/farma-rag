@@ -37,6 +37,7 @@ comercial, erro de digitação leve) contra o catálogo indexado e contra
 - misturados -> segue com os indexados e devolve `medicamentos_nao_indexados` para o frontend avisar;
 - nenhum reconhecido -> segue sem filtro e o limiar de similaridade decide.
 Limite: só reconhece o que está nas duas listas. Mantenha `medicamentos_conhecidos.txt` crescendo.
+**Mudou em 2026-10-16 (seção 20):** só não-indexados e nenhum reconhecido vão para a busca geral.
 
 ## 5. Filtro por princípio ativo
 A API recebe `principios_ativos: list[str]`, não `bula_id`. Vários fabricantes têm bula do mesmo
@@ -231,7 +232,7 @@ Decisões:
   só nesse nó, que roda pouco: é o jeito de ganhar capacidade sem deixar a pergunta comum mais lenta.
 - **Orçamento de tempo:** nova rodada só se `gasto + gasto/rodadas <= ORCAMENTO_S`.
 - **Esclarecimento:** por ora só "nenhum medicamento reconhecido e sem filtro"; as opções são os
-  princípios ativos indexados. Antes desse caso a busca rodava sem filtro. A ambiguidade de forma
+  princípios ativos indexados. **Saiu em 2026-10-16 (seção 20):** esse caso virou busca geral. Antes desse caso a busca rodava sem filtro. A ambiguidade de forma
   farmacêutica precisa do campo `forma` na bula.
 - **Erro do Ollama não gera nova rodada**: fora do ar ou tempo esgotado não se resolve tentando de
   novo dentro da mesma pergunta.
@@ -319,3 +320,225 @@ Decisões:
 as do schema e os testes gravavam no banco de desenvolvimento (o `TRUNCATE chunks, bulas` do
 `carregar_banco` apagava o acervo do `public` a cada `pytest`). Agora `criar_engine(schema=...)`
 também usa `schema_translate_map`, e um teste confere que as tabelas existem no schema temporário.
+
+## 19. Frontend React (2026-10-16)
+Vite + React 19 + TypeScript em `frontend/`, duas abas (Perguntar e Histórico), sobre a API da seção 18.
+
+Decisões:
+- **Dependências mínimas e fixadas**: só `react`, `react-dom`, `vite`, `@vitejs/plugin-react`,
+  `typescript` e os tipos do React, com versão exata (`save-exact`), sem roteador, sem biblioteca de
+  componentes, sem fonte externa (a tela funciona sem internet). 24 pacotes, 73 MB em `node_modules`.
+- **Instalação conferida antes** (regra do projeto para qualquer download): versões, datas e tamanhos
+  lidos do registro do npm sem baixar nada; proveniência SLSA de React, Vite e plugin (publicados pelo
+  GitHub Actions dos repositórios oficiais; o React passou de `facebook/react` para `react/react` com
+  a React Foundation, em 2026); `package-lock.json` resolvido antes do download; `npm ci` (instala
+  exatamente o lockfile e confere o SHA-512 de cada pacote); `npm audit` sem vulnerabilidades;
+  Defender sem ameaças. `.npmrc` com `ignore-scripts=true`: nenhum pacote roda script ao instalar.
+- **Proxy do Vite em desenvolvimento**: a tela chama `/api` na própria origem e o Vite repassa para
+  `127.0.0.1:8000` (`FARMARAG_API` troca o destino). Não depende de CORS e evita o `localhost` → IPv6.
+- **O Vite escuta em `127.0.0.1:5173`**, não em `localhost`: aqui o `localhost` resolve primeiro para o
+  IPv6 (`::1`), o Vite escutava só nele, e o navegador que tentava `127.0.0.1` dava conexão recusada
+  (erro -102). No PowerShell, `npm.cmd run dev`: o `npm.ps1` é barrado pela política de scripts.
+- **Tipos espelhados à mão** (`src/api.ts`) dos contratos de `schemas/api.py`, sem gerador a partir do
+  OpenAPI: são poucos modelos, e um gerador seria mais uma dependência. Mudou o contrato, muda lá.
+- **A resposta e o histórico usam os mesmos componentes** (texto com `[n]` clicável e lista de fontes).
+  O clique numa citação destaca a fonte e abre o trecho inteiro; o mesmo `[n]` clicado de novo reabre.
+- **As duas abas ficam montadas** (`hidden`): trocar de aba não perde a resposta na tela, e o
+  histórico recarrega ao voltar a aparecer. A aba fica no endereço (`#historico`).
+- **Erro com título claro por código** e, no 502, a mensagem da API quebrada em uma linha por rodada.
+  Os três erros de verificação (`RESPOSTA_NAO_VERIFICADA`, `SAIDA_INVALIDA`, `CITACAO_INVALIDA`)
+  dizem que o sistema preferiu parar a mostrar algo que não confere com a bula.
+- **Sem testes automáticos de tela por enquanto** (exigiriam Vitest e Testing Library, mais
+  dependências). Conferido com `tsc` estrito, `vite build` e capturas do Edge sem janela em todos os
+  estados, com uma API de teste (o mesmo `criar_app`, Ollama simulado, schema temporário) para os
+  estados que dependem do LLM.
+- **Falta**: serviço `frontend` no `docker-compose.yml` e o botão "não ajudou" (feature em espera).
+
+## 20. Qualquer pergunta sobre remédio, com base nas bulas (2026-10-16)
+Pedido do usuário depois de testar a tela: "qual o melhor remédio pra dor de cabeça?" voltava com
+"sobre qual medicamento é a pergunta?" e parecia não responder nada. Ele quer que **qualquer
+pergunta sobre remédio seja respondida** ("estou tonto, qual o melhor medicamento?", "tenho alergia a
+um remédio, tem outro que eu possa tomar?"), **com base nas pesquisas**, isto é, nas bulas
+recuperadas. Não com o conhecimento próprio do modelo.
+
+Decisões:
+- **Busca geral** (`_busca_geral` em `grafo.py`) quando a pergunta não tem medicamento indexado
+  (nenhum nome, ou só remédio sem bula no acervo): todas as bulas, só nas seções que a pergunta indica
+  e **um trecho por princípio ativo**, até `TOP_K_GERAL=4`. Cada trecho é uma opção na resposta; sem a
+  regra, os três melhores trechos podiam ser do mesmo remédio.
+- **A seção vale já na rodada 1 da busca geral.** Sem isso, "melhor remédio pra dor de cabeça" traz
+  reações adversas que citam cefaleia antes das indicações. `intencao.py` ganhou gatilhos de escolha e
+  de sintoma ("melhor remédio", "remédio pra", "o que tomar", "dor de", "febre", "tontura",
+  "alergia"...) para Indicações, e "alergia"/"hipersensibilidade" para Contraindicações.
+- **O nó `esclarecer` saiu** (o grafo tem 6 nós): ele perguntava o medicamento, o que agora vira busca
+  geral. O contrato `precisa_esclarecimento` fica na API e na tela para a ambiguidade de forma
+  farmacêutica (Tylalgin gotas × comprimido), que ainda não tem nó.
+- **Remédio sem bula também busca**: "captopril pode com álcool?" procura o assunto nas outras bulas.
+  O prompt ganha a observação "não há trechos da bula de captopril; não atribua a ele o que a bula de
+  outro medicamento diz", e a tela avisa que a resposta veio de outras bulas. Se nenhuma bula fala do
+  assunto, continua `nao_encontrada` com `medicamento_nao_indexado`.
+- **Prompt**: saiu "não recomende dose nem conduta para um paciente específico"; entrou "responda toda
+  pergunta com o que os trechos dizem, dizendo de qual medicamento é cada informação". Para "o
+  melhor", ele lista os indicados (as bulas não dizem qual é o melhor); para alergia, o que as bulas
+  dizem de hipersensibilidade e quais servem para o mesmo uso. A recusa ficou só para trechos sem
+  relação nenhuma com a pergunta. Continua sem exemplo de resposta (o modelo pequeno copia).
+- **Não muda**: toda frase cita o trecho, a checagem de fundamentação e as rodadas continuam, e
+  resposta que não passa vira 502. É isso que mantém "com base nas pesquisas" verdadeiro.
+- **Limite**: o acervo tem 20 dos 40 medicamentos do MVP. Para um sintoma que nenhuma bula trata
+  (tontura: o dimenidrinato ainda não foi baixado), a resposta certa é "nenhuma bula do acervo fala
+  disso", com os trechos consultados ao lado.
+
+**Primeiro teste com o LLM real e as 24 bulas (mesmo dia), e o que mudou por causa dele.** Das 11
+perguntas, as 7 sobre um remédio específico saíram certas, mas a busca geral deu três respostas
+erradas com cara de verificadas: "estou tonto" → "Tylalgin gotas [1]. Ibuprofeno [2]."; "dipirona
+para criança" → uma frase da bula do omeprazol atribuída à dipirona; "dor de cabeça" → só nomes.
+Correções, todas determinísticas:
+- **Fundamentação, regra 3**: algum termo da afirmação, além do nome do remédio, tem de estar no
+  texto do trecho. O nome está no cabeçalho do trecho, então "Ibuprofeno 400 mg [2]" passava.
+- **Fundamentação, regra 4**: remédio citado na afirmação (pelo catálogo, sem tolerar erro de
+  digitação) tem de ser o do trecho ou aparecer no texto dele.
+- **Busca híbrida na busca geral**: além da semelhança e da seção, o trecho precisa ter uma palavra
+  do assunto da pergunta (`intencao.termos_do_assunto`, com sinônimos de sintoma: "tonto" →
+  tontura, vertigem, labirintite; "dor de cabeça" → cabeça, cefaleia, enxaqueca). Se a pergunta cita
+  remédio sem bula, o trecho tem de mencioná-lo (em qualquer seção, os da seção da pergunta
+  primeiro). Nenhum trecho assim = "não encontrei", sem chamar o LLM.
+- **"Cefaleia" não é cefalexina**: a tolerância a erro de digitação de `detectar` lia "cefaleia" como o
+  antibiótico (0,88 de semelhança). Palavra que aparece no texto das bulas (`Catalogo.vocabulario`)
+  é palavra de verdade e não passa pela tolerância; no texto do modelo a tolerância fica desligada.
+- **Aviso específico** para a próxima rodada quando o modelo responde só com nomes
+  (`DICA_SO_NOME`); com o aviso genérico ele repetia os nomes nas 3 rodadas. O prompt também pede
+  "cada frase diz o que o trecho diz, nunca só o nome do medicamento".
+
+Resultado depois das correções: 10 de 11 respostas certas ("tonto" e "dipirona" viram "não encontrei",
+que é o certo com este acervo; "dor de cabeça" responde ibuprofeno e paracetamol com a indicação de
+cada um). A de alergia continua fraca: sem saber a que remédio é a alergia, cita as contraindicações
+por hipersensibilidade da nimesulida e uma do ibuprofeno sem relação. Omeprazol + clopidogrel acertou
+nas duas últimas execuções, mas errou na primeira ("aumenta a toxicidade"): a tabela de interações do
+Omenax saiu embaralhada do PDF e precisa de conferência.
+
+## 21. Tela em formato de chat (2026-10-16)
+Pedido do usuário: tirar o filtro de medicamento e deixar a tela "parecida com a do Claude, do
+ChatGPT ou do Gemini". A tela de pergunta + aba de histórico (seção 19) virou um chat:
+- Barra lateral com "Nova pergunta" e o histórico da API agrupado por data (Hoje, Ontem, Últimos 7
+  dias, Anteriores); no celular, menu. Abrir uma consulta antiga mostra a pergunta e a resposta como
+  estavam na hora (snapshot).
+- Conversa com a pergunta em balão e a resposta com `[n]` clicável; as fontes viram chips embaixo da
+  resposta e o clique abre o trecho (no lugar da coluna lateral de fontes).
+- Sem filtro de medicamento: com a busca geral (seção 20), a pergunta sozinha basta. O contrato
+  `principios_ativos` continua na API (o esclarecimento de forma farmacêutica vai usá-lo).
+- A conversa vive só na tela (`conversa.ts`): a API continua sem estado, cada pergunta é independente.
+  **Mudou no mesmo dia (seção 23):** a tela manda a última resposta, e "e para criança?" passa a
+  continuar a pergunta anterior.
+- Conferido com capturas do Edge sem janela: API de teste (Ollama simulado) para todos os estados, e
+  a resposta real da dor de cabeça aberta pelo histórico.
+
+## 22. Tabela de interações lida como tabela (2026-10-16)
+A bula do Omenax traz as interações numa tabela de duas colunas (remédio | "Impacto clínico:" /
+"Intervenção:" + texto). Pela extração de texto do `pdfplumber`, os rótulos da coluna da esquerda caíam
+no meio das frases da direita ("pode reduzir o efeito antiviral e promover o Impacto clínico:
+desenvolvimento de resistência") e um trecho juntava saquinavir com clopidogrel: no teste real, a
+resposta disse que omeprazol + clopidogrel "aumenta a toxicidade" (a bula diz que reduz o efeito).
+- `ingestao/extrair_pdf.py` lê **só esse formato** como tabela (duas colunas, rótulo "Impacto clínico"
+  ou "Intervenção" na esquerda). Cada célula vira uma linha com o nome do remédio na frente
+  ("Clopidogrel, intervenção: Evitar o uso concomitante de omeprazol..."), para o trecho que pegar só
+  aquela linha ainda dizer de quem fala. A tabela continua de uma página para a outra ("(continuação)");
+  o cabeçalho de grupo ("Substratos de CYP2C19 (por exemplo, clopidogrel, ...)") vira uma linha.
+- As outras tabelas continuam pela extração de texto: comparando página a página, só as páginas 26 a 30
+  do Omenax mudaram nas 20 bulas. As tabelas de 10 colunas são o histórico de alteração (descartado) e
+  as de eficácia e dose por peso ficam como estavam (limite conhecido).
+- Reprocessado só o Omenax (`processar_lote --so`); 11 trechos novos com embedding (22 s); 866 trechos.
+
+## 23. Conversa: pergunta seguinte, alergia e "o que o remédio faz" (2026-10-16)
+Pedido do usuário depois do teste real: guardar a última pergunta para a pessoa perguntar outra coisa
+depois, pedir o nome do remédio na pergunta de alergia, e saber o que cada remédio faz.
+
+**Pergunta seguinte.** A tela manda a última resposta da conversa em `consulta_origem_id`; a API busca
+a consulta no histórico (`rag.Anterior`: pergunta, princípios ativos usados, se pediu esclarecimento) e
+continua sem estado. `consultas` ganhou `principios_ativos` (os usados na busca). No `entender`:
+- sem remédio na pergunta nova ("pode na gravidez?"), herda o da anterior; se a anterior foi geral,
+  só herda a pergunta que começa com "e"/"mas" ("e para criança?"), e o assunto vem da anterior;
+- "e com varfarina?" junta o remédio novo com o da anterior (a pergunta é omeprazol + varfarina);
+- pedido de remédio ("qual o melhor remédio para tosse?") é assunto novo e não herda nada;
+- a busca usa as duas perguntas juntas, e o prompt ganha "PERGUNTA ANTERIOR: ...".
+
+**Alergia.** "Alergia a / alérgico à / hipersensibilidade ao" + remédio (`intencao.texto_apos_alergia`,
+que corta o nome na primeira palavra de ligação: "alérgico a dipirona, posso tomar Exemplol?" é alergia
+a dipirona e pergunta sobre o Exemplol). "Loratadina serve para alergia?" não casa: lá a alergia é a
+indicação.
+- Sem dizer o remédio: `precisa_esclarecimento` com motivo `remedio_da_alergia`, sem opções (a pessoa
+  responde no chat; a resposta volta com a pergunta que pediu o esclarecimento). Uma vez só.
+- Com o remédio (e nenhum outro): a contraindicação por hipersensibilidade da bula dele, se está no
+  acervo, e as **alternativas**: os remédios do acervo da **mesma classe terapêutica** no registro da
+  ANVISA (dipirona e ibuprofeno são "analgésicos não narcóticos": entra o paracetamol). Só eles, quando
+  há: outro anti-inflamatório para quem tem alergia a um anti-inflamatório é arriscado (alergia
+  cruzada). Sem nenhum da mesma classe, as indicações mais parecidas com o uso do remédio (indicação
+  da bula dele ou a classe), só as que ficam a até 0,05 da melhor: a semelhança sozinha trouxe o
+  albendazol para a dipirona.
+- A regra 4 da fundamentação deixa o remédio da alergia aparecer citando a bula de outro ("para quem
+  tem alergia a dipirona, o paracetamol é indicado para..."), e "alergia" vale como
+  "hipersensibilidade" (a bula escreve um, o modelo o outro).
+- A tela avisa: antes de trocar, conferir na bula de cada alternativa a hipersensibilidade e a alergia
+  cruzada.
+
+**O que o remédio faz.** O CSV da ANVISA, que já estava no projeto, traz a classe terapêutica de cada
+registro. `Catalogo.classes` guarda, por princípio ativo (e pelos nomes sem o sal), a classe mais
+registrada ("dipirona" → ANALGESICOS NAO NARCOTICOS, sem acento como no CSV). A resposta traz
+`classes_terapeuticas` dos remédios sem bula, e a tela mostra "para que serve, pelo registro na ANVISA".
+Não é texto de bula, por isso não entra na resposta do modelo, só como informação ao lado.
+
+Junto: "bissulfato", "hemifumarato", "trometamol" e outros sais entraram na lista de palavras que o
+nome do remédio perde ("clopidogrel" não era reconhecido porque no registro é "bissulfato de
+clopidogrel").
+
+## 24. Respostas copiadas da bula, sem LLM (2026-10-16)
+Pedido do usuário: melhorar as respostas. No teste real, o modelo de 1,5B errou onde a resposta certa
+é uma frase que a bula já escreve: juntou a linha do clopidogrel com a da varfarina ("deve ser
+evitado", quando a bula manda monitorar o INR) e recusou as alternativas para a dipirona.
+`services/extrato.py` monta a resposta com as frases da bula, e o `gerar` não chama o modelo, em dois
+casos:
+- **interação entre remédios citados** (a pergunta tem "com", "junto", "interação"...): as frases da
+  bula de um que citam o outro, em interações, advertências e contraindicações, até 3. Na tabela de
+  interações vai a linha inteira; linha de outro remédio que só cita este de passagem fica fora, e o
+  cabeçalho de grupo (sem ponto final) também. Os trechos se sobrepõem: a linha cortada num e inteira
+  no seguinte fica só a inteira. Nenhuma frase assim = segue pelo LLM.
+- **alternativas na alergia**: a frase de hipersensibilidade da bula do remédio e a frase de indicação
+  de cada alternativa, com o nome do medicamento na frente.
+A resposta passa pela mesma validação (o texto é o do trecho, a fundamentação confere); só vale na
+rodada 1: se reprovar, a rodada 2 vai pelo LLM. `extrativa` na resposta e "frases da bula (sem LLM)"
+no `modelo` do histórico; a tela mostra "frases copiadas da bula, sem resumo do modelo".
+
+Resultado no teste real, com o LLM de verdade: alergia à dipirona em 4 s (antes, recusa), alergia ao
+ibuprofeno em 5 s (antes, 3 rodadas e 68 s), omeprazol + varfarina em 2 s com as duas linhas exatas
+da tabela (antes, errado).
+
+Limite: a resposta copiada é longa quando a frase da bula é longa (a contraindicação do ibuprofeno é
+uma lista), e não resume nem junta informação de duas frases. Para isso continua o LLM.
+
+## 25. A resposta tem de responder, dose copiada da bula, e o lote 2 (2026-10-16)
+Com a bula da dipirona (Dorageo, lote 2 em `data/FONTES.md`), o teste real mostrou: "qual a dose
+máxima de dipirona?" -> "não existe experiência com o uso de dipirona em longo prazo em pacientes com
+insuficiência renal". A frase está na bula (passa na fundamentação), mas não responde.
+
+- **Regra "fala do assunto"** (`intencao.responde_ao_assunto`, no `validar`): a resposta do LLM precisa
+  usar uma palavra do assunto da pergunta (tirados os nomes de remédio); ou citar trecho da seção que
+  a pergunta indica (menos posologia, onde a frase errada estava); ou, em pergunta de dose, trazer
+  número com unidade ("½ a 1 comprimido até 4 vezes ao dia" não tem a palavra "dose"). Reprovou = nova
+  rodada com o aviso `DICA_ASSUNTO`. Medida antes de entrar: das 12 respostas certas do LLM gravadas
+  no dia, nenhuma seria reprovada. Sinônimos novos: rins/renal/rim, fígado/hepático.
+- **Dose copiada da bula** (`extrato.frases_de_dose`): pergunta de dose sobre remédio do acervo traz,
+  de cada bula dele, a frase da posologia com número e unidade que mais fala do pedido ("máxima",
+  "inicial", "insuficiência cardíaca"); criança só se a pergunta é de criança. "Paracetamol, qual a
+  dose máxima?" traz uma frase por apresentação (gotas, comprimido), que era o "depende da
+  apresentação" esperado desde a seção 14. Sem frase assim, segue pelo LLM.
+- **"E para criança?" sem pergunta anterior** pergunta de volta "sobre qual remédio?" em vez de buscar
+  "criança" em todas as bulas (respondeu com uma frase da bula da permetrina).
+- **O erro também traz o id da consulta** (`ErroOut.consulta_id`): a consulta já era gravada; agora a tela
+  manda o id na pergunta seguinte, e a conversa continua depois de um 502.
+
+Resultado no teste real: dose máxima da dipirona em 3 s ("½ a 1 comprimido até 4 vezes ao dia"),
+paracetamol por apresentação em 2 s, e as outras perguntas do dia iguais ou melhores.
+
+**Lote 2 das bulas.** Só o Dorageo passou: a verificação de segurança e o que foi recusado estão no
+`FONTES.md`. Os sites dos outros detentores publicam só a bula do paciente (Cimed, Aché), não têm link
+direto (Prati-Donaduzzi) ou recusam cliente automático (Bayer, Kenvue, Eurofarma, Neo Química). As
+19 que faltam ficam para download manual no Bulário Eletrônico (Cloudflare: não automatizar).

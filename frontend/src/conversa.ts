@@ -5,12 +5,17 @@ import type { CodigoErro, ConsultaDetalhe, ErroApi, Esclarecimento, Fonte, Pergu
 
 /** O que a tela mostra de uma resposta, venha ela da pergunta de agora, do histórico ou de um erro. */
 export interface Vista {
-  consultaId: string | null; // nulo só em erro (a API não devolve o id no ErroOut)
+  consultaId: string | null; // nulo quando a pergunta nem chegou à API
   status: "respondida" | "nao_encontrada" | "precisa_esclarecimento" | "erro";
   texto: string | null;
   motivo: string | null;
   fontes: Fonte[];
   semBula: string[]; // remédios citados na pergunta sem bula no acervo
+  classes: Record<string, string>; // e para que servem, pelo registro na ANVISA
+  principios: string[];
+  continuacao: boolean;
+  alergiaA: string | null;
+  extrativa: boolean;
   esclarecimento: Esclarecimento | null;
   erro: { codigo: CodigoErro | "API_FORA_DO_AR"; mensagem: string } | null;
   rodadas: number;
@@ -30,6 +35,11 @@ export function daResposta(r: Resposta): Vista {
     motivo: r.motivo,
     fontes: r.fontes,
     semBula: r.medicamentos_nao_indexados,
+    classes: r.classes_terapeuticas,
+    principios: r.principios_ativos,
+    continuacao: r.continuacao,
+    alergiaA: r.alergia_a,
+    extrativa: r.extrativa,
     esclarecimento: r.esclarecimento,
     erro: null,
     rodadas: r.rodadas,
@@ -45,6 +55,11 @@ export function doHistorico(c: ConsultaDetalhe): Vista {
     motivo: c.motivo,
     fontes: c.fontes,
     semBula: [],
+    classes: {},
+    principios: [],
+    continuacao: c.consulta_origem_id !== null,
+    alergiaA: null,
+    extrativa: c.modelo.startsWith("frases da bula"),
     esclarecimento: null,
     erro: c.codigo_erro ? { codigo: c.codigo_erro, mensagem: c.mensagem_erro ?? "" } : null,
     rodadas: c.rodadas,
@@ -54,12 +69,17 @@ export function doHistorico(c: ConsultaDetalhe): Vista {
 
 export function doErro(e: ErroApi): Vista {
   return {
-    consultaId: null,
+    consultaId: e.consultaId, // a pergunta seguinte continua desta, mesmo depois do erro
     status: "erro",
     texto: null,
     motivo: null,
     fontes: [],
     semBula: [],
+    classes: {},
+    principios: [],
+    continuacao: false,
+    alergiaA: null,
+    extrativa: false,
     esclarecimento: null,
     erro: { codigo: e.codigo, mensagem: e.message },
     rodadas: 0,

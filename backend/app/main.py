@@ -13,6 +13,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from sqlalchemy import Engine
 from sqlalchemy.exc import OperationalError
 
@@ -45,6 +46,12 @@ def criar_app(s: Settings | None = None, engine: Engine | None = None) -> FastAP
     )
     erros.registrar(app)
     app.include_router(rotas.router)
+
+    @app.get("/", include_in_schema=False)
+    def raiz() -> RedirectResponse:
+        """Quem abre a API no navegador cai na documentação, não num "Not Found"."""
+        return RedirectResponse("/docs")
+
     return app
 
 

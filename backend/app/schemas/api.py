@@ -45,6 +45,9 @@ class ErroDetalhe(BaseModel):
 
 class ErroOut(BaseModel):
     erro: ErroDetalhe
+    # A consulta gravada no histórico (POST /perguntas que terminou em erro): a tela manda este id
+    # como consulta_origem_id na pergunta seguinte, e a conversa continua depois do erro.
+    consulta_id: UUID | None = None
 
 
 class PerguntaIn(BaseModel):
@@ -56,8 +59,9 @@ class PerguntaIn(BaseModel):
     principios_ativos: list[str] = Field(
         default_factory=list, max_length=MAX_MEDICAMENTOS_POR_PERGUNTA
     )
-    # Reenvio depois de um esclarecimento: a consulta que pediu o esclarecimento. A API continua
-    # sem estado; isto só liga as duas no histórico.
+    # A pergunta anterior da mesma conversa: a tela manda a última resposta. A pergunta nova pode
+    # continuar dela ("e para criança?") ou responder a um esclarecimento ("dipirona", depois de "a
+    # alergia é a qual remédio?"). A API continua sem estado: busca a anterior no histórico.
     consulta_origem_id: UUID | None = None
 
     @field_validator("principios_ativos")
@@ -100,7 +104,9 @@ class OpcaoOut(BaseModel):
 class EsclarecimentoOut(BaseModel):
     """O frontend mostra as opções e reenvia a pergunta com o filtro escolhido."""
 
-    motivo: Literal["medicamento_nao_reconhecido"]
+    # opcoes vazio (remedio_da_alergia): a pessoa responde no chat, e a resposta vem com
+    # consulta_origem_id desta consulta.
+    motivo: Literal["medicamento_nao_reconhecido", "remedio_da_alergia"]
     pergunta: str
     opcoes: list[OpcaoOut]
 
@@ -117,6 +123,13 @@ class RespostaOut(BaseModel):
     fontes: list[FonteOut]
     # Medicamentos citados na pergunta que não têm bula indexada (o frontend avisa).
     medicamentos_nao_indexados: list[str] = Field(default_factory=list)
+    # Para que serve cada um deles, pela classe terapêutica no registro da ANVISA (dados abertos):
+    # {"dipirona": "ANALGESICOS NAO NARCOTICOS"}. Sem acento, como no CSV.
+    classes_terapeuticas: dict[str, str] = Field(default_factory=dict)
+    principios_ativos: list[str] = Field(default_factory=list)  # os usados na busca
+    continuacao: bool = False  # usou a pergunta anterior da conversa
+    alergia_a: str | None = None  # a resposta traz alternativas a este remédio
+    extrativa: bool = False  # a resposta são frases copiadas da bula, sem o modelo de linguagem
     modelo: str
     latencia_ms: int
 

@@ -22,6 +22,7 @@ _COLUNAS_NOVAS = (
     ("consultas", "tentativas", "jsonb"),
     ("consultas", "consulta_origem_id", "uuid"),
     ("consultas", "mensagem_erro", "text"),
+    ("consultas", "principios_ativos", "text[]"),
     ("consulta_fontes", "fabricante", "text"),
     ("consulta_fontes", "numero_registro", "text"),
     ("consulta_fontes", "destaques", "jsonb"),

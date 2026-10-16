@@ -9,14 +9,17 @@ const ALTURA_MAX = 200;
 interface Props {
   ocupado: boolean;
   aoEnviar: (texto: string) => void;
+  dica: string; // o placeholder: muda quando o sistema perguntou algo de volta
 }
 
 /** A caixa de mensagem: cresce com o texto, Enter envia, Shift+Enter quebra a linha. */
-export function Entrada({ ocupado, aoEnviar }: Props) {
+export function Entrada({ ocupado, aoEnviar, dica }: Props) {
   const [texto, setTexto] = useState("");
   const ref = useRef<HTMLTextAreaElement>(null);
   const tamanho = texto.trim().length;
-  const valida = tamanho >= MIN && tamanho <= MAX;
+  // A resposta a um "qual remédio?" pode ser curta ("AAS"): o mínimo de 5 letras é da API, então
+  // a palavra curta é completada com o pedido.
+  const valida = tamanho >= 2 && tamanho <= MAX;
 
   useEffect(() => {
     const el = ref.current;
@@ -31,7 +34,8 @@ export function Entrada({ ocupado, aoEnviar }: Props) {
 
   function enviar() {
     if (!valida || ocupado) return;
-    aoEnviar(texto.trim());
+    const limpo = texto.trim();
+    aoEnviar(limpo.length < MIN ? `Remédio: ${limpo}` : limpo);
     setTexto("");
   }
 
@@ -49,7 +53,7 @@ export function Entrada({ ocupado, aoEnviar }: Props) {
           rows={1}
           value={texto}
           maxLength={MAX}
-          placeholder="Pergunte sobre qualquer remédio..."
+          placeholder={dica}
           aria-label="Pergunta"
           onChange={(e) => setTexto(e.target.value)}
           onKeyDown={(e) => {
@@ -64,8 +68,8 @@ export function Entrada({ ocupado, aoEnviar }: Props) {
         </button>
       </form>
       <p className="rodape-entrada">
-        {tamanho > 0 && tamanho < MIN
-          ? `Escreva pelo menos ${MIN} caracteres.`
+        {tamanho === 1
+          ? "Escreva um pouco mais."
           : tamanho > MAX - 50
             ? `${tamanho}/${MAX} caracteres.`
             : "Responde com o que está nas bulas do acervo e pode errar: confira a fonte. Não substitui o farmacêutico."}

@@ -23,6 +23,10 @@ interface Props {
 
 export function Conversa({ mensagens, ocupado, bulas, aoPerguntar, aoEscolherOpcao }: Props) {
   const fim = useRef<HTMLDivElement>(null);
+  const ultima = mensagens[mensagens.length - 1];
+  // O sistema perguntou algo de volta sem opções ("a alergia é a qual remédio?"): a caixa pede a resposta.
+  const respondendo =
+    ultima?.autor === "assistente" && !ultima.carregando && ultima.vista.status === "precisa_esclarecimento";
 
   // Mensagem nova (ou resposta que chegou): rola até o fim, como num chat.
   useEffect(() => {
@@ -59,7 +63,11 @@ export function Conversa({ mensagens, ocupado, bulas, aoPerguntar, aoEscolherOpc
           </div>
         )}
       </div>
-      <Entrada ocupado={ocupado} aoEnviar={aoPerguntar} />
+      <Entrada
+        ocupado={ocupado}
+        aoEnviar={aoPerguntar}
+        dica={respondendo ? "Digite o nome do remédio..." : "Pergunte sobre qualquer remédio..."}
+      />
     </div>
   );
 }

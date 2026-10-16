@@ -33,7 +33,7 @@ from app.schemas.api import (
 from app.services import historico
 from app.services.acervo import Acervo, AcervoIncompletoError
 from app.services.medicamentos import normalizar
-from app.services.rag import responder
+from app.services.rag import Anterior, responder
 
 router = APIRouter(prefix="/api/v1")
 
@@ -123,12 +123,16 @@ def medicamentos(sv: Servicos = Depends(servicos)) -> list[MedicamentoOut]:
 def perguntar(entrada: PerguntaIn, sv: Servicos = Depends(servicos)) -> RespostaOut:
     """Roda o agente (services/grafo.py) e grava a consulta, inclusive quando termina em erro."""
     acervo = sv.acervo()
+    anterior = None
+    if entrada.consulta_origem_id and (c := historico.buscar(sv.engine, entrada.consulta_origem_id)):
+        anterior = Anterior(c.pergunta, c.principios_ativos or [], c.status == "precisa_esclarecimento")
     inicio = time.perf_counter()
-    r = responder(entrada.pergunta, acervo, entrada.principios_ativos, sv.s)
+    r = responder(entrada.pergunta, acervo, entrada.principios_ativos, sv.s, anterior)
     latencia_ms = round((time.perf_counter() - inicio) * 1000)
-    consulta = historico.gravar(sv.engine, entrada, r, acervo, sv.s.llm_modelo, latencia_ms)
+    modelo = "frases da bula (sem LLM)" if r.extrativa else sv.s.llm_modelo
+    consulta = historico.gravar(sv.engine, entrada, r, acervo, modelo, latencia_ms)
     if r.status == "erro":
-        raise ErroApi(r.codigo_erro, r.detalhe_erro)
+        raise ErroApi(r.codigo_erro, r.detalhe_erro, consulta.id)
     return RespostaOut(
         consulta_id=consulta.id,
         status=r.status,
@@ -141,6 +145,13 @@ def perguntar(entrada: PerguntaIn, sv: Servicos = Depends(servicos)) -> Resposta
         # As mesmas fontes que o histórico vai mostrar: as do snapshot gravado.
         fontes=[FonteOut.model_validate(f, from_attributes=True) for f in consulta.fontes],
         medicamentos_nao_indexados=r.medicamentos_nao_indexados,
+        classes_terapeuticas={
+            nome: classe for nome in r.medicamentos_nao_indexados if (classe := acervo.catalogo.classe_de(nome))
+        },
+        principios_ativos=r.principios_ativos,
+        continuacao=r.continuacao,
+        alergia_a=r.alergia_a,
+        extrativa=r.extrativa,
         modelo=consulta.modelo,
         latencia_ms=latencia_ms,
     )

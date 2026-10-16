@@ -73,6 +73,9 @@ class Consulta(Base):
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
     pergunta: Mapped[str] = mapped_column(Text)
     principios_ativos_filtro: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    # Os usados na busca (detectados, herdados da anterior ou do filtro): a pergunta seguinte da
+    # conversa herda daqui ("e para criança?"). Nulo nas consultas gravadas antes da coluna.
+    principios_ativos: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
     resposta: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(Text)  # respondida | nao_encontrada | precisa_esclarecimento | erro
     motivo: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -84,8 +87,8 @@ class Consulta(Base):
     rodadas: Mapped[int] = mapped_column(Integer, default=0)
     # rag.Tentativa de cada rodada: trechos enviados, saída crua do modelo e por que passou ou não.
     tentativas: Mapped[list[dict]] = mapped_column(JSONB, default=list)
-    # A consulta que esta continua (reenvio depois do esclarecimento). Sem FK, como o chunk_id das
-    # fontes: o histórico não pode quebrar se uma consulta antiga for apagada.
+    # A pergunta anterior da mesma conversa (pergunta seguinte, ou resposta a um esclarecimento).
+    # Sem FK, como o chunk_id das fontes: o histórico não pode quebrar se uma consulta antiga for apagada.
     consulta_origem_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_agora_utc, index=True)
 

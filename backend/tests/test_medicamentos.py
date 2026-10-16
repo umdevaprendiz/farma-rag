@@ -203,3 +203,42 @@ def test_catalogo_real_com_os_medicamentos_do_mvp():
     for pergunta, (indexados, nao_indexados) in casos.items():
         d = detectar(pergunta, cat)
         assert (d.indexados, d.nao_indexados) == (indexados, nao_indexados), pergunta
+
+
+def test_palavra_das_bulas_nao_vira_remedio_por_erro_de_digitacao():
+    # "cefaleia" fica a 0,88 de "cefalexina": sem o vocabulário das bulas, virava o antibiótico.
+    assert detectar("remédio para cefaleia", Catalogo.montar([], ["cefalexina"])).nao_indexados == ["cefalexina"]
+    cat = Catalogo.montar([], ["cefalexina"], vocabulario=["cefaleia"])
+    assert detectar("remédio para cefaleia", cat).nao_indexados == []
+    assert detectar("cefalexna serve para que?", cat).nao_indexados == ["cefalexina"]  # erro de verdade
+
+
+def test_sem_tolerancia_so_o_nome_exato():
+    cat = Catalogo.montar([], ["cefalexina"])
+    assert detectar("cefalexna", cat, tolerar_erros=False).nao_indexados == []
+    assert detectar("cefalexina", cat, tolerar_erros=False).nao_indexados == ["cefalexina"]
+
+
+def test_classe_terapeutica_do_registro_anvisa():
+    anvisa = [
+        {"associacao": False, "classe_terapeutica": "ANALGESICOS NAO NARCOTICOS", "n_registros": 1018,
+         "nome_produto": "NOVALGINA", "principios_ativos": ["dipirona"]},
+        {"associacao": False, "classe_terapeutica": "ANALGESICOS", "n_registros": 4,
+         "nome_produto": "DIPIRONA X", "principios_ativos": ["dipirona monoidratada"]},
+        {"associacao": False, "classe_terapeutica": "ANTIDIARREICOS", "n_registros": 9,
+         "nome_produto": "IMOSEC", "principios_ativos": ["cloridrato de loperamida"]},
+        {"associacao": True, "classe_terapeutica": "ANTIGRIPAIS", "n_registros": 50,
+         "nome_produto": "COMBINADO", "principios_ativos": ["dipirona", "cafeína"]},  # associação não conta
+    ]
+    cat = Catalogo.montar([], [], anvisa)
+    assert cat.classe_de("dipirona") == "ANALGESICOS NAO NARCOTICOS"  # a mais registrada
+    assert cat.classe_de("Loperamida") == "ANTIDIARREICOS"  # pelo núcleo, sem o sal
+    assert cat.classe_de("captopril") is None
+
+
+def test_nome_com_sal_do_catalogo_e_reconhecido_sem_o_sal():
+    # No registro da ANVISA é "bissulfato de clopidogrel"; na pergunta, "clopidogrel".
+    anvisa = [{"associacao": False, "classe_terapeutica": "ANTIAGREGANTE PLAQUETARIO", "n_registros": 3,
+               "nome_produto": "PLAVIX", "principios_ativos": ["bissulfato de clopidogrel"]}]
+    cat = Catalogo.montar([], [], anvisa)
+    assert detectar("Omeprazol pode com clopidogrel?", cat).nao_indexados == ["bissulfato de clopidogrel"]
