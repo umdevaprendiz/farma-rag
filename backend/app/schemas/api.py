@@ -5,13 +5,16 @@ from enum import Enum
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validator
+
+from app.schemas.dataset import ROTULO_SECAO
 
 MAX_MEDICAMENTOS_POR_PERGUNTA = 3
 
 
 class CodigoErro(str, Enum):
     MEDICAMENTO_NAO_ENCONTRADO = "MEDICAMENTO_NAO_ENCONTRADO"
+    CONSULTA_NAO_ENCONTRADA = "CONSULTA_NAO_ENCONTRADA"
     ENTRADA_INVALIDA = "ENTRADA_INVALIDA"
     SAIDA_INVALIDA = "SAIDA_INVALIDA"
     CITACAO_INVALIDA = "CITACAO_INVALIDA"
@@ -24,6 +27,7 @@ class CodigoErro(str, Enum):
 
 HTTP_POR_CODIGO: dict[CodigoErro, int] = {
     CodigoErro.MEDICAMENTO_NAO_ENCONTRADO: 404,
+    CodigoErro.CONSULTA_NAO_ENCONTRADA: 404,
     CodigoErro.ENTRADA_INVALIDA: 422,
     CodigoErro.SAIDA_INVALIDA: 502,
     CodigoErro.CITACAO_INVALIDA: 502,
@@ -52,6 +56,9 @@ class PerguntaIn(BaseModel):
     principios_ativos: list[str] = Field(
         default_factory=list, max_length=MAX_MEDICAMENTOS_POR_PERGUNTA
     )
+    # Reenvio depois de um esclarecimento: a consulta que pediu o esclarecimento. A API continua
+    # sem estado; isto só liga as duas no histórico.
+    consulta_origem_id: UUID | None = None
 
     @field_validator("principios_ativos")
     @classmethod
@@ -63,14 +70,26 @@ class PerguntaIn(BaseModel):
 
 
 class FonteOut(BaseModel):
-    posicao: int = Field(ge=1)
+    posicao: int = Field(ge=1)  # o [n] da resposta
     chunk_id: str
     medicamento: str
+    # Nulos só nas bulas de teste e em consultas gravadas antes destes campos.
+    fabricante: str | None = None
+    numero_registro: str | None = None
     secao: str
     pagina: int
     data_versao: date
     trecho: str
     score: float
+    # Trecho enviado ao modelo e usado na resposta. Os não citados também aparecem: são o que
+    # o sistema consultou.
+    citado: bool
+
+    @computed_field
+    @property
+    def rotulo_secao(self) -> str:
+        """A seção como o usuário lê ("Posologia e modo de usar"), sem o frontend repetir a tabela."""
+        return ROTULO_SECAO.get(self.secao, self.secao)
 
 
 class OpcaoOut(BaseModel):
@@ -106,6 +125,7 @@ class BulaResumo(BaseModel):
     id: str
     medicamento: str
     fabricante: str
+    forma_farmaceutica: str | None = None
     data_versao: date
 
 
@@ -119,5 +139,39 @@ class MedicamentoOut(BaseModel):
 class ConsultaResumo(BaseModel):
     id: UUID
     pergunta: str
-    status: Literal["respondida", "nao_encontrada", "erro"]
+    status: Literal["respondida", "nao_encontrada", "precisa_esclarecimento", "erro"]
     criado_em: datetime
+
+
+class HistoricoOut(BaseModel):
+    itens: list[ConsultaResumo]  # da mais recente para a mais antiga
+    total: int
+    pagina: int
+    limite: int
+
+
+class ConsultaDetalhe(ConsultaResumo):
+    """Uma consulta como foi respondida, com as fontes guardadas no momento (snapshot)."""
+
+    principios_ativos_filtro: list[str]
+    resposta: str | None
+    motivo: str | None
+    codigo_erro: CodigoErro | None
+    mensagem_erro: str | None
+    rodadas: int
+    modelo: str
+    latencia_ms: int
+    consulta_origem_id: UUID | None
+    fontes: list[FonteOut]
+
+
+class SaudeOut(BaseModel):
+    status: Literal["ok", "degradado"]
+    banco: bool
+    ollama: bool
+    # Modelos do .env que o Ollama ainda não tem (ollama pull).
+    modelos_faltando: list[str]
+    bulas: int
+    trechos: int
+    # O que está fora do ar e por quê, para mostrar na tela.
+    problemas: list[str]

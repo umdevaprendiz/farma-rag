@@ -28,8 +28,12 @@ services:
       OLLAMA_URL: http://host.docker.internal:11434
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes:
+      # Bulas e trechos a API lê do banco; daqui ela só lê o catálogo de nomes (medicamentos
+      # conhecidos, catálogo da ANVISA, aliases ignorados). Só leitura.
+      - ./data:/srv/data:ro
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     depends_on:
       db:
         condition: service_healthy

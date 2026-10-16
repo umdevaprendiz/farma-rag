@@ -1,13 +1,11 @@
-"""BuscaPgvector e carregar_banco contra um PostgreSQL de verdade.
+"""BuscaPgvector, carregar_banco e Acervo.do_banco contra um PostgreSQL de verdade.
 
 Pulado se o pgvector/psycopg não estiver instalado ou se o banco do .env não responder
-(suba com: docker compose up -d db). Roda num schema temporário, apagado no fim: não mexe
-nas tabelas do banco de desenvolvimento.
+(suba com: docker compose up -d db). Roda num schema temporário (fixture `engine`, conftest.py).
 """
 
 from datetime import date
 from pathlib import Path
-from uuid import uuid4
 
 import numpy as np
 import pytest
@@ -15,37 +13,19 @@ import pytest
 pytest.importorskip("pgvector")
 pytest.importorskip("psycopg")
 
-from sqlalchemy import create_engine, text  # noqa: E402
-from sqlalchemy.exc import OperationalError  # noqa: E402
+from sqlalchemy import text  # noqa: E402
 
-from app.config import get_settings  # noqa: E402
+from app.config import Settings  # noqa: E402
 from app.db.busca_pgvector import BuscaPgvector  # noqa: E402
 from app.db.busca_vetorial import IndiceEmMemoria  # noqa: E402
+from app.db.conexao import preparar_banco  # noqa: E402
 from app.db.models import EMBED_DIM  # noqa: E402
-from ingestao.carregar_banco import gravar, preparar_banco  # noqa: E402
+from app.services.acervo import Acervo, AcervoIncompletoError  # noqa: E402
+from ingestao.carregar_banco import gravar  # noqa: E402
 from ingestao.gerar_chunks import gerar_chunks  # noqa: E402
 from ingestao.processar_bula import montar_bula  # noqa: E402
 
 FIXTURES = Path(__file__).parent / "fixtures"
-
-
-@pytest.fixture(scope="module")
-def engine():
-    url = get_settings().database_url
-    schema = f"teste_{uuid4().hex[:12]}"
-    try:
-        with create_engine(url).begin() as conexao:
-            conexao.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-            conexao.execute(text(f"CREATE SCHEMA {schema}"))
-    except OperationalError:
-        pytest.skip("PostgreSQL não responde (docker compose up -d db)")
-    # "public" no fim do search_path para achar o tipo vector, que a extensão criou lá.
-    eng = create_engine(url, connect_args={"options": f"-csearch_path={schema},public"})
-    preparar_banco(eng)
-    yield eng
-    eng.dispose()
-    with create_engine(url).begin() as conexao:
-        conexao.execute(text(f"DROP SCHEMA {schema} CASCADE"))
 
 
 @pytest.fixture(scope="module")
@@ -105,3 +85,39 @@ def test_matriz_com_dimensao_errada(engine, dados):
     bulas, chunks, _ = dados
     with pytest.raises(ValueError, match="esperado"):
         gravar(engine, bulas, chunks, np.zeros((len(chunks), 3), dtype="<f4"))
+
+
+def test_acervo_do_banco_tem_os_mesmos_trechos_dos_arquivos(engine, dados, buscas):
+    bulas, chunks, _ = dados
+    acervo = Acervo.do_banco(engine, Settings(_env_file=None))
+    assert list(acervo.chunks.values()) == sorted(chunks, key=lambda c: c.chunk_id)
+    assert sorted(acervo.bulas) == sorted(b.id for b in bulas)
+    b = acervo.bulas[bulas[0].id]
+    assert (b.medicamento, b.fabricante, b.data_versao) == (bulas[0].medicamento, "Laboratório Teste", date(2025, 3, 15))
+    assert isinstance(acervo.indice, BuscaPgvector)
+    assert acervo.catalogo.indexados["exemplol"] == "maleato de exemplina"
+
+
+def test_acervo_do_banco_vazio_ou_antigo(engine, dados, buscas):
+    gravar(engine, [], [], np.empty((0, EMBED_DIM), dtype="<f4"))
+    with pytest.raises(AcervoIncompletoError, match="não tem bulas"):
+        Acervo.do_banco(engine, Settings(_env_file=None))
+
+    gravar(engine, *dados)
+    with engine.begin() as conexao:  # como um banco criado antes da coluna
+        conexao.execute(text("ALTER TABLE chunks DROP COLUMN medicamento"))
+    preparar_banco(engine)  # devolve a coluna, vazia nos trechos que já estavam lá
+    with pytest.raises(AcervoIncompletoError, match="Rode de novo"):
+        Acervo.do_banco(engine, Settings(_env_file=None))
+    gravar(engine, *dados)  # deixa como os outros testes esperam
+
+
+def test_tabelas_ficam_no_schema_temporario(engine):
+    """O pytest não pode tocar no banco de desenvolvimento (public): ver criar_engine."""
+    with engine.connect() as conexao:
+        schema = conexao.execute(text("SELECT current_schema()")).scalar()
+        tabelas = set(conexao.execute(
+            text("SELECT table_name FROM information_schema.tables WHERE table_schema = :s"), {"s": schema}
+        ).scalars())
+    assert schema.startswith("teste_")
+    assert {"bulas", "chunks", "consultas", "consulta_fontes"} <= tabelas

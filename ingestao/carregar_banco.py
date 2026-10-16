@@ -8,34 +8,21 @@ Destino: o banco de DB_HOST/DB_PORT/DB_NAME do .env (docker compose up -d db)
 O arquivo é a fonte da verdade (docs/DECISOES.md, seção 15): `bulas` e `chunks` são apagadas e
 recriadas numa transação só, então quem consulta durante a carga vê o acervo antigo inteiro ou o
 novo inteiro. O histórico (`consultas`, `consulta_fontes`) não é tocado.
+A API lê bulas e trechos uma vez, ao subir: depois desta carga, reinicie a API.
 """
 
 import sys
 
 import numpy as np
-from sqlalchemy import Engine, create_engine, text
+from sqlalchemy import Engine, text
 from sqlalchemy.orm import Session
 
 from app.config import Settings, get_settings
 from app.db import models
+from app.db.conexao import criar_engine, preparar_banco
 from app.schemas.dataset import Bula, Chunk
 from app.services.acervo import AcervoIncompletoError, carregar_dataset
 from app.services.medicamentos import normalizar
-
-
-# Colunas que entraram depois da primeira versão de `bulas`: create_all não altera tabela que já
-# existe, então quem criou o banco antes recebe as colunas aqui.
-_COLUNAS_NOVAS = ("numero_registro", "forma_farmaceutica", "versao")
-
-
-def preparar_banco(engine: Engine) -> None:
-    """Cria a extensão vector, as tabelas que faltarem e as colunas novas de `bulas`."""
-    with engine.begin() as conexao:
-        conexao.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
-    models.Base.metadata.create_all(engine)
-    with engine.begin() as conexao:
-        for coluna in _COLUNAS_NOVAS:
-            conexao.execute(text(f"ALTER TABLE bulas ADD COLUMN IF NOT EXISTS {coluna} text"))
 
 
 def gravar(engine: Engine, bulas: list[Bula], chunks: list[Chunk], matriz: np.ndarray) -> None:
@@ -63,12 +50,14 @@ def gravar(engine: Engine, bulas: list[Bula], chunks: list[Chunk], matriz: np.nd
             models.Chunk(
                 chunk_id=c.chunk_id,
                 bula_id=c.bula_id,
+                medicamento=c.medicamento,
                 principio_ativo=c.principio_ativo,
                 principio_ativo_norm=normalizar(c.principio_ativo),
                 secao=c.secao,
                 pagina=c.pagina,
                 ordem=c.ordem,
                 texto=c.texto,
+                n_tokens=c.n_tokens,
                 embedding=vetor,
             )
             for c, vetor in zip(chunks, matriz)
@@ -86,7 +75,7 @@ def main(s: Settings | None = None) -> None:
         bulas, chunks, matriz = carregar_dataset(s)
     except AcervoIncompletoError as e:
         sys.exit(str(e))
-    engine = create_engine(s.database_url)
+    engine = criar_engine(s)
     preparar_banco(engine)
     gravar(engine, bulas, chunks, matriz)
     engine.dispose()

@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     db_name: str = "farmarag"
     db_host: str = "127.0.0.1"  # não "localhost": ver .env.example
     db_port: int = 5432
+    # Sem limite, conectar ao banco desligado espera ~130 s no Windows antes de falhar.
+    db_timeout_s: int = 5
 
     top_k: int = 3
     limiar_similaridade: float | None = None

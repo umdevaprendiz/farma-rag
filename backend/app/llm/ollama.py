@@ -1,4 +1,4 @@
-"""Cliente mínimo do Ollama: embeddings e chat. Só biblioteca padrão."""
+"""Cliente mínimo do Ollama: embeddings, chat e lista de modelos. Só biblioteca padrão."""
 
 import json
 import socket
@@ -30,10 +30,10 @@ class RespostaLLM:
     geracao_s: float
 
 
-def _post(caminho: str, corpo: dict, timeout: float, s: Settings) -> dict:
-    req = urllib.request.Request(
-        s.ollama_url + caminho, json.dumps(corpo).encode(), {"Content-Type": "application/json"}
-    )
+def _pedir(caminho: str, corpo: dict | None, timeout: float, s: Settings) -> dict:
+    """POST com `corpo` em JSON; GET sem corpo."""
+    dados = json.dumps(corpo).encode() if corpo is not None else None
+    req = urllib.request.Request(s.ollama_url + caminho, dados, {"Content-Type": "application/json"})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             return json.load(r)
@@ -54,7 +54,7 @@ def embed(textos: list[str], s: Settings | None = None) -> list[list[float]]:
     s = s or get_settings()
     # Na CPU cada trecho leva ~3 s; o tempo limite cresce com o lote.
     timeout = s.timeout_llm_s + 10 * len(textos)
-    r = _post("/api/embed", {"model": s.embed_modelo, "input": textos, "keep_alive": KEEP_ALIVE}, timeout, s)
+    r = _pedir("/api/embed", {"model": s.embed_modelo, "input": textos, "keep_alive": KEEP_ALIVE}, timeout, s)
     vetores = r["embeddings"]
     if vetores and len(vetores[0]) != s.embed_dim:
         raise OllamaError(
@@ -78,7 +78,7 @@ def chat(
         "keep_alive": KEEP_ALIVE,
         "options": {"temperature": s.temperatura, "num_ctx": s.num_ctx, "num_predict": s.num_predict},
     }
-    r = _post("/api/chat", corpo, s.timeout_llm_s, s)
+    r = _pedir("/api/chat", corpo, s.timeout_llm_s, s)
     return RespostaLLM(
         texto=r["message"]["content"],
         prompt_tokens=r.get("prompt_eval_count", 0),
@@ -86,3 +86,16 @@ def chat(
         prompt_s=r.get("prompt_eval_duration", 0) / NS,
         geracao_s=r.get("eval_duration", 0) / NS,
     )
+
+
+def modelos(s: Settings | None = None, timeout: float = 3) -> list[str]:
+    """Modelos baixados, como o Ollama lista ("qwen2.5:1.5b", "bge-m3:latest"). Para o /saude."""
+    s = s or get_settings()
+    return [m["name"] for m in _pedir("/api/tags", None, timeout, s)["models"]]
+
+
+def faltando(s: Settings, baixados: list[str]) -> list[str]:
+    """Modelos do .env que não estão em `baixados`. Sem tag, o Ollama entende ":latest"."""
+    com_tag = {n if ":" in n else f"{n}:latest" for n in baixados}
+    pedidos = [s.embed_modelo, s.llm_modelo] + ([s.llm_modelo_verificacao] if s.llm_modelo_verificacao else [])
+    return [m for m in dict.fromkeys(pedidos) if (m if ":" in m else f"{m}:latest") not in com_tag]

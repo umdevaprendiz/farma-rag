@@ -62,19 +62,19 @@ NÃO ENCONTREI: não tenho a bula desse medicamento
 | Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citacoes.py` |
 | Agente em grafo (LangGraph, 7 nós, rodadas 0 a 3) | ✅ pronto, testado com LLM falso e com a bula de teste | `app/services/grafo.py` |
 | Teste manual pelo terminal | ✅ pronto | `python -m benchmark.perguntar` |
-| Testes automáticos | ✅ 114 testes (7 precisam do PostgreSQL de pé) | `backend/tests/` |
+| Testes automáticos | ✅ 177 testes em ~11 s (24 precisam do PostgreSQL de pé e rodam num schema temporário) | `backend/tests/` |
 | Bulas reais: 20 PDFs → 24 bulas em JSON, com registro ANVISA e forma farmacêutica | ✅ 20 de 40 medicamentos (faltam trechos e embeddings) | `data/bulas_manifesto.json`, `data/processed/bulas/` |
 | Checagem de fundamentação (números, doses, termos) | ✅ pronto | `app/services/fundamentacao.py` |
 | Perguntas de esclarecimento (rodada 0) | 🟡 sem nome reconhecido: pronto; forma farmacêutica ambígua: falta `forma` na bula | `app/services/grafo.py` |
 | Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metricas.py` |
-| API FastAPI | 🟡 contratos prontos, endpoints não | `app/schemas/api.py` |
+| API FastAPI: 5 endpoints, histórico de toda consulta | ✅ pronta, testada com LLM falso e no servidor (perguntas sem LLM) | `app/main.py`, `app/api/`, `app/services/historico.py` |
 | Frontend React | ⬜ não iniciado | |
 
 ## Arquitetura
 
 ### Hoje
 
-O fluxo funciona de ponta a ponta pelo terminal. O dataset em arquivo é a fonte da verdade; o PostgreSQL é um espelho que pode ser apagado e recriado.
+O fluxo funciona de ponta a ponta pelo terminal (lendo os arquivos) e pela API (lendo o banco). O dataset em arquivo é a fonte da verdade; `bulas` e `chunks` no PostgreSQL são um espelho que pode ser apagado e recriado. O histórico de consultas só existe no banco.
 
 ```mermaid
 flowchart LR
@@ -90,15 +90,19 @@ flowchart LR
 
   subgraph RUN["Consulta"]
     CLI["benchmark/perguntar.py"] --> RAG["rag.responder<br/>grafo LangGraph"]
+    API["FastAPI /api/v1<br/>app/main.py"] --> RAG
     RAG --> ACV["Acervo<br/>(bulas + trechos + catálogo)"]
-    ACV --> MEM["IndiceEmMemoria<br/>numpy"]
+    ACV --> MEM["IndiceEmMemoria<br/>numpy (terminal)"]
+    ACV --> BPG["BuscaPgvector<br/>(API)"]
     RAG --> OLL["Ollama<br/>bge-m3 + qwen2.5:1.5b"]
   end
 
-  JSON --> ACV
+  JSON -- "Acervo.carregar" --> ACV
   JSONL --> ACV
   CB --> PG[("PostgreSQL 17<br/>+ pgvector")]
-  PG -. "BuscaPgvector<br/>(mesma interface)" .-> RAG
+  PG -- "Acervo.do_banco" --> ACV
+  BPG --> PG
+  API -- "grava consultas<br/>+ fontes (snapshot)" --> PG
 ```
 
 ### Alvo
@@ -180,12 +184,15 @@ Cada falha tem código próprio e status HTTP definido (`app/schemas/api.py`):
 | Código | HTTP | Quando |
 |---|---|---|
 | `MEDICAMENTO_NAO_ENCONTRADO` | 404 | Filtro com princípio ativo sem bula indexada |
-| `ENTRADA_INVALIDA` | 422 | Pergunta fora de 5–500 caracteres, filtro vazio, mais de 3 medicamentos |
+| `CONSULTA_NAO_ENCONTRADA` | 404 | `GET /historico/{id}` de uma consulta que não existe |
+| `ENTRADA_INVALIDA` | 422 | Pergunta fora de 5–500 caracteres, filtro vazio, mais de 3 medicamentos, paginação inválida |
 | `SAIDA_INVALIDA` | 502 | O modelo devolveu JSON quebrado até a última rodada |
 | `CITACAO_INVALIDA` | 502 | Citação para trecho não enviado ou incoerente até a última rodada |
 | `RESPOSTA_NAO_VERIFICADA` | 502 | Nenhuma rodada passou na fundamentação ou na verificação; a mensagem explica cada rodada |
-| `OLLAMA_INDISPONIVEL` / `BANCO_INDISPONIVEL` | 503 | Dependência fora do ar |
+| `OLLAMA_INDISPONIVEL` / `BANCO_INDISPONIVEL` | 503 | Dependência fora do ar (ou banco sem bulas carregadas) |
 | `TEMPO_ESGOTADO` | 504 | Passou de `TIMEOUT_LLM_S` |
+
+Na API, todo erro sai no mesmo formato, `{"erro": {"codigo", "mensagem"}}` (`ErroOut`), inclusive a validação de entrada do FastAPI.
 
 ### 4. Desempenho medido (CPU)
 
@@ -198,6 +205,24 @@ Cada falha tem código próprio e status HTTP definido (`app/schemas/api.py`):
 | Embedding `bge-m3` | ~2,5–3,4 s por trecho | |
 
 A leitura do prompt domina a latência, então `CHUNK_TOKENS` e `TOP_K` pesam mais que o modelo. Meta revisada: mediana abaixo de 60 s com o 1.5b.
+
+### 5. API
+
+FastAPI em `app/main.py`, rotas em `app/api/rotas.py`, documentação interativa em `http://127.0.0.1:8000/docs`.
+
+| Método e rota | Função |
+|---|---|
+| `GET /api/v1/saude` | Banco, Ollama e modelos baixados. Sempre 200: `status` é `ok` ou `degradado`, com a lista do que falta |
+| `GET /api/v1/medicamentos` | Princípios ativos com bula indexada e as bulas de cada um (fabricante, forma, data), para o seletor |
+| `POST /api/v1/perguntas` | `{pergunta, principios_ativos?, consulta_origem_id?}` → resposta, fontes, status, rodadas. Erro sai em `ErroOut`, com o HTTP do catálogo |
+| `GET /api/v1/historico?limite=20&pagina=1` | Consultas da mais recente para a mais antiga, com o total |
+| `GET /api/v1/historico/{consulta_id}` | A consulta como foi respondida, com as fontes do snapshot |
+
+- **O acervo vem do banco** (`Acervo.do_banco`): bulas e trechos são lidos uma vez, ao subir, e a busca é a `BuscaPgvector`. Depois de rodar `carregar_banco`, reinicie a API.
+- **Toda pergunta fica no histórico**, inclusive esclarecimento e erro: status, rodadas, cada tentativa (`tentativas`, em JSON, com a saída crua do modelo), a mensagem do erro e o `consulta_origem_id` do reenvio depois de um esclarecimento.
+- **A resposta sai do snapshot gravado**: as fontes do `POST` são as mesmas que o histórico mostra depois, com fabricante, nº de registro, seção (chave e rótulo), página, data da bula e `citado`. Os trechos consultados e não citados também vêm.
+- **Sobe sem o banco**: com o PostgreSQL fora do ar, a API sobe, responde 503 `BANCO_INDISPONIVEL` e tenta de novo a cada requisição. `DB_TIMEOUT_S` (5 s) corta a espera de ~130 s que o Windows faz por conexão.
+- **Endpoints síncronos** (`def`): o FastAPI roda cada um numa thread à parte, e a pergunta espera o Ollama por dezenas de segundos.
 
 ## Modelo de dados
 
@@ -221,11 +246,13 @@ erDiagram
   chunks {
     text chunk_id PK
     text bula_id FK
+    text medicamento
     text principio_ativo_norm "filtro da busca"
     text secao
     int pagina
     int ordem
     text texto
+    int n_tokens
     vector_1024 embedding
   }
   consultas {
@@ -236,18 +263,28 @@ erDiagram
     text status
     text motivo
     text codigo_erro
+    text mensagem_erro
     text modelo
     int latencia_ms
+    int rodadas
+    jsonb tentativas "cada rodada"
+    uuid consulta_origem_id "sem FK"
     timestamptz criado_em
   }
   consulta_fontes {
     uuid consulta_id PK
     int posicao PK
     text chunk_id "sem FK: snapshot"
+    text medicamento
+    text fabricante
+    text numero_registro
+    text secao
+    int pagina
     text trecho
     date data_versao
     float score
     bool citado
+    jsonb destaques "nulo até o destaque na fonte"
   }
 ```
 
@@ -266,7 +303,8 @@ erDiagram
 | Processamento de texto | Extração de PDF (`pdfplumber`), separação de seções por regex, normalização de nomes, tolerância a erro de digitação, rastreio de página com `\f` | `ingestao/`, `app/services/medicamentos.py` |
 | Dados públicos | Dados abertos da ANVISA (228 mil registros → catálogo de 6.999 itens), validação do arquivo antes do uso, procedência com SHA-256, geração determinística | `ingestao/catalogo_anvisa.py`, `data/FONTES.md` |
 | Avaliação | Gabarito por âncora (frase da bula) em vez de `chunk_id`, para comparar tamanhos de trecho; métricas de recall@k e recusa correta | `benchmark/metricas.py` |
-| Testes | pytest, LLM substituído por falso, teste de equivalência numpy × pgvector, *skip* automático sem banco | `backend/tests/` |
+| API | FastAPI com *lifespan*, injeção de dependência, todo erro no mesmo formato (handlers próprios, inclusive para a validação de entrada), endpoints síncronos para chamada bloqueante, CORS, OpenAPI gerado | `app/main.py`, `app/api/` |
+| Testes | pytest, LLM substituído por falso, teste de equivalência numpy × pgvector, API testada com `TestClient` contra banco real num schema temporário isolado (`schema_translate_map`), *skip* automático sem banco | `backend/tests/` |
 | Engenharia | Configuração 100% por `.env`, dataset versionado no Git, Docker Compose, cache reprodutível, registro escrito de decisões | `.env.example`, `docker-compose.yml`, `docs/DECISOES.md` |
 
 ## Decisões e aprendizados
@@ -289,7 +327,6 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 ### 2. O que falta das rodadas e do esclarecimento
 
 - **Forma farmacêutica ambígua** (diclofenaco sódico comprimido × gel): o nó `esclarecer` já existe, mas a bula ainda não tem o campo `forma`. Entra com as bulas reais.
-- **Histórico das rodadas no banco**: `consultas` ganha `rodadas`, `tentativas` (JSON) e `consulta_origem_id` (UUID, sem FK), gravados pela API.
 - **"Não ajudou, explique de outro jeito"**: o balconista pede outra explicação; o grafo entra direto em `buscar` com os trechos já mostrados excluídos e passa pelas mesmas validações. Não precisa de nó novo.
 - O esclarecimento só pergunta sobre medicamento, forma farmacêutica ou seção. **Nunca** pergunta dado do paciente (idade, gestação, doenças), por causa da LGPD e da regra "não personaliza conduta". No máximo 1 por pergunta: o reenvio já vem com o filtro.
 
@@ -306,19 +343,7 @@ flowchart LR
 
 As 10 perguntas sem resposta calibram o `LIMIAR_SIMILARIDADE`, que hoje está vazio de propósito. Perguntas de interação têm duas âncoras e só contam se as duas forem recuperadas.
 
-### 4. API
-
-FastAPI sob `/api/v1`, com os contratos Pydantic já escritos em `app/schemas/api.py`, `BuscaPgvector` no lugar do índice em memória e cada consulta gravada em `consultas` + `consulta_fontes`.
-
-| Método e rota | Função |
-|---|---|
-| `GET /api/v1/saude` | API, banco e Ollama de pé |
-| `GET /api/v1/medicamentos` | Princípios ativos com bulas indexadas, para o seletor |
-| `POST /api/v1/perguntas` | Pergunta → resposta, fontes, status e motivo |
-| `GET /api/v1/historico?limite=20&pagina=1` | Consultas recentes |
-| `GET /api/v1/historico/{consulta_id}` | Consulta completa com as fontes (snapshot) |
-
-### 5. Frontend e entrega
+### 4. Frontend e entrega
 
 Tela em React com a resposta, citações `[n]` clicáveis que abrem o trecho, fontes ao lado, aviso de medicamento não indexado, botões de esclarecimento e histórico. Depois: Docker Compose completo, resultados do benchmark publicados aqui e um vídeo curto de demonstração.
 
@@ -347,9 +372,10 @@ python -m ingestao.gerar_chunks
 # Perguntar pelo terminal (usa os arquivos, sem banco)
 python -m benchmark.perguntar "Losartana pode ser usada com ibuprofeno?"
 
-# Banco (opcional hoje)
+# Banco e API
 docker compose up -d db
 python -m ingestao.carregar_banco
+uvicorn app.main:app --app-dir backend --reload   # http://127.0.0.1:8000/docs
 
 # Testes
 pytest
@@ -364,11 +390,12 @@ farma-rag/
 ├── backend/
 │   ├── app/
 │   │   ├── config.py          # Settings (pydantic-settings), tudo vem do .env
-│   │   ├── api/               # endpoints FastAPI (a implementar)
-│   │   ├── db/                # models SQLAlchemy, BuscaVetorial, IndiceEmMemoria, BuscaPgvector
+│   │   ├── main.py            # aplicação FastAPI: CORS, erros, rotas, carga do acervo ao subir
+│   │   ├── api/               # rotas /api/v1 e erros no formato ErroOut
+│   │   ├── db/                # models SQLAlchemy, conexão e preparo do banco, IndiceEmMemoria, BuscaPgvector
 │   │   ├── llm/               # cliente do Ollama (chat + embed) e cálculo de embeddings
 │   │   ├── schemas/           # contratos do dataset e da API, catálogo de erros
-│   │   └── services/          # acervo, detecção, citações, fundamentação, rag (peças) e grafo (agente LangGraph)
+│   │   └── services/          # acervo, detecção, citações, fundamentação, rag (peças), grafo (agente LangGraph), histórico
 │   └── tests/                 # pytest + fixtures (bula inventada "Exemplol")
 ├── ingestao/                  # PDF -> JSON -> trechos -> embeddings -> banco; catálogo ANVISA
 ├── benchmark/                 # medição do ambiente, métricas, teste manual (perguntar.py)

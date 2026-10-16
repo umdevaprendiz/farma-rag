@@ -207,6 +207,7 @@ def montar_grafo(acervo: Acervo, s: Settings):
         """Com seção indicada: só trechos dessa seção, os ainda não usados primeiro (o trecho
         certo pode ter vindo na rodada 1 e o erro ter sido do modelo). Sem seção: trechos ainda
         não usados. Sem nada novo: os melhores de novo (a rodada ainda muda a observação ao modelo)."""
+        
         ativos = e["principios_ativos"]
         candidatos = acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos)
         novos = [a for a in candidatos if a.chunk_id not in e["usados"]]

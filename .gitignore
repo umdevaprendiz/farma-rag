@@ -23,6 +23,7 @@ frontend/dist/
 pgdata/
 
 # Editor / SO
+.claude/
 .vscode/
 .idea/
 .DS_Store

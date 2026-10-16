@@ -164,8 +164,8 @@ paciente (idade, gestação, doenças), por causa da LGPD e da regra "não perso
 
 Mudanças de contrato decorrentes: `status` ganha `precisa_esclarecimento` e `CodigoErro` ganha
 `RESPOSTA_NAO_VERIFICADA` (502), já feitos; env `RODADAS_MAX=3` e `ORCAMENTO_S=150`, já feitos.
-Falta, com a API: `consultas` ganha `rodadas` (int), `tentativas` (JSON) e `consulta_origem_id`
-(UUID, sem FK).
+Com a API (2026-10-16, seção 18): `consultas` ganhou `rodadas` (int), `tentativas` (JSON) e
+`consulta_origem_id` (UUID, sem FK).
 
 ## 15. Fluxo de ponta a ponta por arquivos, para teste manual (2026-10-13)
 Do PDF à resposta sem banco, API ou tela. Da raiz, com `pip install -e backend` feito (ou
@@ -274,3 +274,48 @@ Encontrado nos PDFs e decidido:
   LEGAIS" (ambroxol) abre essa seção em "VENDA SEM PRESCRIÇÃO" / "Registro M.S." depois da superdose.
 - **Resultado:** as 24 bulas têm as 8 seções esperadas e o registro conferido. Limite conhecido:
   tabelas (doses por peso, por exemplo) saem como texto corrido.
+
+## 18. API FastAPI (2026-10-16)
+Cinco rotas sob `/api/v1` (`app/main.py`, `app/api/rotas.py`): `saude`, `medicamentos`, `perguntas`,
+`historico` e `historico/{id}`. O agente é o mesmo do terminal (`rag.responder`); a API acrescenta a
+leitura do acervo no banco, o histórico e o formato de erro.
+
+Decisões:
+- **O acervo da API vem do banco** (`Acervo.do_banco`): bulas e trechos são lidos uma vez, ao subir,
+  e a busca é a `BuscaPgvector`. Os arquivos continuam sendo a fonte da verdade (seção 15); o banco é
+  o que a API enxerga. Depois de `carregar_banco`, a API precisa ser reiniciada.
+- **`chunks` ganhou `medicamento` e `n_tokens`**, para o banco espelhar o `chunks.jsonl` inteiro e a
+  API montar os trechos sem ler arquivo. Banco carregado antes delas: a API recusa subir o acervo e
+  pede para rodar `carregar_banco` de novo (não adivinha valor).
+- **A bula do banco não tem as seções** (o texto está nos trechos), então o `Acervo` passou a aceitar
+  qualquer objeto com os dados da bula (`BulaDoAcervo`, um `Protocol`): a `Bula` do arquivo e a do
+  banco servem.
+- **`preparar_banco` saiu de `ingestao/` para `app/db/conexao.py`**: a imagem Docker da API só leva o
+  pacote `app`, e a API prepara o banco ao subir (cria tabelas e colunas que faltam). As colunas
+  novas de tabela já existente continuam entrando por `ADD COLUMN IF NOT EXISTS`, sem Alembic.
+- **Toda pergunta fica no histórico**, inclusive esclarecimento e erro. Colunas novas: `rodadas`,
+  `tentativas` (JSONB com cada rodada e a saída crua do modelo), `mensagem_erro` (no 502, a
+  explicação das rodadas) e `consulta_origem_id` (sem FK, como o `chunk_id` das fontes). A entrada
+  inválida (422) não é gravada: não chegou a ser pergunta.
+- **Snapshot da fonte com fabricante e nº de registro**, e a coluna `destaques` já criada, nula
+  (decisão de 2026-10-15 para a feature "fonte completa", que segue em espera).
+- **A resposta do `POST` é montada a partir do snapshot gravado**, não do resultado em memória: o que
+  o balconista vê na hora é exatamente o que o histórico mostra depois.
+- **Todo erro sai em `ErroOut`** (`app/api/erros.py`), inclusive a validação de entrada do FastAPI
+  (422 `ENTRADA_INVALIDA`, com o campo e o motivo) e o banco fora do ar (503 `BANCO_INDISPONIVEL`).
+  Código novo: `CONSULTA_NAO_ENCONTRADA` (404).
+- **`/saude` sempre responde 200**, com `status` `ok` ou `degradado` e a lista do que falta (banco,
+  Ollama, modelo não baixado): é para a tela avisar, não para derrubar a requisição.
+- **A API sobe sem o banco** e tenta de novo a cada requisição. `DB_TIMEOUT_S=5`: sem limite, conectar
+  ao banco desligado esperava ~130 s no Windows (medido; era o que deixava o `pytest` em 2 min 16 s).
+- **Endpoints síncronos** (`def`): o FastAPI roda cada um numa thread, e a pergunta espera o Ollama
+  (cliente síncrono, `urllib`) por dezenas de segundos sem travar as outras rotas.
+- **Docker:** o serviço `backend` monta `data/` só para leitura. Bulas e trechos vêm do banco, mas o
+  catálogo de nomes (`medicamentos_conhecidos.txt`, catálogo da ANVISA, aliases ignorados) é lido de lá.
+  A porta 8000 foi publicada só em `127.0.0.1`, como a do banco. A imagem ainda não foi construída.
+
+**Defeito encontrado nos testes e corrigido.** O schema temporário dos testes não isolava nada: com
+`search_path=teste_x,public`, o `create_all` enxergava as tabelas do `public` pelo caminho, não criava
+as do schema e os testes gravavam no banco de desenvolvimento (o `TRUNCATE chunks, bulas` do
+`carregar_banco` apagava o acervo do `public` a cada `pytest`). Agora `criar_engine(schema=...)`
+também usa `schema_translate_map`, e um teste confere que as tabelas existem no schema temporário.
