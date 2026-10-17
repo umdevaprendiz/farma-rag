@@ -63,13 +63,14 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 | Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citations.py` |
 | Agente em grafo (LangGraph, 6 nós, rodadas 1 a 3) | ✅ pronto, testado com LLM falso e com o LLM real nas 24 bulas | `app/services/graph.py` |
 | Teste manual pelo terminal | ✅ pronto | `python -m benchmark.ask` |
-| Testes automáticos | ✅ 230 testes em ~12 s (os de banco rodam num schema temporário) | `backend/tests/` |
+| Testes automáticos | ✅ 246 testes; os 30 de banco rodam num schema temporário e são pulados sem o PostgreSQL | `backend/tests/` |
 | Bulas reais: 21 PDFs → 25 bulas, 906 trechos com embedding, no banco; tabela de interações lida como tabela | ✅ 21 de 40 medicamentos | `data/bulas_manifesto.json`, `data/processed/bulas/`, `ingestion/extract_pdf.py` |
 | Checagem de fundamentação (números, doses, termos, "só o nome" não vale, remédio certo) e de assunto (a resposta responde à pergunta) | ✅ pronto | `app/services/grounding.py`, `app/services/intent.py` |
 | Pergunta sem remédio ou com remédio sem bula: busca híbrida em todas as bulas, um trecho por medicamento | ✅ pronto, testado com o LLM real | `app/services/graph.py`, `app/services/intent.py` |
 | Conversa: pergunta seguinte ("e para criança?"), alergia com pergunta de volta e alternativas da mesma classe | ✅ pronto, testado com o LLM real | `app/services/graph.py`, `app/services/intent.py` |
 | Respostas copiadas da bula, sem LLM (dose, interação entre remédios citados, alternativas na alergia) | ✅ pronto | `app/services/extract.py` |
 | Para que serve o remédio sem bula: classe terapêutica do registro na ANVISA | ✅ pronto | `app/services/medicines.py` |
+| "Não ajudou": outra explicação sem os trechos citados, e destaque das frases da bula que sustentam cada afirmação | 🟡 pronto no grafo, testado com LLM falso; faltam a API e a tela | `app/services/graph.py`, `app/services/grounding.py` |
 | Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metrics.py` |
 | API FastAPI: 5 endpoints, histórico de toda consulta | ✅ pronta, testada com LLM falso e no servidor (perguntas sem LLM) | `app/main.py`, `app/api/`, `app/services/history.py` |
 | Frontend React (Vite + TypeScript) em formato de chat: conversa, citações clicáveis, fontes em chips, histórico na lateral | ✅ pronto, conferido no navegador com o LLM real e com o simulado | `frontend/` |
@@ -161,7 +162,7 @@ flowchart TD
 | Nó | LLM | O que faz |
 |---|---|---|
 | `entender` | não | Detecta o medicamento (ou aplica o filtro) e infere as seções da pergunta (`services/intent.py`: "gravidez" → contraindicações e advertências, "dose" → posologia…) |
-| `buscar` | não (embedding, 1 vez só) | Com medicamento indexado: rodada 1 top_k por semelhança na bula dele; rodadas seguintes, trechos das seções indicadas, os ainda não usados primeiro. Sem medicamento indexado (nenhum nome, ou só remédio sem bula): **busca geral**, todas as bulas, só nas seções indicadas e um trecho por princípio ativo (`TOP_K_GERAL=4`), para a resposta trazer as opções |
+| `buscar` | não (embedding, 1 vez só) | Com medicamento indexado: rodada 1 top_k por semelhança na bula dele; rodadas seguintes, trechos das seções indicadas, os ainda não usados primeiro. Sem medicamento indexado (nenhum nome, ou só remédio sem bula): **busca geral**, todas as bulas, só nas seções indicadas e um trecho por princípio ativo (`TOP_K_GERAL=4`), para a resposta trazer as opções. No "não ajudou", começa como numa rodada seguinte: sem os trechos citados na resposta anterior e com os já enviados no fim da fila |
 | `gerar` | **sim** | Geração com JSON Schema. Da rodada 2 em diante, uma observação genérica diz o que falhou (sem repetir a afirmação errada, que o modelo copiaria). Se a pergunta cita remédio sem bula, a observação avisa que não há trechos dele, para o modelo não atribuir a ele o que a bula de outro diz |
 | `validar` | não | `validar_saida` + checagem de fundamentação (`services/grounding.py`): todo número tem de estar no trecho citado, todo número com unidade de dose com a mesma unidade, a maioria dos termos da frase também, algum termo além do nome do remédio tem de estar no texto do trecho, e remédio citado na frase tem de ser o do trecho ou aparecer nele |
 | `verificar_llm` | **sim** | Só na rodada 3: "o trecho diz isso? sim/não" por afirmação. Pode usar um modelo maior (`LLM_MODELO_VERIFICACAO`) sem deixar a pergunta comum mais lenta |
@@ -219,7 +220,7 @@ FastAPI em `app/main.py`, rotas em `app/api/routes.py`, documentação interativ
 | `GET /api/v1/historico?limite=20&pagina=1` | Consultas da mais recente para a mais antiga, com o total |
 | `GET /api/v1/historico/{consulta_id}` | A consulta como foi respondida, com as fontes do snapshot |
 
-- **O acervo vem do banco** (`Corpus.do_banco`): bulas e trechos são lidos uma vez, ao subir, e a busca é a `PgvectorSearch`. Depois de rodar `carregar_banco`, reinicie a API.
+- **O acervo vem do banco** (`Corpus.do_banco`): bulas e trechos são lidos uma vez, ao subir, e a busca é a `PgvectorSearch`. Depois de rodar `python -m ingestion.load_database`, reinicie a API.
 - **Toda pergunta fica no histórico**, inclusive esclarecimento e erro: status, rodadas, cada tentativa (`tentativas`, em JSON, com a saída crua do modelo), a mensagem do erro e o `consulta_origem_id` do reenvio depois de um esclarecimento.
 - **A resposta sai do snapshot gravado**: as fontes do `POST` são as mesmas que o histórico mostra depois, com fabricante, nº de registro, seção (chave e rótulo), página, data da bula e `citado`. Os trechos consultados e não citados também vêm.
 - **Sobe sem o banco**: com o PostgreSQL fora do ar, a API sobe, responde 503 `BANCO_INDISPONIVEL` e tenta de novo a cada requisição. `DB_TIMEOUT_S` (5 s) corta a espera de ~130 s que o Windows faz por conexão.
@@ -241,6 +242,18 @@ React 19 + TypeScript, servido pelo Vite (`frontend/`), em `http://127.0.0.1:517
 - **Alergia**: "tenho alergia a um remédio, tem outro?" pergunta de volta qual é. Com o nome, a resposta traz a contraindicação por hipersensibilidade da bula dele e as alternativas da **mesma classe terapêutica no registro da ANVISA** (dipirona → ibuprofeno e paracetamol). A tela lembra de conferir a alergia cruzada.
 - **Frases da bula, sem o LLM**: em pergunta de dose (uma frase da posologia por apresentação), em interação entre remédios citados e nas alternativas, a resposta são as frases da bula como estão escritas (na tabela de interações, a linha inteira). Saem em 2 a 5 s, sem o modelo juntar linhas erradas.
 - **Para que serve**: remédio sem bula no acervo vem com a classe terapêutica do registro na ANVISA ("dipirona: analgésicos não narcóticos").
+
+### 8. "Não ajudou" e destaque na fonte
+
+Pronto no grafo (`rag.AnotherExplanation`, `Result.outra_explicacao`, `Source.destaques`); a API e a tela vêm a seguir. O balconista aperta "não ajudou, explique de outro jeito" e o agente refaz a resposta com outros trechos, com a mesma validação e sempre com fonte. O agente não pede isso sozinho: resposta fraca continua sendo resolvida pelas rodadas.
+
+- **Sem os trechos citados**: a pergunta roda de novo sem os trechos que a resposta anterior citou (e as outras explicações antes dela). Os enviados e não citados continuam valendo, mas depois dos que nunca foram enviados.
+- **Seção antes da semelhança**: com seção indicada pela pergunta, a busca começa por ela, como nas rodadas 2 e 3. Se todos os trechos da seção já foram citados, não há outra explicação: `nao_encontrada` com motivo `sem_outra_explicacao`, sem chamar o LLM. Recusa do modelo também vira esse motivo.
+- **Sempre pelo LLM**: sem frases copiadas da bula, porque a cópia pode ter sido o que não ajudou e, como os trechos se sobrepõem, a frase copiada sairia a mesma.
+- **O prompt não muda**: nem a resposta anterior nem "explique de outro jeito" entram no prompt, porque o modelo pequeno copia o que vê. A diferença vem dos trechos.
+- **Destaque** (`grounding.destaques`, sem LLM): de cada fonte citada, as frases inteiras do trecho que sustentam as afirmações, como posições (início, fim) no texto. Frase copiada da bula: as frases onde ela está. Paráfrase do modelo: as frases que mais cobrem os termos e números da afirmação, uma por vez, até no máximo 3; a primeira precisa cobrir pelo menos dois itens, e o nome do remédio não conta.
+
+Falta: a API pedir a outra explicação a partir de uma consulta do histórico (montar `AnotherExplanation` com os trechos citados e enviados), devolver e gravar os destaques (`SourceOut`, `consulta_fontes.destaques`) e aceitar o motivo `sem_outra_explicacao`; a tela ganhar o botão (só em resposta respondida) e o trecho com a parte destacada. Fabricante e nº de registro já aparecem na fonte.
 
 ## Modelo de dados
 
@@ -314,8 +327,8 @@ erDiagram
 |---|---|---|
 | RAG | Chunking por seção com sobreposição, embeddings multilíngues (`bge-m3`), similaridade de cosseno, filtro por metadado (princípio ativo), divisão do top-k entre entidades, citação por trecho | `ingestion/generate_chunks.py`, `app/db/`, `app/services/rag.py` |
 | LLM local | Ollama, modelo de 1,5B em CPU, saída restrita por JSON Schema (*structured output*), engenharia de prompt para modelo pequeno, medição de tokens/s | `app/llm/ollama.py`, `benchmark/measure_environment.py` |
-| Confiabilidade | Recusa antes do LLM, validação determinística das citações, checagem de fundamentação (números, doses e termos no trecho citado), verificação por LLM só na última rodada, catálogo de erros com HTTP próprio | `app/services/citations.py`, `app/services/grounding.py`, `app/schemas/api.py` |
-| Agentes | LangGraph: estado tipado (`TypedDict`), nós com responsabilidade única, decisões em arestas condicionais determinísticas, laço de rodadas com limite e orçamento de tempo, modelo diferente por nó | `app/services/graph.py`, `docs/DECISOES.md` §16 |
+| Confiabilidade | Recusa antes do LLM, validação determinística das citações, checagem de fundamentação (números, doses e termos no trecho citado), verificação por LLM só na última rodada, destaque das frases que sustentam cada afirmação (cobertura gulosa de termos, sem LLM), catálogo de erros com HTTP próprio | `app/services/citations.py`, `app/services/grounding.py`, `app/schemas/api.py` |
+| Agentes | LangGraph: estado tipado (`TypedDict`), nós com responsabilidade única, decisões em arestas condicionais determinísticas, laço de rodadas com limite e orçamento de tempo, modelo diferente por nó, nova execução com estado inicial próprio ("não ajudou") | `app/services/graph.py`, `docs/DECISOES.md` §16 |
 | Banco vetorial | PostgreSQL 17 + pgvector, coluna `vector(1024)`, operador `<=>`, decisão consciente de não usar HNSW, carga transacional com `TRUNCATE` | `app/db/pgvector_search.py`, `ingestion/load_database.py` |
 | Python | Pydantic v2 e pydantic-settings para contratos e configuração, `typing.Protocol` para interfaces, dataclasses, numpy, SQLAlchemy 2 tipado (`Mapped`), psycopg 3, `urllib` para o cliente HTTP | `backend/app/` |
 | Processamento de texto | Extração de PDF (`pdfplumber`), separação de seções por regex, normalização de nomes, tolerância a erro de digitação, rastreio de página com `\f` | `ingestion/`, `app/services/medicines.py` |
@@ -324,7 +337,7 @@ erDiagram
 | API | FastAPI com *lifespan*, injeção de dependência, todo erro no mesmo formato (handlers próprios, inclusive para a validação de entrada), endpoints síncronos para chamada bloqueante, CORS, OpenAPI gerado | `app/main.py`, `app/api/` |
 | Testes | pytest, LLM substituído por falso, teste de equivalência numpy × pgvector, API testada com `TestClient` contra banco real num schema temporário isolado (`schema_translate_map`), *skip* automático sem banco | `backend/tests/` |
 | Frontend | React 19 com hooks, TypeScript estrito com tipos espelhando os contratos da API, estados de carregamento e erro, citações clicáveis ligadas às fontes, tema claro/escuro por variáveis CSS, layout responsivo, dependências fixadas e instaladas sem scripts | `frontend/src/` |
-| Engenharia | Configuração 100% por `.env`, dataset versionado no Git, Docker Compose, cache reprodutível, registro escrito de decisões | `.env.example`, `docker-compose.yml`, `docs/DECISOES.md` |
+| Engenharia | Configuração 100% por `.env`, dataset versionado no Git, Docker Compose, cache reprodutível, registro escrito de decisões, convenção de nomes (código em inglês, domínio em português) | `.env.example`, `docker-compose.yml`, `docs/DECISOES.md` |
 
 ## Decisões e aprendizados
 
@@ -335,6 +348,7 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 - **Busca por semelhança sempre acha alguma coisa.** "Estou tonto" trazia as indicações do paracetamol. Na busca em todas as bulas, o trecho precisa ter a palavra do assunto (tontura, vertigem); sem isso, "não encontrei" é a resposta certa.
 - **Modelo pequeno não cita de forma confiável dentro do texto.** Pedindo `[1]` no meio da frase, o qwen2.5:1.5b citou só na lista e 5 de 5 respostas certas foram recusadas. Pedindo afirmações separadas e montando o `[n]` no código, 7 de 7 passaram.
 - **Nenhum exemplo de resposta no prompt.** O modelo copiou o exemplo ("Deve ser tomado em jejum [2]") numa pergunta sobre armazenamento, e a validação de citações deixou passar.
+- **Outra explicação vem de outros trechos, não de outro prompt.** Pelo mesmo motivo, o "não ajudou" não manda a resposta anterior nem "explique de outro jeito" ao modelo: tira os trechos que ela citou e deixa o prompt igual.
 - **O dataset em arquivo é a fonte da verdade.** Bulas e trechos em JSON versionado; banco e cache são derivados.
 - **Gabarito por âncora.** `chunk_id` muda com `CHUNK_TOKENS`; uma frase copiada da bula, não.
 - **Bulas baixadas à mão.** O Bulário da ANVISA usa Cloudflare Turnstile; o projeto não automatiza nem contorna isso, e cada PDF tem procedência e SHA-256 registrados.
@@ -345,10 +359,10 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 
 21 dos 40 medicamentos do MVP (`data/medicamentos_mvp.json`) viraram 25 bulas, com trechos e embeddings no banco (a dipirona entrou no lote 2). As 19 restantes (AAS, amoxicilina, loperamida...) não têm bula do profissional em site oficial aberto: ficam para download manual no Bulário Eletrônico, com a verificação de segurança de `data/FONTES.md` antes de entrar no manifesto. A tabela de interações já é lida como tabela; as outras (ex.: doses por peso) ainda saem como texto corrido.
 
-### 2. O que falta das rodadas e do esclarecimento
+### 2. O que falta do agente
 
+- **"Não ajudou" na API e na tela**: o grafo já refaz a resposta sem os trechos citados (item 8 de [Como funciona hoje](#como-funciona-hoje)); falta a rota montar o pedido a partir do histórico e gravar os destaques, e a tela ganhar o botão e o trecho com a parte destacada.
 - **Forma farmacêutica ambígua** (Tylalgin gotas × comprimido × sachê): a bula já tem `forma_farmaceutica`, e o contrato `precisa_esclarecimento` continua na API e na tela; falta o nó que pergunta (o antigo `esclarecer`, que perguntava o medicamento, saiu em 2026-10-16).
-- **"Não ajudou, explique de outro jeito"**: o balconista pede outra explicação; o grafo entra direto em `buscar` com os trechos já mostrados excluídos e passa pelas mesmas validações. Não precisa de nó novo.
 - O esclarecimento só pergunta sobre medicamento, forma farmacêutica ou seção. **Nunca** pergunta dado do paciente (idade, gestação, doenças), por causa da LGPD e da regra "não personaliza conduta". No máximo 1 por pergunta: o reenvio já vem com o filtro.
 
 ### 3. Benchmark próprio
@@ -422,9 +436,9 @@ farma-rag/
 │   │   ├── db/                # models SQLAlchemy, connection.py, vector_search.py (InMemoryIndex), pgvector_search.py
 │   │   ├── llm/               # cliente do Ollama (chat + embed) e cálculo de embeddings
 │   │   ├── schemas/           # contratos do dataset e da API, catálogo de erros
-│   │   └── services/          # corpus, medicines (detecção), intent, citations, grounding (fundamentação), extract, rag (peças), graph (agente LangGraph), history
+│   │   └── services/          # corpus, medicines (detecção), intent, citations, grounding (fundamentação e destaque), extract, rag (peças), graph (agente LangGraph), history
 │   └── tests/                 # pytest + fixtures (bula inventada "Exemplol")
-├── ingestion/                  # PDF -> JSON -> trechos -> embeddings -> banco; catálogo ANVISA
+├── ingestion/                 # PDF -> JSON -> trechos -> embeddings -> banco; catálogo ANVISA
 ├── benchmark/                 # medição do ambiente, métricas, teste manual (ask.py)
 ├── data/
 │   ├── raw/                   # PDFs e CSV de origem (procedência em FONTES.md)
@@ -438,3 +452,5 @@ farma-rag/
 ├── docker-compose.yml         # pgvector/pgvector:pg17 + backend
 └── FarmaRAG.pdf               # especificação original
 ```
+
+**Nomes**: classes, tipos e arquivos de código em inglês (`Corpus`, `graph.py`, `components/Sidebar.tsx`); funções, variáveis, campos do JSON, colunas do banco, textos da tela e os nomes em `data/` e `docs/` em português. O contrato da API e o banco não mudaram com a troca ([`docs/DECISOES.md`](docs/DECISOES.md) §27).
