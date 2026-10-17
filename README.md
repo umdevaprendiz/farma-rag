@@ -54,24 +54,24 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 
 | Componente | Estado | Onde |
 |---|---|---|
-| Medição do hardware (etapa 0) | ✅ pronto | `benchmark/medir_ambiente.py`, `data/benchmark/resultados/` |
-| Catálogo da ANVISA (6.999 pares nome comercial / princípio ativo) | ✅ pronto | `ingestao/catalogo_anvisa.py`, `data/processed/catalogo_anvisa.jsonl` |
-| Detecção do medicamento na pergunta (sem LLM) | ✅ pronto | `app/services/medicamentos.py` |
-| Ingestão: PDF/TXT → JSON por seção → trechos → embeddings com cache | ✅ pronto | `ingestao/processar_lote.py`, `ingestao/processar_bula.py`, `ingestao/gerar_chunks.py` |
-| Busca vetorial em memória (numpy) | ✅ pronto | `app/db/busca_vetorial.py` |
-| Busca vetorial no PostgreSQL + pgvector | ✅ pronto, testado contra o numpy | `app/db/busca_pgvector.py`, `ingestao/carregar_banco.py` |
-| Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citacoes.py` |
-| Agente em grafo (LangGraph, 6 nós, rodadas 1 a 3) | ✅ pronto, testado com LLM falso e com o LLM real nas 24 bulas | `app/services/grafo.py` |
-| Teste manual pelo terminal | ✅ pronto | `python -m benchmark.perguntar` |
+| Medição do hardware (etapa 0) | ✅ pronto | `benchmark/measure_environment.py`, `data/benchmark/resultados/` |
+| Catálogo da ANVISA (6.999 pares nome comercial / princípio ativo) | ✅ pronto | `ingestion/anvisa_catalog.py`, `data/processed/catalogo_anvisa.jsonl` |
+| Detecção do medicamento na pergunta (sem LLM) | ✅ pronto | `app/services/medicines.py` |
+| Ingestão: PDF/TXT → JSON por seção → trechos → embeddings com cache | ✅ pronto | `ingestion/process_batch.py`, `ingestion/process_leaflet.py`, `ingestion/generate_chunks.py` |
+| Busca vetorial em memória (numpy) | ✅ pronto | `app/db/vector_search.py` |
+| Busca vetorial no PostgreSQL + pgvector | ✅ pronto, testado contra o numpy | `app/db/pgvector_search.py`, `ingestion/load_database.py` |
+| Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citations.py` |
+| Agente em grafo (LangGraph, 6 nós, rodadas 1 a 3) | ✅ pronto, testado com LLM falso e com o LLM real nas 24 bulas | `app/services/graph.py` |
+| Teste manual pelo terminal | ✅ pronto | `python -m benchmark.ask` |
 | Testes automáticos | ✅ 230 testes em ~12 s (os de banco rodam num schema temporário) | `backend/tests/` |
-| Bulas reais: 21 PDFs → 25 bulas, 906 trechos com embedding, no banco; tabela de interações lida como tabela | ✅ 21 de 40 medicamentos | `data/bulas_manifesto.json`, `data/processed/bulas/`, `ingestao/extrair_pdf.py` |
-| Checagem de fundamentação (números, doses, termos, "só o nome" não vale, remédio certo) e de assunto (a resposta responde à pergunta) | ✅ pronto | `app/services/fundamentacao.py`, `app/services/intencao.py` |
-| Pergunta sem remédio ou com remédio sem bula: busca híbrida em todas as bulas, um trecho por medicamento | ✅ pronto, testado com o LLM real | `app/services/grafo.py`, `app/services/intencao.py` |
-| Conversa: pergunta seguinte ("e para criança?"), alergia com pergunta de volta e alternativas da mesma classe | ✅ pronto, testado com o LLM real | `app/services/grafo.py`, `app/services/intencao.py` |
-| Respostas copiadas da bula, sem LLM (dose, interação entre remédios citados, alternativas na alergia) | ✅ pronto | `app/services/extrato.py` |
-| Para que serve o remédio sem bula: classe terapêutica do registro na ANVISA | ✅ pronto | `app/services/medicamentos.py` |
-| Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metricas.py` |
-| API FastAPI: 5 endpoints, histórico de toda consulta | ✅ pronta, testada com LLM falso e no servidor (perguntas sem LLM) | `app/main.py`, `app/api/`, `app/services/historico.py` |
+| Bulas reais: 21 PDFs → 25 bulas, 906 trechos com embedding, no banco; tabela de interações lida como tabela | ✅ 21 de 40 medicamentos | `data/bulas_manifesto.json`, `data/processed/bulas/`, `ingestion/extract_pdf.py` |
+| Checagem de fundamentação (números, doses, termos, "só o nome" não vale, remédio certo) e de assunto (a resposta responde à pergunta) | ✅ pronto | `app/services/grounding.py`, `app/services/intent.py` |
+| Pergunta sem remédio ou com remédio sem bula: busca híbrida em todas as bulas, um trecho por medicamento | ✅ pronto, testado com o LLM real | `app/services/graph.py`, `app/services/intent.py` |
+| Conversa: pergunta seguinte ("e para criança?"), alergia com pergunta de volta e alternativas da mesma classe | ✅ pronto, testado com o LLM real | `app/services/graph.py`, `app/services/intent.py` |
+| Respostas copiadas da bula, sem LLM (dose, interação entre remédios citados, alternativas na alergia) | ✅ pronto | `app/services/extract.py` |
+| Para que serve o remédio sem bula: classe terapêutica do registro na ANVISA | ✅ pronto | `app/services/medicines.py` |
+| Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metrics.py` |
+| API FastAPI: 5 endpoints, histórico de toda consulta | ✅ pronta, testada com LLM falso e no servidor (perguntas sem LLM) | `app/main.py`, `app/api/`, `app/services/history.py` |
 | Frontend React (Vite + TypeScript) em formato de chat: conversa, citações clicáveis, fontes em chips, histórico na lateral | ✅ pronto, conferido no navegador com o LLM real e com o simulado | `frontend/` |
 
 ## Arquitetura
@@ -83,28 +83,28 @@ O fluxo funciona de ponta a ponta pelo terminal (lendo os arquivos) e pela API (
 ```mermaid
 flowchart LR
   subgraph ING["Ingestão (offline, no host)"]
-    MAN["bulas_manifesto.json"] --> PB["processar_lote.py<br/>confere hash e registro,<br/>pdfplumber + separar_bulas"]
+    MAN["bulas_manifesto.json"] --> PB["process_batch.py<br/>confere hash e registro,<br/>pdfplumber + separar_bulas"]
     PDF["PDF da bula<br/>data/raw/"] --> PB
     PB --> JSON["data/processed/bulas/&lt;id&gt;.json"]
-    JSON --> GC["gerar_chunks.py"]
+    JSON --> GC["generate_chunks.py"]
     GC --> JSONL["data/processed/chunks.jsonl"]
     GC <--> CACHE[("cache SQLite<br/>de embeddings")]
-    JSONL --> CB["carregar_banco.py"]
+    JSONL --> CB["load_database.py"]
   end
 
   subgraph RUN["Consulta"]
-    CLI["benchmark/perguntar.py"] --> RAG["rag.responder<br/>grafo LangGraph"]
+    CLI["benchmark/ask.py"] --> RAG["rag.responder<br/>grafo LangGraph"]
     API["FastAPI /api/v1<br/>app/main.py"] --> RAG
-    RAG --> ACV["Acervo<br/>(bulas + trechos + catálogo)"]
-    ACV --> MEM["IndiceEmMemoria<br/>numpy (terminal)"]
-    ACV --> BPG["BuscaPgvector<br/>(API)"]
+    RAG --> ACV["Corpus<br/>(bulas + trechos + catálogo)"]
+    ACV --> MEM["InMemoryIndex<br/>numpy (terminal)"]
+    ACV --> BPG["PgvectorSearch<br/>(API)"]
     RAG --> OLL["Ollama<br/>bge-m3 + qwen2.5:1.5b"]
   end
 
-  JSON -- "Acervo.carregar" --> ACV
+  JSON -- "Corpus.carregar" --> ACV
   JSONL --> ACV
   CB --> PG[("PostgreSQL 17<br/>+ pgvector")]
-  PG -- "Acervo.do_banco" --> ACV
+  PG -- "Corpus.do_banco" --> ACV
   BPG --> PG
   API -- "grava consultas<br/>+ fontes (snapshot)" --> PG
 ```
@@ -115,13 +115,13 @@ flowchart LR
 flowchart LR
   UI["Frontend React<br/>(Vite)"] -- "HTTP /api/v1" --> API["FastAPI<br/>container backend"]
   API --> RAG["rag.responder<br/>grafo LangGraph, rodadas 0 a 3"]
-  RAG --> BV["BuscaPgvector"]
+  RAG --> BV["PgvectorSearch"]
   BV --> PG[("PostgreSQL + pgvector<br/>bulas, chunks, consultas")]
   RAG --> OLL["Ollama nativo<br/>host.docker.internal:11434"]
   API -- "grava histórico" --> PG
 ```
 
-A busca fica atrás do `Protocol` `BuscaVetorial`. `IndiceEmMemoria` (numpy) e `BuscaPgvector` (`<=>`, distância de cosseno) devolvem os mesmos trechos e scores, e `rag.responder` não sabe de onde o acervo veio.
+A busca fica atrás do `Protocol` `VectorSearch`. `InMemoryIndex` (numpy) e `PgvectorSearch` (`<=>`, distância de cosseno) devolvem os mesmos trechos e scores, e `rag.responder` não sabe de onde o acervo veio.
 
 ## Como funciona hoje
 
@@ -129,18 +129,18 @@ A busca fica atrás do `Protocol` `BuscaVetorial`. `IndiceEmMemoria` (numpy) e `
 
 | Etapa | Arquivo | O que faz |
 |---|---|---|
-| Validar o PDF | `ingestao/validar_pdf_bula.py` | Checagem de segurança antes de abrir: procura JavaScript, ações automáticas e arquivos embutidos (inclusive com nome ofuscado e dentro de streams comprimidos) e calcula o SHA-256 |
-| Extrair texto | `ingestao/extrair_pdf.py` | `pdfplumber`, texto por página |
-| Separar bulas | `ingestao/separar_secoes.py` | Um PDF pode trazer várias bulas (Tylalgin: gotas, comprimido e sachê). Cada uma termina na tabela "Histórico de Alteração", que é descartada, e a próxima começa em "MODELO DE BULA...". Lê também o código de versão impresso e o nº de registro de cada uma |
-| Separar seções | `ingestao/separar_secoes.py` | Regex sobre os títulos padronizados pela ANVISA, com as variações das bulas reais (singular, erro de digitação, rodapé colado no título). Remissão "(veja o item 8. POSOLOGIA...)" não abre seção; referências bibliográficas são puladas; hífen de palavra composta no fim da linha é mantido. Guarda `\f` onde a página vira |
-| Montar as bulas | `ingestao/processar_lote.py` | Lê `data/bulas_manifesto.json` e, antes de gravar, confere SHA-256 (o mesmo do `FONTES.md`), quantas bulas há no PDF e o registro impresso em cada uma. Gera `data/processed/bulas/<id>.json` pelo contrato `Bula`, com registro, forma farmacêutica e versão. `processar_bula.py` faz o mesmo para uma bula avulsa |
-| Dividir em trechos | `ingestao/gerar_chunks.py` | ~300 tokens com sobreposição de 50, sem misturar seções; cada trecho guarda a página em que começa. Tokens estimados em 3,3 caracteres por token |
+| Validar o PDF | `ingestion/validate_leaflet_pdf.py` | Checagem de segurança antes de abrir: procura JavaScript, ações automáticas e arquivos embutidos (inclusive com nome ofuscado e dentro de streams comprimidos) e calcula o SHA-256 |
+| Extrair texto | `ingestion/extract_pdf.py` | `pdfplumber`, texto por página |
+| Separar bulas | `ingestion/split_sections.py` | Um PDF pode trazer várias bulas (Tylalgin: gotas, comprimido e sachê). Cada uma termina na tabela "Histórico de Alteração", que é descartada, e a próxima começa em "MODELO DE BULA...". Lê também o código de versão impresso e o nº de registro de cada uma |
+| Separar seções | `ingestion/split_sections.py` | Regex sobre os títulos padronizados pela ANVISA, com as variações das bulas reais (singular, erro de digitação, rodapé colado no título). Remissão "(veja o item 8. POSOLOGIA...)" não abre seção; referências bibliográficas são puladas; hífen de palavra composta no fim da linha é mantido. Guarda `\f` onde a página vira |
+| Montar as bulas | `ingestion/process_batch.py` | Lê `data/bulas_manifesto.json` e, antes de gravar, confere SHA-256 (o mesmo do `FONTES.md`), quantas bulas há no PDF e o registro impresso em cada uma. Gera `data/processed/bulas/<id>.json` pelo contrato `Leaflet`, com registro, forma farmacêutica e versão. `process_leaflet.py` faz o mesmo para uma bula avulsa |
+| Dividir em trechos | `ingestion/generate_chunks.py` | ~300 tokens com sobreposição de 50, sem misturar seções; cada trecho guarda a página em que começa. Tokens estimados em 3,3 caracteres por token |
 | Embeddings | `app/llm/embeddings.py` + cache | `bge-m3` (1024 dimensões). O texto embutido leva medicamento e seção na frente. Cache SQLite com chave `hash(modelo + texto)`, gravado a cada lote de 8: interromper e retomar não refaz nada |
-| Carregar o banco | `ingestao/carregar_banco.py` | `CREATE EXTENSION vector`, `create_all` e troca de `bulas` e `chunks` com `TRUNCATE` numa transação só; `consultas` não é tocada |
+| Carregar o banco | `ingestion/load_database.py` | `CREATE EXTENSION vector`, `create_all` e troca de `bulas` e `chunks` com `TRUNCATE` numa transação só; `consultas` não é tocada |
 
 ### 2. Consulta: o agente em grafo (LangGraph)
 
-`rag.responder` executa um grafo de 6 nós (`app/services/grafo.py`). Só 2 chamam o LLM; os caminhos são decididos nas arestas condicionais, em código. Cada chamada ao LLM custa 30–45 s nesta CPU, então as rodadas são **adaptativas**: uma nova só começa se a anterior falhou e se ainda cabe no orçamento de tempo.
+`rag.responder` executa um grafo de 6 nós (`app/services/graph.py`). Só 2 chamam o LLM; os caminhos são decididos nas arestas condicionais, em código. Cada chamada ao LLM custa 30–45 s nesta CPU, então as rodadas são **adaptativas**: uma nova só começa se a anterior falhou e se ainda cabe no orçamento de tempo.
 
 ```mermaid
 flowchart TD
@@ -154,18 +154,18 @@ flowchart TD
   VA -- "recusou com trechos da seção errada<br/>(só na rodada 1)" --> BU
   VA -- "passou na rodada 3" --> VL{"verificar_llm<br/>cada afirmação: sim/não<br/>(LLM)"}
   VA -- "passou / recusou / sem rodadas" --> FI
-  VL --> FI["finalizar<br/>Resultado"]
+  VL --> FI["finalizar<br/>Result"]
   FI --> E((fim))
 ```
 
 | Nó | LLM | O que faz |
 |---|---|---|
-| `entender` | não | Detecta o medicamento (ou aplica o filtro) e infere as seções da pergunta (`services/intencao.py`: "gravidez" → contraindicações e advertências, "dose" → posologia…) |
+| `entender` | não | Detecta o medicamento (ou aplica o filtro) e infere as seções da pergunta (`services/intent.py`: "gravidez" → contraindicações e advertências, "dose" → posologia…) |
 | `buscar` | não (embedding, 1 vez só) | Com medicamento indexado: rodada 1 top_k por semelhança na bula dele; rodadas seguintes, trechos das seções indicadas, os ainda não usados primeiro. Sem medicamento indexado (nenhum nome, ou só remédio sem bula): **busca geral**, todas as bulas, só nas seções indicadas e um trecho por princípio ativo (`TOP_K_GERAL=4`), para a resposta trazer as opções |
 | `gerar` | **sim** | Geração com JSON Schema. Da rodada 2 em diante, uma observação genérica diz o que falhou (sem repetir a afirmação errada, que o modelo copiaria). Se a pergunta cita remédio sem bula, a observação avisa que não há trechos dele, para o modelo não atribuir a ele o que a bula de outro diz |
-| `validar` | não | `validar_saida` + checagem de fundamentação (`services/fundamentacao.py`): todo número tem de estar no trecho citado, todo número com unidade de dose com a mesma unidade, a maioria dos termos da frase também, algum termo além do nome do remédio tem de estar no texto do trecho, e remédio citado na frase tem de ser o do trecho ou aparecer nele |
+| `validar` | não | `validar_saida` + checagem de fundamentação (`services/grounding.py`): todo número tem de estar no trecho citado, todo número com unidade de dose com a mesma unidade, a maioria dos termos da frase também, algum termo além do nome do remédio tem de estar no texto do trecho, e remédio citado na frase tem de ser o do trecho ou aparecer nele |
 | `verificar_llm` | **sim** | Só na rodada 3: "o trecho diz isso? sim/não" por afirmação. Pode usar um modelo maior (`LLM_MODELO_VERIFICACAO`) sem deixar a pergunta comum mais lenta |
-| `finalizar` | não | Monta o `Resultado` com as rodadas, cada tentativa e o motivo de cada reprovação |
+| `finalizar` | não | Monta o `Result` com as rodadas, cada tentativa e o motivo de cada reprovação |
 
 Nenhuma resposta não verificada sai do grafo: se as rodadas acabam (`RODADAS_MAX=3`) ou o tempo acaba (`ORCAMENTO_S=150`), a resposta é **erro 502 com a explicação de cada rodada**. Na prática a maioria das perguntas termina na rodada 1, com uma chamada ao LLM.
 
@@ -173,7 +173,7 @@ Nenhuma resposta não verificada sai do grafo: se as rodadas acabam (`RODADAS_MA
 
 Detalhes que importam:
 
-- **Detecção do medicamento** (`services/medicamentos.py`): normaliza acento e caixa, reconhece princípio ativo, nome comercial e erro de digitação leve (só em princípio ativo). O nome mais longo vence ("Buscopan Composto" não cai na bula do Buscopan), e uma palavra que já é nome conhecido nunca é "corrigida" para outro ("prednisona" não vira "prednisolona"). Marcas do catálogo só entram com 5+ letras, de um único princípio ativo e fora de `data/aliases_ignorados.txt`.
+- **Detecção do medicamento** (`services/medicines.py`): normaliza acento e caixa, reconhece princípio ativo, nome comercial e erro de digitação leve (só em princípio ativo). O nome mais longo vence ("Buscopan Composto" não cai na bula do Buscopan), e uma palavra que já é nome conhecido nunca é "corrigida" para outro ("prednisona" não vira "prednisolona"). Marcas do catálogo só entram com 5+ letras, de um único princípio ativo e fora de `data/aliases_ignorados.txt`.
 - **Busca com mais de um medicamento**: até 3 por pergunta; o `k` é dividido entre eles, para que "ibuprofeno + losartana" traga trechos das duas bulas.
 - **Saída estruturada**: o parâmetro `format` do Ollama recebe um JSON Schema em que `trecho` é um `enum` de 1 a N. O modelo não consegue citar um trecho que não recebeu.
 - **Sem índice HNSW**: com poucos milhares de trechos a varredura exata leva milissegundos e dá o top-k exato; o HNSW, aproximado e com filtro, poderia devolver menos de `k`.
@@ -193,7 +193,7 @@ Cada falha tem código próprio e status HTTP definido (`app/schemas/api.py`):
 | `OLLAMA_INDISPONIVEL` / `BANCO_INDISPONIVEL` | 503 | Dependência fora do ar (ou banco sem bulas carregadas) |
 | `TEMPO_ESGOTADO` | 504 | Passou de `TIMEOUT_LLM_S` |
 
-Na API, todo erro sai no mesmo formato, `{"erro": {"codigo", "mensagem"}}` (`ErroOut`), inclusive a validação de entrada do FastAPI.
+Na API, todo erro sai no mesmo formato, `{"erro": {"codigo", "mensagem"}}` (`ErrorOut`), inclusive a validação de entrada do FastAPI.
 
 ### 4. Desempenho medido (CPU)
 
@@ -209,17 +209,17 @@ A leitura do prompt domina a latência, então `CHUNK_TOKENS` e `TOP_K` pesam ma
 
 ### 5. API
 
-FastAPI em `app/main.py`, rotas em `app/api/rotas.py`, documentação interativa em `http://127.0.0.1:8000/docs`.
+FastAPI em `app/main.py`, rotas em `app/api/routes.py`, documentação interativa em `http://127.0.0.1:8000/docs`.
 
 | Método e rota | Função |
 |---|---|
 | `GET /api/v1/saude` | Banco, Ollama e modelos baixados. Sempre 200: `status` é `ok` ou `degradado`, com a lista do que falta |
 | `GET /api/v1/medicamentos` | Princípios ativos com bula indexada e as bulas de cada um (fabricante, forma, data), para o seletor |
-| `POST /api/v1/perguntas` | `{pergunta, principios_ativos?, consulta_origem_id?}` → resposta, fontes, status, rodadas. Erro sai em `ErroOut`, com o HTTP do catálogo |
+| `POST /api/v1/perguntas` | `{pergunta, principios_ativos?, consulta_origem_id?}` → resposta, fontes, status, rodadas. Erro sai em `ErrorOut`, com o HTTP do catálogo |
 | `GET /api/v1/historico?limite=20&pagina=1` | Consultas da mais recente para a mais antiga, com o total |
 | `GET /api/v1/historico/{consulta_id}` | A consulta como foi respondida, com as fontes do snapshot |
 
-- **O acervo vem do banco** (`Acervo.do_banco`): bulas e trechos são lidos uma vez, ao subir, e a busca é a `BuscaPgvector`. Depois de rodar `carregar_banco`, reinicie a API.
+- **O acervo vem do banco** (`Corpus.do_banco`): bulas e trechos são lidos uma vez, ao subir, e a busca é a `PgvectorSearch`. Depois de rodar `carregar_banco`, reinicie a API.
 - **Toda pergunta fica no histórico**, inclusive esclarecimento e erro: status, rodadas, cada tentativa (`tentativas`, em JSON, com a saída crua do modelo), a mensagem do erro e o `consulta_origem_id` do reenvio depois de um esclarecimento.
 - **A resposta sai do snapshot gravado**: as fontes do `POST` são as mesmas que o histórico mostra depois, com fabricante, nº de registro, seção (chave e rótulo), página, data da bula e `citado`. Os trechos consultados e não citados também vêm.
 - **Sobe sem o banco**: com o PostgreSQL fora do ar, a API sobe, responde 503 `BANCO_INDISPONIVEL` e tenta de novo a cada requisição. `DB_TIMEOUT_S` (5 s) corta a espera de ~130 s que o Windows faz por conexão.
@@ -312,15 +312,15 @@ erDiagram
 
 | Área | O que foi aplicado | Onde ver |
 |---|---|---|
-| RAG | Chunking por seção com sobreposição, embeddings multilíngues (`bge-m3`), similaridade de cosseno, filtro por metadado (princípio ativo), divisão do top-k entre entidades, citação por trecho | `ingestao/gerar_chunks.py`, `app/db/`, `app/services/rag.py` |
-| LLM local | Ollama, modelo de 1,5B em CPU, saída restrita por JSON Schema (*structured output*), engenharia de prompt para modelo pequeno, medição de tokens/s | `app/llm/ollama.py`, `benchmark/medir_ambiente.py` |
-| Confiabilidade | Recusa antes do LLM, validação determinística das citações, checagem de fundamentação (números, doses e termos no trecho citado), verificação por LLM só na última rodada, catálogo de erros com HTTP próprio | `app/services/citacoes.py`, `app/services/fundamentacao.py`, `app/schemas/api.py` |
-| Agentes | LangGraph: estado tipado (`TypedDict`), nós com responsabilidade única, decisões em arestas condicionais determinísticas, laço de rodadas com limite e orçamento de tempo, modelo diferente por nó | `app/services/grafo.py`, `docs/DECISOES.md` §16 |
-| Banco vetorial | PostgreSQL 17 + pgvector, coluna `vector(1024)`, operador `<=>`, decisão consciente de não usar HNSW, carga transacional com `TRUNCATE` | `app/db/busca_pgvector.py`, `ingestao/carregar_banco.py` |
+| RAG | Chunking por seção com sobreposição, embeddings multilíngues (`bge-m3`), similaridade de cosseno, filtro por metadado (princípio ativo), divisão do top-k entre entidades, citação por trecho | `ingestion/generate_chunks.py`, `app/db/`, `app/services/rag.py` |
+| LLM local | Ollama, modelo de 1,5B em CPU, saída restrita por JSON Schema (*structured output*), engenharia de prompt para modelo pequeno, medição de tokens/s | `app/llm/ollama.py`, `benchmark/measure_environment.py` |
+| Confiabilidade | Recusa antes do LLM, validação determinística das citações, checagem de fundamentação (números, doses e termos no trecho citado), verificação por LLM só na última rodada, catálogo de erros com HTTP próprio | `app/services/citations.py`, `app/services/grounding.py`, `app/schemas/api.py` |
+| Agentes | LangGraph: estado tipado (`TypedDict`), nós com responsabilidade única, decisões em arestas condicionais determinísticas, laço de rodadas com limite e orçamento de tempo, modelo diferente por nó | `app/services/graph.py`, `docs/DECISOES.md` §16 |
+| Banco vetorial | PostgreSQL 17 + pgvector, coluna `vector(1024)`, operador `<=>`, decisão consciente de não usar HNSW, carga transacional com `TRUNCATE` | `app/db/pgvector_search.py`, `ingestion/load_database.py` |
 | Python | Pydantic v2 e pydantic-settings para contratos e configuração, `typing.Protocol` para interfaces, dataclasses, numpy, SQLAlchemy 2 tipado (`Mapped`), psycopg 3, `urllib` para o cliente HTTP | `backend/app/` |
-| Processamento de texto | Extração de PDF (`pdfplumber`), separação de seções por regex, normalização de nomes, tolerância a erro de digitação, rastreio de página com `\f` | `ingestao/`, `app/services/medicamentos.py` |
-| Dados públicos | Dados abertos da ANVISA (228 mil registros → catálogo de 6.999 itens), validação do arquivo antes do uso, procedência com SHA-256, geração determinística | `ingestao/catalogo_anvisa.py`, `data/FONTES.md` |
-| Avaliação | Gabarito por âncora (frase da bula) em vez de `chunk_id`, para comparar tamanhos de trecho; métricas de recall@k e recusa correta | `benchmark/metricas.py` |
+| Processamento de texto | Extração de PDF (`pdfplumber`), separação de seções por regex, normalização de nomes, tolerância a erro de digitação, rastreio de página com `\f` | `ingestion/`, `app/services/medicines.py` |
+| Dados públicos | Dados abertos da ANVISA (228 mil registros → catálogo de 6.999 itens), validação do arquivo antes do uso, procedência com SHA-256, geração determinística | `ingestion/anvisa_catalog.py`, `data/FONTES.md` |
+| Avaliação | Gabarito por âncora (frase da bula) em vez de `chunk_id`, para comparar tamanhos de trecho; métricas de recall@k e recusa correta | `benchmark/metrics.py` |
 | API | FastAPI com *lifespan*, injeção de dependência, todo erro no mesmo formato (handlers próprios, inclusive para a validação de entrada), endpoints síncronos para chamada bloqueante, CORS, OpenAPI gerado | `app/main.py`, `app/api/` |
 | Testes | pytest, LLM substituído por falso, teste de equivalência numpy × pgvector, API testada com `TestClient` contra banco real num schema temporário isolado (`schema_translate_map`), *skip* automático sem banco | `backend/tests/` |
 | Frontend | React 19 com hooks, TypeScript estrito com tipos espelhando os contratos da API, estados de carregamento e erro, citações clicáveis ligadas às fontes, tema claro/escuro por variáveis CSS, layout responsivo, dependências fixadas e instaladas sem scripts | `frontend/src/` |
@@ -357,7 +357,7 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 flowchart LR
   Q["50 perguntas<br/>(10 sem resposta nas bulas)"] --> RUN["rag.responder<br/>por configuração"]
   CFG["modelo × CHUNK_TOKENS (300 vs ~200)<br/>× TOP_K × limiar"] --> RUN
-  RUN --> M["metricas.py"]
+  RUN --> M["metrics.py"]
   GAB["gabarito por âncora<br/>{principio_ativo, secao, frase}"] --> M
   M --> OUT["recall@k · fidelidade (revisão manual)<br/>citação correta · recusa correta · latência p50/p95"]
 ```
@@ -385,17 +385,17 @@ pip install -e backend
 copy .env.example .env   # ajuste DB_PASSWORD; use DB_HOST=127.0.0.1
 
 # Ingestão das bulas do manifesto (PDFs em data/raw/bulas/, procedência em data/FONTES.md)
-python -m ingestao.processar_lote
+python -m ingestion.process_batch
 # ou uma bula avulsa:
-# python -m ingestao.processar_bula data/raw/<bula>.pdf --medicamento "..." --principio-ativo "..." --fabricante "..." --data-versao AAAA-MM-DD --registro 1.2345.6789 --forma "comprimido"
-python -m ingestao.gerar_chunks
+# python -m ingestion.process_leaflet data/raw/<bula>.pdf --medicamento "..." --principio-ativo "..." --fabricante "..." --data-versao AAAA-MM-DD --registro 1.2345.6789 --forma "comprimido"
+python -m ingestion.generate_chunks
 
 # Perguntar pelo terminal (usa os arquivos, sem banco)
-python -m benchmark.perguntar "Losartana pode ser usada com ibuprofeno?"
+python -m benchmark.ask "Losartana pode ser usada com ibuprofeno?"
 
 # Banco e API
 docker compose up -d db
-python -m ingestao.carregar_banco
+python -m ingestion.load_database
 uvicorn app.main:app --app-dir backend --reload   # http://127.0.0.1:8000/docs
 
 # Frontend (outro terminal; npm ci instala exatamente o package-lock.json, sem scripts)
@@ -418,14 +418,14 @@ farma-rag/
 │   ├── app/
 │   │   ├── config.py          # Settings (pydantic-settings), tudo vem do .env
 │   │   ├── main.py            # aplicação FastAPI: CORS, erros, rotas, carga do acervo ao subir
-│   │   ├── api/               # rotas /api/v1 e erros no formato ErroOut
-│   │   ├── db/                # models SQLAlchemy, conexão e preparo do banco, IndiceEmMemoria, BuscaPgvector
+│   │   ├── api/               # routes.py (rotas /api/v1) e errors.py (erros no formato ErrorOut)
+│   │   ├── db/                # models SQLAlchemy, connection.py, vector_search.py (InMemoryIndex), pgvector_search.py
 │   │   ├── llm/               # cliente do Ollama (chat + embed) e cálculo de embeddings
 │   │   ├── schemas/           # contratos do dataset e da API, catálogo de erros
-│   │   └── services/          # acervo, detecção, citações, fundamentação, rag (peças), grafo (agente LangGraph), histórico
+│   │   └── services/          # corpus, medicines (detecção), intent, citations, grounding (fundamentação), extract, rag (peças), graph (agente LangGraph), history
 │   └── tests/                 # pytest + fixtures (bula inventada "Exemplol")
-├── ingestao/                  # PDF -> JSON -> trechos -> embeddings -> banco; catálogo ANVISA
-├── benchmark/                 # medição do ambiente, métricas, teste manual (perguntar.py)
+├── ingestion/                  # PDF -> JSON -> trechos -> embeddings -> banco; catálogo ANVISA
+├── benchmark/                 # medição do ambiente, métricas, teste manual (ask.py)
 ├── data/
 │   ├── raw/                   # PDFs e CSV de origem (procedência em FONTES.md)
 │   ├── bulas_manifesto.json   # entrada do lote: PDF, hash, registro, uma "parte" por bula do PDF
@@ -433,7 +433,7 @@ farma-rag/
 │   ├── cache/                 # embeddings em SQLite (fora do Git)
 │   └── benchmark/             # perguntas e resultados
 ├── frontend/                  # React + TypeScript (Vite): tela de chat
-│   └── src/                   # api.ts (cliente e tipos), conversa.ts (modelo da conversa), App.tsx, componentes/, estilo.css
+│   └── src/                   # api.ts (cliente e tipos), conversation.ts (modelo da conversa), App.tsx, components/, styles.css
 ├── docs/DECISOES.md           # correções à especificação, com motivo
 ├── docker-compose.yml         # pgvector/pgvector:pg17 + backend
 └── FarmaRAG.pdf               # especificação original

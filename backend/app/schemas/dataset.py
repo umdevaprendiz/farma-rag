@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field, model_validator
 
-Secao = Literal[
+Section = Literal[
     "composicao",
     "indicacoes",
     "resultados_eficacia",
@@ -36,7 +36,7 @@ ROTULO_SECAO: dict[str, str] = {
     "outras": "Outras informações",
 }
 
-Categoria = Literal[
+Category = Literal[
     "interacao",
     "contraindicacao",
     "posologia",
@@ -47,8 +47,8 @@ Categoria = Literal[
 ]
 
 
-class SecaoBula(BaseModel):
-    secao: Secao
+class LeafletSection(BaseModel):
+    secao: Section
     titulo_original: str
     pagina_inicio: int = Field(ge=1)
     pagina_fim: int = Field(ge=1)
@@ -63,7 +63,7 @@ class SecaoBula(BaseModel):
         return self
 
 
-class Bula(BaseModel):
+class Leaflet(BaseModel):
     id: str
     medicamento: str
     principio_ativo: str
@@ -75,7 +75,7 @@ class Bula(BaseModel):
     data_versao: date
     fonte_pdf: str
     processado_em: datetime
-    secoes: list[SecaoBula]
+    secoes: list[LeafletSection]
     # Registro na ANVISA ("1.0029.0007"), conferido contra o texto da bula na ingestão. Vai junto
     # da fonte na resposta. Opcional só para as bulas de teste, anteriores ao campo.
     numero_registro: str | None = Field(default=None, pattern=r"^\d\.\d{4}\.\d{4}$")
@@ -92,7 +92,7 @@ class Chunk(BaseModel):
     medicamento: str
     # Denormalizado de propósito: permite casar âncoras do benchmark sem consultar a bula.
     principio_ativo: str
-    secao: Secao
+    secao: Section
     pagina: int = Field(ge=1)
     ordem: int = Field(ge=0)
     texto: str
@@ -106,7 +106,7 @@ class Chunk(BaseModel):
         return self
 
 
-class Ancora(BaseModel):
+class Anchor(BaseModel):
     """Onde a resposta está, sem depender de como a bula foi dividida em trechos.
 
     `frase` é um pedaço curto (até ~12 palavras) copiado do texto da bula, de
@@ -114,18 +114,18 @@ class Ancora(BaseModel):
     """
 
     principio_ativo: str
-    secao: Secao
+    secao: Section
     frase: str = Field(min_length=8)
 
 
-class PerguntaBenchmark(BaseModel):
+class BenchmarkQuestion(BaseModel):
     id: str
     pergunta: str
     respondivel: bool
     # Uma âncora por medicamento necessário (perguntas de interação precisam de duas).
-    ancoras: list[Ancora] = Field(default_factory=list)
+    ancoras: list[Anchor] = Field(default_factory=list)
     resposta_esperada: str | None = None
-    categoria: Categoria
+    categoria: Category
 
     @model_validator(mode="after")
     def _respondivel_coerente(self):

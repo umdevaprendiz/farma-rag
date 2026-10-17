@@ -23,14 +23,14 @@ A máquina tem Intel UHD (sem NVIDIA), i5-10210U (4 núcleos) e ~16 GB de RAM.
 Cada pergunta traz `ancoras: [{principio_ativo, secao, frase}]`; um trecho acerta se for daquela
 seção/medicamento e contiver a frase (copiada da bula, curta, dentro de uma única frase).
 Pergunta de interação tem **duas** âncoras e só conta se as duas forem recuperadas.
-Código: `benchmark/metricas.py`; contrato: `PerguntaBenchmark` em `schemas/dataset.py`.
+Código: `benchmark/metrics.py`; contrato: `BenchmarkQuestion` em `schemas/dataset.py`.
 
 ## 3. Pergunta com mais de um medicamento
 Suportamos até 3 (`MAX_MEDICAMENTOS_POR_PERGUNTA`). A busca divide o `k` entre os medicamentos
-(`IndiceEmMemoria.buscar`), então "ibuprofeno + losartana" recebe trechos das duas bulas.
+(`InMemoryIndex.buscar`), então "ibuprofeno + losartana" recebe trechos das duas bulas.
 
 ## 4. Medicamento não indexado
-`services/medicamentos.py` detecta, antes do LLM, nomes na pergunta (princípio ativo, nome
+`services/medicines.py` detecta, antes do LLM, nomes na pergunta (princípio ativo, nome
 comercial, erro de digitação leve) contra o catálogo indexado e contra
 `data/medicamentos_conhecidos.txt`:
 - só não-indexados -> `nao_encontrada` com `motivo=medicamento_nao_indexado`, **sem chamar o LLM**;
@@ -52,33 +52,33 @@ Uma só `.env`, montada em partes: `DB_HOST=localhost` para scripts no host; o C
 sobrescreve para `db` no container da API. A porta do banco é publicada em `127.0.0.1`.
 
 ## 8. Código compartilhado
-`ingestao/` e `benchmark/` importam `app` (cliente do Ollama, schemas, config). Instale com
-`pip install -e backend` e rode da raiz: `python -m ingestao.extrair_pdf`.
+`ingestion/` e `benchmark/` importam `app` (cliente do Ollama, schemas, config). Instale com
+`pip install -e backend` e rode da raiz: `python -m ingestion.extract_pdf`.
 
 ## 9. Códigos de erro
 Adicionado `SAIDA_INVALIDA` (502) para JSON quebrado; `CITACAO_INVALIDA` fica para citação
 inexistente/incoerente. `BULA_NAO_ENCONTRADA` virou `MEDICAMENTO_NAO_ENCONTRADO`.
 
 ## 10. Limite conhecido da validação de citação
-`services/citacoes.py` garante que as citações apontam para trechos enviados. Não garante que a
+`services/citations.py` garante que as citações apontam para trechos enviados. Não garante que a
 afirmação está sustentada: isso é a métrica de fidelidade (revisão manual) do benchmark.
 
 ## 11. Banco: PostgreSQL 17 + pgvector (2026-10-14)
 Volta ao que o PDF previa. O MySQL ficou só no código (nunca foi instalado nem recebeu dados), então
-não houve dado a migrar: o banco é preenchido a partir dos arquivos por `ingestao/carregar_banco.py`.
+não houve dado a migrar: o banco é preenchido a partir dos arquivos por `ingestion/load_database.py`.
 - Container `pgvector/pgvector:pg17` (serviço `db` do `docker-compose.yml`, volume `pgdata`). No
   Windows nativo o pgvector precisa ser compilado com Visual Studio; o container evita isso.
 - Driver `psycopg[binary]` 3 (`postgresql+psycopg://`) e o pacote `pgvector` para o tipo `vector`.
 - Modelos: listas em `ARRAY(Text)`, UUID nativo, `timestamptz` em UTC, `Text` sem tamanho,
   `chunks.embedding` em `vector(1024)` (`EMBED_DIM` em `db/models.py`, conferido contra o `.env`).
 - `chunks.principio_ativo_norm` = `normalizar(principio_ativo)`: o filtro da busca no banco compara
-  igual ao `IndiceEmMemoria`.
-- `BuscaPgvector` (`db/busca_pgvector.py`) implementa `BuscaVetorial` com `<=>` (distância de
-  cosseno) e a mesma divisão do k entre princípios ativos. O teste `test_busca_pgvector.py` confere
-  que devolve os mesmos trechos e scores do numpy. O `IndiceEmMemoria` continua no fluxo por arquivos.
+  igual ao `InMemoryIndex`.
+- `PgvectorSearch` (`db/pgvector_search.py`) implementa `VectorSearch` com `<=>` (distância de
+  cosseno) e a mesma divisão do k entre princípios ativos. O teste `test_pgvector_search.py` confere
+  que devolve os mesmos trechos e scores do numpy. O `InMemoryIndex` continua no fluxo por arquivos.
 - **Sem índice HNSW**: com poucos milhares de trechos a varredura exata leva milissegundos e dá o
   top-k exato; o HNSW é aproximado e, com o filtro por princípio ativo, pode devolver menos de k.
-- `carregar_banco.py` cria a extensão e as tabelas que faltam (`create_all`, sem Alembic por ora) e
+- `load_database.py` cria a extensão e as tabelas que faltam (`create_all`, sem Alembic por ora) e
   troca `bulas` e `chunks` com `TRUNCATE` numa transação só; `consultas` não é tocada. Mudar colunas
   de tabela já criada exige apagá-la ou adotar Alembic (decidir quando o histórico tiver dado real).
 
@@ -103,15 +103,15 @@ Procedência, SHA-256 e validação em `data/FONTES.md`. O que ele é e não é:
 
 ### Catálogo derivado e aliases (consequência da seção 13)
 `data/processed/catalogo_anvisa.jsonl` (6.999 itens; 5.216 de um só princípio; 1.525 princípios
-ativos distintos) é versionado. Ao adaptar `Catalogo.montar` para usá-lo:
+ativos distintos) é versionado. Ao adaptar `Catalog.montar` para usá-lo:
 - Para os medicamentos **indexados**, usar princípio ativo + nomes comerciais do catálogo.
 - Para os **não indexados** (`medicamentos_conhecidos`), usar só princípios ativos de produtos
   de um único princípio, não nomes comerciais: há marcas curtas ou ambíguas (ex.: "CORUS", "DIP")
   que gerariam falso positivo em perguntas normais.
 - Sais: o catálogo traz "losartana potássica", a pergunta diz "losartana"; o alias da primeira
-  palavra já cobre isso (ver `_aliases` em `services/medicamentos.py`).
+  palavra já cobre isso (ver `_aliases` em `services/medicines.py`).
 
-**Implementado em 2026-10-13** (`Catalogo.montar(bulas, conhecidos, anvisa, ignorados)`):
+**Implementado em 2026-10-13** (`Catalog.montar(bulas, conhecidos, anvisa, ignorados)`):
 - Bula e catálogo casam pelo princípio ativo **sem a hidratação** ("dipirona" = "dipirona
   monoidratada"), mas **com o sal**: diclofenaco sódico e potássico são bulas diferentes. Quem
   pergunta por "diclofenaco potássico" tendo só o sódico indexado recebe "não indexado".
@@ -163,7 +163,7 @@ O frontend mostra botões e reenvia a pergunta com o filtro escolhido e `consult
 O sistema só pergunta sobre medicamento, forma farmacêutica ou seção; **nunca** por dado do
 paciente (idade, gestação, doenças), por causa da LGPD e da regra "não personaliza".
 
-Mudanças de contrato decorrentes: `status` ganha `precisa_esclarecimento` e `CodigoErro` ganha
+Mudanças de contrato decorrentes: `status` ganha `precisa_esclarecimento` e `ErrorCode` ganha
 `RESPOSTA_NAO_VERIFICADA` (502), já feitos; env `RODADAS_MAX=3` e `ORCAMENTO_S=150`, já feitos.
 Com a API (2026-10-16, seção 18): `consultas` ganhou `rodadas` (int), `tentativas` (JSON) e
 `consulta_origem_id` (UUID, sem FK).
@@ -172,19 +172,19 @@ Com a API (2026-10-16, seção 18): `consultas` ganhou `rodadas` (int), `tentati
 Do PDF à resposta sem banco, API ou tela. Da raiz, com `pip install -e backend` feito (ou
 `PYTHONPATH=backend` no terminal):
 
-1. `python -m ingestao.processar_bula <pdf> --medicamento ... --principio-ativo ... --fabricante ...
+1. `python -m ingestion.process_leaflet <pdf> --medicamento ... --principio-ativo ... --fabricante ...
    --data-versao AAAA-MM-DD` -> `data/processed/bulas/<id>.json` (lista as seções para conferir).
-2. `python -m ingestao.gerar_chunks` -> `data/processed/chunks.jsonl` + embeddings no cache.
-3. `python -m benchmark.perguntar ["pergunta"]` -> resposta, trechos usados e tempos.
+2. `python -m ingestion.generate_chunks` -> `data/processed/chunks.jsonl` + embeddings no cache.
+3. `python -m benchmark.ask ["pergunta"]` -> resposta, trechos usados e tempos.
 
 Decisões tomadas ao implementar:
-- **O dataset em arquivo é a fonte da verdade** e o `Acervo` (`services/acervo.py`) carrega dele. O
+- **O dataset em arquivo é a fonte da verdade** e o `Corpus` (`services/corpus.py`) carrega dele. O
   PostgreSQL fica para o histórico de consultas e para a API; `rag.responder` não sabe de onde o acervo veio.
 - **Cache de embeddings** em SQLite (`data/cache/embeddings.sqlite`, fora do Git), chave = hash de
   modelo + texto. Grava a cada lote de 8: dá para interromper e continuar.
 - O texto que vira embedding leva medicamento e seção na frente (`texto_para_embedding`): mudar
   esse cabeçalho invalida o cache.
-- **Seções novas** em `Secao`: `composicao` ("tem lactose?"), `resultados_eficacia` e
+- **Seções novas** em `Section`: `composicao` ("tem lactose?"), `resultados_eficacia` e
   `caracteristicas_farmacologicas` (mecanismo de ação). Antes caíam em `outras`.
 - **Página do trecho:** o texto da seção guarda `\f` onde a página vira; o trecho usa a página em
   que começa.
@@ -199,28 +199,28 @@ Decisões tomadas ao implementar:
   em jejum [2]") numa pergunta sobre armazenamento, e a validação de citações deixou passar.
 - Cliente do Ollama com `urllib` (biblioteca padrão), síncrono.
 
-**Limites de hoje:** testado só com a bula inventada de `backend/tests/fixtures/bula_exemplo.txt`;
+**Limites de hoje:** testado só com a bula inventada de `backend/tests/fixtures/sample_leaflet.txt`;
 a leitura de PDF (`pdfplumber`) ainda não rodou nesta máquina, porque depende do Python 3.12
 (seção 12). As rodadas e a checagem de fundamentação entraram em 2026-10-15 (seção 16).
 
 ## 16. Agente em grafo com LangGraph (2026-10-15)
 Pedido do usuário: o agente decidir melhor o que fazer quando a resposta é fraca, em vez de uma
-tentativa só. A seção 14 virou um grafo de **7 nós** (`app/services/grafo.py`): `entender`,
+tentativa só. A seção 14 virou um grafo de **7 nós** (`app/services/graph.py`): `entender`,
 `esclarecer`, `buscar`, `gerar`, `validar`, `verificar_llm`, `finalizar`. `rag.responder`
-continua sendo a porta de entrada, com o mesmo `Resultado` (mais `rodadas` e `tentativas`).
+continua sendo a porta de entrada, com o mesmo `Result` (mais `rodadas` e `tentativas`).
 
 Decisões:
 - **Só 2 nós chamam o LLM** (`gerar` e `verificar_llm`). As decisões ficam nas arestas
   condicionais (`depois_de_*`), em código. Motivo: 30-45 s por chamada nesta CPU, e o qwen2.5:1.5b
   não é confiável para escolher caminho; o `detectar()` determinístico já faz isso melhor. Nada
   de roteador, planejador ou reescritor de pergunta por LLM.
-- **Seção da pergunta sem LLM** (`services/intencao.py`): palavras-gatilho por seção. A rodada 1
+- **Seção da pergunta sem LLM** (`services/intent.py`): palavras-gatilho por seção. A rodada 1
   não usa (busca só por semelhança, como antes); da rodada 2 em diante a busca fica nas seções
   indicadas, com os trechos ainda não usados primeiro. Os já usados continuam elegíveis: o trecho
   certo pode ter vindo na rodada 1 e o erro ter sido do modelo.
 - **Recusa do modelo também pode gerar nova rodada**, uma vez: se a pergunta indica seção e nenhum
   trecho enviado era dela, a recusa é falha de busca, não falta de informação.
-- **Checagem de fundamentação** (`services/fundamentacao.py`): todo número da afirmação tem de
+- **Checagem de fundamentação** (`services/grounding.py`): todo número da afirmação tem de
   estar no trecho citado, e número com unidade de dose (mg, mL, gotas, %, °C…) com a mesma unidade;
   pelo menos `FUNDAMENTACAO_MIN_TERMOS` (0,6, arredondado para baixo, mínimo 1) dos termos de 4+
   letras também, comparando pelos 5 primeiros caracteres para aceitar flexão. Números por extenso
@@ -242,7 +242,7 @@ Decisões:
   que só envia algo se `LANGSMITH_TRACING` estiver ligado).
 
 ## 17. Bulas reais: lote pelo manifesto, várias bulas por PDF, registro e forma (2026-10-15)
-Primeira ingestão das bulas reais (lote 1 de `FONTES.md`: 20 PDFs). `python -m ingestao.processar_lote`
+Primeira ingestão das bulas reais (lote 1 de `FONTES.md`: 20 PDFs). `python -m ingestion.process_batch`
 lê `data/bulas_manifesto.json` e grava 24 bulas em `data/processed/bulas/`.
 
 Encontrado nos PDFs e decidido:
@@ -255,7 +255,7 @@ Encontrado nos PDFs e decidido:
   princípio ativo (grafia do catálogo), nomes comerciais e, por parte, medicamento e forma. Nada é
   gravado para um PDF cujo SHA-256 difere do `FONTES.md` (há teste que confere os dois) ou cujo
   registro não aparece impresso na bula.
-- **`Bula` ganha `numero_registro`, `forma_farmaceutica` e `versao`** (opcionais só por causa das
+- **`Leaflet` ganha `numero_registro`, `forma_farmaceutica` e `versao`** (opcionais só por causa das
   bulas de teste). O registro é para a fonte completa na resposta (item "fonte em toda resposta");
   a forma é o que vai permitir perguntar "gotas ou comprimido?" quando houver duas bulas do mesmo
   princípio ativo. No banco, `carregar_banco` acrescenta as colunas com `ADD COLUMN IF NOT EXISTS`.
@@ -277,21 +277,21 @@ Encontrado nos PDFs e decidido:
   tabelas (doses por peso, por exemplo) saem como texto corrido.
 
 ## 18. API FastAPI (2026-10-16)
-Cinco rotas sob `/api/v1` (`app/main.py`, `app/api/rotas.py`): `saude`, `medicamentos`, `perguntas`,
+Cinco rotas sob `/api/v1` (`app/main.py`, `app/api/routes.py`): `saude`, `medicamentos`, `perguntas`,
 `historico` e `historico/{id}`. O agente é o mesmo do terminal (`rag.responder`); a API acrescenta a
 leitura do acervo no banco, o histórico e o formato de erro.
 
 Decisões:
-- **O acervo da API vem do banco** (`Acervo.do_banco`): bulas e trechos são lidos uma vez, ao subir,
-  e a busca é a `BuscaPgvector`. Os arquivos continuam sendo a fonte da verdade (seção 15); o banco é
+- **O acervo da API vem do banco** (`Corpus.do_banco`): bulas e trechos são lidos uma vez, ao subir,
+  e a busca é a `PgvectorSearch`. Os arquivos continuam sendo a fonte da verdade (seção 15); o banco é
   o que a API enxerga. Depois de `carregar_banco`, a API precisa ser reiniciada.
 - **`chunks` ganhou `medicamento` e `n_tokens`**, para o banco espelhar o `chunks.jsonl` inteiro e a
   API montar os trechos sem ler arquivo. Banco carregado antes delas: a API recusa subir o acervo e
   pede para rodar `carregar_banco` de novo (não adivinha valor).
-- **A bula do banco não tem as seções** (o texto está nos trechos), então o `Acervo` passou a aceitar
-  qualquer objeto com os dados da bula (`BulaDoAcervo`, um `Protocol`): a `Bula` do arquivo e a do
+- **A bula do banco não tem as seções** (o texto está nos trechos), então o `Corpus` passou a aceitar
+  qualquer objeto com os dados da bula (`CorpusLeaflet`, um `Protocol`): a `Leaflet` do arquivo e a do
   banco servem.
-- **`preparar_banco` saiu de `ingestao/` para `app/db/conexao.py`**: a imagem Docker da API só leva o
+- **`preparar_banco` saiu de `ingestion/` para `app/db/connection.py`**: a imagem Docker da API só leva o
   pacote `app`, e a API prepara o banco ao subir (cria tabelas e colunas que faltam). As colunas
   novas de tabela já existente continuam entrando por `ADD COLUMN IF NOT EXISTS`, sem Alembic.
 - **Toda pergunta fica no histórico**, inclusive esclarecimento e erro. Colunas novas: `rodadas`,
@@ -302,7 +302,7 @@ Decisões:
   (decisão de 2026-10-15 para a feature "fonte completa", que segue em espera).
 - **A resposta do `POST` é montada a partir do snapshot gravado**, não do resultado em memória: o que
   o balconista vê na hora é exatamente o que o histórico mostra depois.
-- **Todo erro sai em `ErroOut`** (`app/api/erros.py`), inclusive a validação de entrada do FastAPI
+- **Todo erro sai em `ErrorOut`** (`app/api/errors.py`), inclusive a validação de entrada do FastAPI
   (422 `ENTRADA_INVALIDA`, com o campo e o motivo) e o banco fora do ar (503 `BANCO_INDISPONIVEL`).
   Código novo: `CONSULTA_NAO_ENCONTRADA` (404).
 - **`/saude` sempre responde 200**, com `status` `ok` ou `degradado` e a lista do que falta (banco,
@@ -362,12 +362,12 @@ um remédio, tem outro que eu possa tomar?"), **com base nas pesquisas**, isto �
 recuperadas. Não com o conhecimento próprio do modelo.
 
 Decisões:
-- **Busca geral** (`_busca_geral` em `grafo.py`) quando a pergunta não tem medicamento indexado
+- **Busca geral** (`_busca_geral` em `graph.py`) quando a pergunta não tem medicamento indexado
   (nenhum nome, ou só remédio sem bula no acervo): todas as bulas, só nas seções que a pergunta indica
   e **um trecho por princípio ativo**, até `TOP_K_GERAL=4`. Cada trecho é uma opção na resposta; sem a
   regra, os três melhores trechos podiam ser do mesmo remédio.
 - **A seção vale já na rodada 1 da busca geral.** Sem isso, "melhor remédio pra dor de cabeça" traz
-  reações adversas que citam cefaleia antes das indicações. `intencao.py` ganhou gatilhos de escolha e
+  reações adversas que citam cefaleia antes das indicações. `intent.py` ganhou gatilhos de escolha e
   de sintoma ("melhor remédio", "remédio pra", "o que tomar", "dor de", "febre", "tontura",
   "alergia"...) para Indicações, e "alergia"/"hipersensibilidade" para Contraindicações.
 - **O nó `esclarecer` saiu** (o grafo tem 6 nós): ele perguntava o medicamento, o que agora vira busca
@@ -398,12 +398,12 @@ Correções, todas determinísticas:
 - **Fundamentação, regra 4**: remédio citado na afirmação (pelo catálogo, sem tolerar erro de
   digitação) tem de ser o do trecho ou aparecer no texto dele.
 - **Busca híbrida na busca geral**: além da semelhança e da seção, o trecho precisa ter uma palavra
-  do assunto da pergunta (`intencao.termos_do_assunto`, com sinônimos de sintoma: "tonto" →
+  do assunto da pergunta (`intent.termos_do_assunto`, com sinônimos de sintoma: "tonto" →
   tontura, vertigem, labirintite; "dor de cabeça" → cabeça, cefaleia, enxaqueca). Se a pergunta cita
   remédio sem bula, o trecho tem de mencioná-lo (em qualquer seção, os da seção da pergunta
   primeiro). Nenhum trecho assim = "não encontrei", sem chamar o LLM.
 - **"Cefaleia" não é cefalexina**: a tolerância a erro de digitação de `detectar` lia "cefaleia" como o
-  antibiótico (0,88 de semelhança). Palavra que aparece no texto das bulas (`Catalogo.vocabulario`)
+  antibiótico (0,88 de semelhança). Palavra que aparece no texto das bulas (`Catalog.vocabulario`)
   é palavra de verdade e não passa pela tolerância; no texto do modelo a tolerância fica desligada.
 - **Aviso específico** para a próxima rodada quando o modelo responde só com nomes
   (`DICA_SO_NOME`); com o aviso genérico ele repetia os nomes nas 3 rodadas. O prompt também pede
@@ -426,7 +426,7 @@ ChatGPT ou do Gemini". A tela de pergunta + aba de histórico (seção 19) virou
   resposta e o clique abre o trecho (no lugar da coluna lateral de fontes).
 - Sem filtro de medicamento: com a busca geral (seção 20), a pergunta sozinha basta. O contrato
   `principios_ativos` continua na API (o esclarecimento de forma farmacêutica vai usá-lo).
-- A conversa vive só na tela (`conversa.ts`): a API continua sem estado, cada pergunta é independente.
+- A conversa vive só na tela (`conversation.ts`): a API continua sem estado, cada pergunta é independente.
   **Mudou no mesmo dia (seção 23):** a tela manda a última resposta, e "e para criança?" passa a
   continuar a pergunta anterior.
 - Conferido com capturas do Edge sem janela: API de teste (Ollama simulado) para todos os estados, e
@@ -438,7 +438,7 @@ A bula do Omenax traz as interações numa tabela de duas colunas (remédio | "I
 no meio das frases da direita ("pode reduzir o efeito antiviral e promover o Impacto clínico:
 desenvolvimento de resistência") e um trecho juntava saquinavir com clopidogrel: no teste real, a
 resposta disse que omeprazol + clopidogrel "aumenta a toxicidade" (a bula diz que reduz o efeito).
-- `ingestao/extrair_pdf.py` lê **só esse formato** como tabela (duas colunas, rótulo "Impacto clínico"
+- `ingestion/extract_pdf.py` lê **só esse formato** como tabela (duas colunas, rótulo "Impacto clínico"
   ou "Intervenção" na esquerda). Cada célula vira uma linha com o nome do remédio na frente
   ("Clopidogrel, intervenção: Evitar o uso concomitante de omeprazol..."), para o trecho que pegar só
   aquela linha ainda dizer de quem fala. A tabela continua de uma página para a outra ("(continuação)");
@@ -453,7 +453,7 @@ Pedido do usuário depois do teste real: guardar a última pergunta para a pesso
 depois, pedir o nome do remédio na pergunta de alergia, e saber o que cada remédio faz.
 
 **Pergunta seguinte.** A tela manda a última resposta da conversa em `consulta_origem_id`; a API busca
-a consulta no histórico (`rag.Anterior`: pergunta, princípios ativos usados, se pediu esclarecimento) e
+a consulta no histórico (`rag.PreviousQuestion`: pergunta, princípios ativos usados, se pediu esclarecimento) e
 continua sem estado. `consultas` ganhou `principios_ativos` (os usados na busca). No `entender`:
 - sem remédio na pergunta nova ("pode na gravidez?"), herda o da anterior; se a anterior foi geral,
   só herda a pergunta que começa com "e"/"mas" ("e para criança?"), e o assunto vem da anterior;
@@ -461,7 +461,7 @@ continua sem estado. `consultas` ganhou `principios_ativos` (os usados na busca)
 - pedido de remédio ("qual o melhor remédio para tosse?") é assunto novo e não herda nada;
 - a busca usa as duas perguntas juntas, e o prompt ganha "PERGUNTA ANTERIOR: ...".
 
-**Alergia.** "Alergia a / alérgico à / hipersensibilidade ao" + remédio (`intencao.texto_apos_alergia`,
+**Alergia.** "Alergia a / alérgico à / hipersensibilidade ao" + remédio (`intent.texto_apos_alergia`,
 que corta o nome na primeira palavra de ligação: "alérgico a dipirona, posso tomar Exemplol?" é alergia
 a dipirona e pergunta sobre o Exemplol). "Loratadina serve para alergia?" não casa: lá a alergia é a
 indicação.
@@ -481,7 +481,7 @@ indicação.
   cruzada.
 
 **O que o remédio faz.** O CSV da ANVISA, que já estava no projeto, traz a classe terapêutica de cada
-registro. `Catalogo.classes` guarda, por princípio ativo (e pelos nomes sem o sal), a classe mais
+registro. `Catalog.classes` guarda, por princípio ativo (e pelos nomes sem o sal), a classe mais
 registrada ("dipirona" → ANALGESICOS NAO NARCOTICOS, sem acento como no CSV). A resposta traz
 `classes_terapeuticas` dos remédios sem bula, e a tela mostra "para que serve, pelo registro na ANVISA".
 Não é texto de bula, por isso não entra na resposta do modelo, só como informação ao lado.
@@ -494,7 +494,7 @@ clopidogrel").
 Pedido do usuário: melhorar as respostas. No teste real, o modelo de 1,5B errou onde a resposta certa
 é uma frase que a bula já escreve: juntou a linha do clopidogrel com a da varfarina ("deve ser
 evitado", quando a bula manda monitorar o INR) e recusou as alternativas para a dipirona.
-`services/extrato.py` monta a resposta com as frases da bula, e o `gerar` não chama o modelo, em dois
+`services/extract.py` monta a resposta com as frases da bula, e o `gerar` não chama o modelo, em dois
 casos:
 - **interação entre remédios citados** (a pergunta tem "com", "junto", "interação"...): as frases da
   bula de um que citam o outro, em interações, advertências e contraindicações, até 3. Na tabela de
@@ -519,20 +519,20 @@ Com a bula da dipirona (Dorageo, lote 2 em `data/FONTES.md`), o teste real mostr
 máxima de dipirona?" -> "não existe experiência com o uso de dipirona em longo prazo em pacientes com
 insuficiência renal". A frase está na bula (passa na fundamentação), mas não responde.
 
-- **Regra "fala do assunto"** (`intencao.responde_ao_assunto`, no `validar`): a resposta do LLM precisa
+- **Regra "fala do assunto"** (`intent.responde_ao_assunto`, no `validar`): a resposta do LLM precisa
   usar uma palavra do assunto da pergunta (tirados os nomes de remédio); ou citar trecho da seção que
   a pergunta indica (menos posologia, onde a frase errada estava); ou, em pergunta de dose, trazer
   número com unidade ("½ a 1 comprimido até 4 vezes ao dia" não tem a palavra "dose"). Reprovou = nova
   rodada com o aviso `DICA_ASSUNTO`. Medida antes de entrar: das 12 respostas certas do LLM gravadas
   no dia, nenhuma seria reprovada. Sinônimos novos: rins/renal/rim, fígado/hepático.
-- **Dose copiada da bula** (`extrato.frases_de_dose`): pergunta de dose sobre remédio do acervo traz,
+- **Dose copiada da bula** (`extract.frases_de_dose`): pergunta de dose sobre remédio do acervo traz,
   de cada bula dele, a frase da posologia com número e unidade que mais fala do pedido ("máxima",
   "inicial", "insuficiência cardíaca"); criança só se a pergunta é de criança. "Paracetamol, qual a
   dose máxima?" traz uma frase por apresentação (gotas, comprimido), que era o "depende da
   apresentação" esperado desde a seção 14. Sem frase assim, segue pelo LLM.
 - **"E para criança?" sem pergunta anterior** pergunta de volta "sobre qual remédio?" em vez de buscar
   "criança" em todas as bulas (respondeu com uma frase da bula da permetrina).
-- **O erro também traz o id da consulta** (`ErroOut.consulta_id`): a consulta já era gravada; agora a tela
+- **O erro também traz o id da consulta** (`ErrorOut.consulta_id`): a consulta já era gravada; agora a tela
   manda o id na pergunta seguinte, e a conversa continua depois de um 502.
 
 Resultado no teste real: dose máxima da dipirona em 3 s ("½ a 1 comprimido até 4 vezes ao dia"),
@@ -549,14 +549,14 @@ balconista (botão "não ajudou, explique de outro jeito"); o agente não pede s
 continua sendo a verificação em rodadas da seção 14). Toda resposta segue com fonte; a única pergunta
 de volta continua sendo a de esclarecimento.
 
-**Destaque** (`fundamentacao.destaques`, sem LLM): de cada fonte citada, as frases inteiras do trecho
+**Destaque** (`grounding.destaques`, sem LLM): de cada fonte citada, as frases inteiras do trecho
 que sustentam as afirmações que a citam, como posições (início, fim) no texto do trecho. Frase copiada
 da bula (resposta extrativa): as frases onde ela está. Paráfrase do modelo: as frases que mais cobrem
 os termos e números da afirmação, uma de cada vez, até nenhuma acrescentar nada (no máximo 3); a
 primeira precisa cobrir dois itens, porque uma palavra solta em comum não basta. O nome do remédio
 não conta (está no trecho todo).
 
-**Não ajudou** (`rag.OutraExplicacao`, grafo):
+**Não ajudou** (`rag.AnotherExplanation`, grafo):
 - A pergunta roda de novo **sem os trechos citados** na resposta que não ajudou (e nas outras
   explicações antes dela). Os enviados e não citados continuam valendo, mas depois dos que nunca foram
   enviados: o grafo começa como numa rodada seguinte, com eles já "usados".
@@ -572,6 +572,47 @@ não conta (está no trecho todo).
 - O prompt não recebe a resposta anterior nem aviso de "explique de outro jeito": o modelo pequeno
   copia o que vê no prompt (seções 15 e 16). A diferença vem dos trechos.
 
-Feito em 2026-10-17: destaque e grafo (`Resultado.outra_explicacao`, `Fonte.destaques`), 16 testes.
+Feito em 2026-10-17: destaque e grafo (`Result.outra_explicacao`, `Source.destaques`), 16 testes.
 Falta: a API (pedido de outra explicação a partir da consulta, destaques/fabricante/registro na
 fonte, gravar em `consulta_fontes`) e a tela (botão, trecho com a parte destacada).
+
+## 27. Classes, tipos e arquivos em inglês (2026-10-17)
+Pedido do usuário: nomes em inglês. Escopo escolhido por ele: **classes do Python (e os aliases de
+tipo `Section` e `Category`), tipos/interfaces do TypeScript, e os arquivos e pastas de código**
+(`ingestao/` → `ingestion/`, `componentes/` → `components/`); o componente principal de cada arquivo
+do frontend segue o nome dele (`Sidebar.tsx` exporta `Sidebar`). Continua em português todo o resto:
+funções, métodos, variáveis, campos dos modelos e do JSON, colunas e tabelas do banco, os outros
+componentes React, os textos da tela, e os nomes em `data/` e `docs/` (dados e documentos, não código).
+
+- O contrato da API não muda: o JSON é o mesmo. Só os nomes dos schemas no OpenAPI (`/docs`) mudam.
+- O banco não muda: as tabelas têm `__tablename__` explícito.
+- Classe, tipo ou arquivo de código novo nasce em inglês.
+- Os comandos mudam: `python -m ingestion.process_batch`, `python -m ingestion.generate_chunks`,
+  `python -m ingestion.load_database`, `python -m benchmark.ask`.
+
+| Onde | Antes → depois |
+|---|---|
+| `schemas/dataset.py` | Bula → Leaflet, SecaoBula → LeafletSection, Secao → Section, Ancora → Anchor, PerguntaBenchmark → BenchmarkQuestion, Categoria → Category (Chunk fica) |
+| `schemas/api.py` | CodigoErro → ErrorCode, ErroDetalhe → ErrorDetail, ErroOut → ErrorOut, PerguntaIn → QuestionIn, FonteOut → SourceOut, OpcaoOut → OptionOut, EsclarecimentoOut → ClarificationOut, RespostaOut → AnswerOut, BulaResumo → LeafletSummary, MedicamentoOut → MedicineOut, ConsultaResumo → InquirySummary, HistoricoOut → HistoryOut, ConsultaDetalhe → InquiryDetail, SaudeOut → HealthOut |
+| `db/` | Bula → Leaflet, Consulta → Inquiry, ConsultaFonte → InquirySource, BuscaVetorial → VectorSearch, IndiceEmMemoria → InMemoryIndex, Resultado (da busca) → SearchHit, BuscaPgvector → PgvectorSearch |
+| `services/` | Acervo → Corpus, AcervoIncompletoError → IncompleteCorpusError, BulaDoAcervo → CorpusLeaflet, Catalogo → Catalog, Deteccao → Detection, Referencia → Reference, SaidaLLM → LLMOutput, SaidaInvalidaError → InvalidOutputError, Resultado → Result, Fonte → Source, Tentativa → Attempt, Opcao → Option, Esclarecimento → Clarification, Anterior → PreviousQuestion, OutraExplicacao → AnotherExplanation, Estado → State, Falha → Failure |
+| `api/`, `llm/` | ErroApi → ApiError, Servicos → Services, RespostaLLM → LLMResponse, CacheEmbeddings → EmbeddingCache |
+| `ingestion/` | ParteBula → LeafletPart, Manifesto → Manifest, ItemManifesto → ManifestItem, ParteManifesto → ManifestPart, ManifestoError → ManifestError, Relatorio → Report, _LeitorDeInteracoes → _InteractionTableReader |
+| `frontend/src/` | CodigoErro → ErrorCode, ErroApi → ApiError, Fonte → Source, Opcao → Option, Esclarecimento → Clarification, Resposta → Answer, BulaResumo → LeafletSummary, Medicamento → Medicine, StatusConsulta → InquiryStatus, ConsultaResumo → InquirySummary, Historico → History, ConsultaDetalhe → InquiryDetail, Saude → Health, PerguntaIn → QuestionIn, FonteAtiva → ActiveSource, Vista → View, Mensagem (tipo) → Message, props dos componentes (TextProps, SourcesProps, AnswerProps) |
+
+**Arquivos:**
+
+| Onde | Antes → depois |
+|---|---|
+| `backend/app/api/` | erros → errors, rotas → routes |
+| `backend/app/db/` | busca_vetorial → vector_search, busca_pgvector → pgvector_search, conexao → connection |
+| `backend/app/services/` | acervo → corpus, citacoes → citations, extrato → extract, fundamentacao → grounding, grafo → graph, historico → history, intencao → intent, medicamentos → medicines |
+| `ingestao/` → `ingestion/` | carregar_banco → load_database, catalogo_anvisa → anvisa_catalog, extrair_pdf → extract_pdf, gerar_chunks → generate_chunks, processar_bula → process_leaflet, processar_lote → process_batch, separar_secoes → split_sections, validar_csv_anvisa → validate_anvisa_csv, validar_pdf_bula → validate_leaflet_pdf |
+| `benchmark/` | medir_ambiente → measure_environment, metricas → metrics, perguntar → ask |
+| `backend/tests/` | cada `test_*.py` segue o módulo que testa (test_fundamentacao → test_grounding...); fixture bula_exemplo → sample_leaflet |
+| `frontend/src/` | componentes/ → components/: AvisoErro → ErrorNotice, BarraLateral → Sidebar, Citacoes → Citations, Conversa → Conversation, Entrada → MessageInput, Icones → Icons, Mensagem → Message (componente MensagemVista → MessageView); conversa.ts → conversation.ts, formato.ts → format.ts, estilo.css → styles.css |
+
+O arquivo de dados `data/processed/catalogo_anvisa.jsonl` mantém o nome (gerado por `ingestion/anvisa_catalog.py`).
+
+As seções anteriores e o README foram atualizados onde citam classe, arquivo ou comando. Onde "bula", "fonte" ou
+"consulta" aparecem como palavra (e não como classe), continuam em português.

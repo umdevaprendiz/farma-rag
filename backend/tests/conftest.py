@@ -17,7 +17,7 @@ def engine():
     from sqlalchemy.exc import OperationalError
 
     from app.config import get_settings
-    from app.db.conexao import criar_engine, preparar_banco
+    from app.db.connection import criar_engine, preparar_banco
 
     s = get_settings()
     schema = f"teste_{uuid4().hex[:12]}"

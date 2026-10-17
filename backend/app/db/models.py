@@ -1,8 +1,8 @@
 """Modelos SQLAlchemy para PostgreSQL 17 + pgvector.
 
 - listas em ARRAY(Text), UUID nativo, datas com fuso (timestamptz, gravadas em UTC);
-- o embedding é `vector(EMBED_DIM)` e a similaridade é calculada no banco (ver busca_pgvector.py);
-- antes de criar as tabelas é preciso `CREATE EXTENSION vector` (db/conexao.py, preparar_banco);
+- o embedding é `vector(EMBED_DIM)` e a similaridade é calculada no banco (ver pgvector_search.py);
+- antes de criar as tabelas é preciso `CREATE EXTENSION vector` (db/connection.py, preparar_banco);
 - coluna nova em tabela que já existe também entra em `preparar_banco` (create_all não altera tabela).
 """
 
@@ -15,7 +15,7 @@ from sqlalchemy import ARRAY, Boolean, Date, DateTime, Float, ForeignKey, Intege
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
-# Dimensão do bge-m3. Precisa bater com EMBED_DIM do .env (carregar_banco.py confere):
+# Dimensão do bge-m3. Precisa bater com EMBED_DIM do .env (load_database.py confere):
 # trocar de modelo de embedding exige recriar a tabela chunks.
 EMBED_DIM = 1024
 
@@ -28,8 +28,8 @@ class Base(DeclarativeBase):
     pass
 
 
-class Bula(Base):
-    """Espelho de data/processed/bulas/<id>.json. Recriada por carregar_banco.py."""
+class Leaflet(Base):
+    """Espelho de data/processed/bulas/<id>.json. Recriada por load_database.py."""
 
     __tablename__ = "bulas"
 
@@ -46,7 +46,7 @@ class Bula(Base):
 
 
 class Chunk(Base):
-    """Espelho de data/processed/chunks.jsonl. Recriada por carregar_banco.py."""
+    """Espelho de data/processed/chunks.jsonl. Recriada por load_database.py."""
 
     __tablename__ = "chunks"
 
@@ -56,18 +56,18 @@ class Chunk(Base):
     medicamento: Mapped[str] = mapped_column(Text)
     # Denormalizado para filtrar a busca por princípio ativo sem JOIN.
     principio_ativo: Mapped[str] = mapped_column(Text)
-    # normalizar(principio_ativo): o filtro da busca compara assim, igual ao IndiceEmMemoria.
+    # normalizar(principio_ativo): o filtro da busca compara assim, igual ao InMemoryIndex.
     principio_ativo_norm: Mapped[str] = mapped_column(Text, index=True)
     secao: Mapped[str] = mapped_column(Text, index=True)
     pagina: Mapped[int] = mapped_column(Integer)
     ordem: Mapped[int] = mapped_column(Integer)
     texto: Mapped[str] = mapped_column(Text)
     n_tokens: Mapped[int] = mapped_column(Integer)
-    # Sem índice HNSW: ver busca_pgvector.py.
+    # Sem índice HNSW: ver pgvector_search.py.
     embedding: Mapped[np.ndarray] = mapped_column(Vector(EMBED_DIM))
 
 
-class Consulta(Base):
+class Inquiry(Base):
     __tablename__ = "consultas"
 
     id: Mapped[UUID] = mapped_column(Uuid, primary_key=True, default=uuid4)
@@ -85,19 +85,19 @@ class Consulta(Base):
     modelo: Mapped[str] = mapped_column(Text)
     latencia_ms: Mapped[int] = mapped_column(Integer)
     rodadas: Mapped[int] = mapped_column(Integer, default=0)
-    # rag.Tentativa de cada rodada: trechos enviados, saída crua do modelo e por que passou ou não.
+    # rag.Attempt de cada rodada: trechos enviados, saída crua do modelo e por que passou ou não.
     tentativas: Mapped[list[dict]] = mapped_column(JSONB, default=list)
     # A pergunta anterior da mesma conversa (pergunta seguinte, ou resposta a um esclarecimento).
     # Sem FK, como o chunk_id das fontes: o histórico não pode quebrar se uma consulta antiga for apagada.
     consulta_origem_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_agora_utc, index=True)
 
-    fontes: Mapped[list["ConsultaFonte"]] = relationship(
-        back_populates="consulta", cascade="all, delete-orphan", order_by="ConsultaFonte.posicao"
+    fontes: Mapped[list["InquirySource"]] = relationship(
+        back_populates="consulta", cascade="all, delete-orphan", order_by="InquirySource.posicao"
     )
 
 
-class ConsultaFonte(Base):
+class InquirySource(Base):
     """Fonte usada numa resposta, guardada como SNAPSHOT.
 
     Não há FK para `chunks`: essa tabela é recriada quando o dataset muda, e o histórico
@@ -125,4 +125,4 @@ class ConsultaFonte(Base):
     # (decisão de 2026-10-15), preenchida quando entrar o destaque na fonte; até lá, nula.
     destaques: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
-    consulta: Mapped[Consulta] = relationship(back_populates="fontes")
+    consulta: Mapped[Inquiry] = relationship(back_populates="fontes")

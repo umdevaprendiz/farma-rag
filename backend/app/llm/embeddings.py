@@ -12,7 +12,7 @@ from typing import Callable, Sequence
 import numpy as np
 
 from app.config import Settings, get_settings
-from app.db.busca_vetorial import bytes_para_vetor, vetor_para_bytes
+from app.db.vector_search import bytes_para_vetor, vetor_para_bytes
 from app.llm import ollama
 
 LOTE = 8
@@ -22,7 +22,7 @@ def _chave(modelo: str, texto: str) -> str:
     return hashlib.sha256(f"{modelo}\n{texto}".encode()).hexdigest()
 
 
-class CacheEmbeddings:
+class EmbeddingCache:
     def __init__(self, caminho: str | Path):
         Path(caminho).parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(caminho)
@@ -50,7 +50,7 @@ class CacheEmbeddings:
 
 def embutir(
     textos: Sequence[str],
-    cache: CacheEmbeddings,
+    cache: EmbeddingCache,
     s: Settings | None = None,
     ao_avancar: Callable[[int, int], None] | None = None,
 ) -> np.ndarray:

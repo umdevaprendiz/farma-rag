@@ -15,7 +15,7 @@
 | Licença | Não verificada. O dicionário não a informa. |
 | Integridade | A ANVISA não publica checksum; a confiança vem do TLS do domínio `.gov.br`. |
 
-Validação completa (`python -I ingestao/validar_csv_anvisa.py`): sem bytes nulos ou de controle,
+Validação completa (`python -I ingestion/validate_anvisa_csv.py`): sem bytes nulos ou de controle,
 sem assinatura de executável/zip/pdf/html, 11 campos em todas as linhas, sem tags, URLs, comandos
 ou células de fórmula. Há 10 nomes com prefixo `"- "` (cadastros antigos), inofensivos.
 
@@ -33,7 +33,7 @@ Sempre a versão do profissional de saúde, em `data/raw/bulas/`. Duas origens a
 Registrar aqui, por bula: nome, número de registro, data da versão e SHA-256.
 
 Depois de registrar aqui, acrescente o PDF em `data/bulas_manifesto.json` (mesmo SHA-256 e
-registro; um teste confere) e rode `python -m ingestao.processar_lote`.
+registro; um teste confere) e rode `python -m ingestion.process_batch`.
 
 ### Lote 1 (baixado em 2026-10-14)
 
@@ -47,7 +47,7 @@ Verificação feita **antes** de baixar:
 
 Verificação feita **depois** de baixar, numa pasta de quarentena fora do projeto, sem abrir os PDFs:
 - Windows Defender (assinaturas 1.461.28.0, de 2026-10-14): nenhuma ameaça;
-- `python -I ingestao/validar_pdf_bula.py`: nenhum conteúdo ativo (JavaScript, ações, anexos);
+- `python -I ingestion/validate_leaflet_pdf.py`: nenhum conteúdo ativo (JavaScript, ações, anexos);
 - texto lido com `pdfplumber`: confirma que é bula do profissional e que o número de registro
   impresso existe, está `Ativo` no CSV e é do princípio ativo esperado.
 
@@ -89,7 +89,7 @@ Mesma verificação do lote 1, refeita para este lote:
   redirecionamento; TLS válido; Google Safe Browsing sem alerta (status 1); `application/pdf`;
 - download com limite de 20 MB numa pasta de quarentena vazia, fora do projeto; começa com `%PDF-1.7`;
 - depois: Windows Defender (assinaturas 1.461.52.0, de 2026-10-15) sem ameaças;
-  `validar_pdf_bula.py` sem conteúdo ativo (107 objetos, todos legíveis); texto de bula do
+  `validate_leaflet_pdf.py` sem conteúdo ativo (107 objetos, todos legíveis); texto de bula do
   profissional ("Resultados de eficácia"), uma bula só, registro impresso 1.5423.0350 `Ativo` no CSV
   (DORAGEO, dipirona monoidratada, similar).
 
@@ -106,7 +106,7 @@ do paciente. O site de bulas da Prati-Donaduzzi é um aplicativo sem link direto
 ## Catálogo derivado (versionado no Git)
 
 `data/processed/catalogo_anvisa.jsonl` + `catalogo_anvisa.meta.json`, gerados por
-`python -I ingestao/catalogo_anvisa.py` a partir do CSV acima. Saída determinística (sem data/hora):
+`python -I ingestion/anvisa_catalog.py` a partir do CSV acima. Saída determinística (sem data/hora):
 a mesma entrada gera os mesmos bytes, então o Git só mostra diferença quando a ANVISA mudar os dados.
 `meta.json` guarda o SHA-256 da fonte e da saída. Uma linha por par (nome do produto, princípios
 ativos) de registros ativos; `associacao` marca produtos com mais de um princípio ativo, e

@@ -7,7 +7,7 @@ import urllib.request
 from dataclasses import dataclass
 
 from app.config import Settings, get_settings
-from app.schemas.api import CodigoErro
+from app.schemas.api import ErrorCode
 
 NS = 1e9
 # Mantém o modelo na memória entre perguntas: recarregar custa vários segundos na CPU.
@@ -15,14 +15,14 @@ KEEP_ALIVE = "30m"
 
 
 class OllamaError(Exception):
-    def __init__(self, codigo: CodigoErro, detalhe: str):
+    def __init__(self, codigo: ErrorCode, detalhe: str):
         super().__init__(detalhe)
         self.codigo = codigo
         self.detalhe = detalhe
 
 
 @dataclass(frozen=True)
-class RespostaLLM:
+class LLMResponse:
     texto: str
     prompt_tokens: int
     tokens_gerados: int
@@ -39,14 +39,14 @@ def _pedir(caminho: str, corpo: dict | None, timeout: float, s: Settings) -> dic
             return json.load(r)
     except urllib.error.HTTPError as e:  # ex.: 404 quando o modelo não foi baixado
         detalhe = e.read().decode("utf-8", "replace")[:300]
-        raise OllamaError(CodigoErro.OLLAMA_INDISPONIVEL, f"Ollama respondeu {e.code}: {detalhe}") from e
+        raise OllamaError(ErrorCode.OLLAMA_INDISPONIVEL, f"Ollama respondeu {e.code}: {detalhe}") from e
     except (TimeoutError, socket.timeout) as e:
-        raise OllamaError(CodigoErro.TEMPO_ESGOTADO, f"Ollama não respondeu em {timeout:.0f} s") from e
+        raise OllamaError(ErrorCode.TEMPO_ESGOTADO, f"Ollama não respondeu em {timeout:.0f} s") from e
     except urllib.error.URLError as e:
         if isinstance(e.reason, (TimeoutError, socket.timeout)):
-            raise OllamaError(CodigoErro.TEMPO_ESGOTADO, f"Ollama não respondeu em {timeout:.0f} s") from e
+            raise OllamaError(ErrorCode.TEMPO_ESGOTADO, f"Ollama não respondeu em {timeout:.0f} s") from e
         raise OllamaError(
-            CodigoErro.OLLAMA_INDISPONIVEL, f"Ollama fora do ar em {s.ollama_url}: {e.reason}"
+            ErrorCode.OLLAMA_INDISPONIVEL, f"Ollama fora do ar em {s.ollama_url}: {e.reason}"
         ) from e
 
 
@@ -58,7 +58,7 @@ def embed(textos: list[str], s: Settings | None = None) -> list[list[float]]:
     vetores = r["embeddings"]
     if vetores and len(vetores[0]) != s.embed_dim:
         raise OllamaError(
-            CodigoErro.OLLAMA_INDISPONIVEL,
+            ErrorCode.OLLAMA_INDISPONIVEL,
             f"{s.embed_modelo} devolveu {len(vetores[0])} dimensões, mas EMBED_DIM={s.embed_dim}",
         )
     return vetores
@@ -66,7 +66,7 @@ def embed(textos: list[str], s: Settings | None = None) -> list[list[float]]:
 
 def chat(
     sistema: str, usuario: str, formato: dict | str = "json", s: Settings | None = None, modelo: str | None = None
-) -> RespostaLLM:
+) -> LLMResponse:
     """`formato`: "json" ou um JSON Schema (o Ollama restringe a saída a ele).
     `modelo`: vazio = LLM_MODELO."""
     s = s or get_settings()
@@ -79,7 +79,7 @@ def chat(
         "options": {"temperature": s.temperatura, "num_ctx": s.num_ctx, "num_predict": s.num_predict},
     }
     r = _pedir("/api/chat", corpo, s.timeout_llm_s, s)
-    return RespostaLLM(
+    return LLMResponse(
         texto=r["message"]["content"],
         prompt_tokens=r.get("prompt_eval_count", 0),
         tokens_gerados=r.get("eval_count", 0),

@@ -6,14 +6,14 @@ import numpy as np
 import pytest
 
 from app.config import Settings
-from app.db.busca_vetorial import IndiceEmMemoria
+from app.db.vector_search import InMemoryIndex
 from app.llm import ollama
-from app.schemas.api import CodigoErro
-from app.services import grafo, rag
-from app.services.acervo import Acervo
-from app.services.medicamentos import Catalogo
-from ingestao.gerar_chunks import gerar_chunks
-from ingestao.processar_bula import montar_bula
+from app.schemas.api import ErrorCode
+from app.services import graph, rag
+from app.services.corpus import Corpus
+from app.services.medicines import Catalog
+from ingestion.generate_chunks import gerar_chunks
+from ingestion.process_leaflet import montar_bula
 
 FIXTURES = Path(__file__).parent / "fixtures"
 S = Settings(_env_file=None, top_k=2)
@@ -22,13 +22,13 @@ S = Settings(_env_file=None, top_k=2)
 @pytest.fixture
 def acervo():
     bula = montar_bula(
-        FIXTURES / "bula_exemplo.txt", "Exemplol 50 mg", "maleato de exemplina", "Laboratório Teste",
+        FIXTURES / "sample_leaflet.txt", "Exemplol 50 mg", "maleato de exemplina", "Laboratório Teste",
         date(2025, 3, 15), ["Exemplol"],
     )
     chunks = gerar_chunks(bula, 300, 50)
     # Um eixo por trecho: a "pergunta" aponta para o trecho que o teste quiser recuperar.
-    indice = IndiceEmMemoria([c.chunk_id for c in chunks], [c.principio_ativo for c in chunks], np.eye(len(chunks)))
-    return Acervo({bula.id: bula}, {c.chunk_id: c for c in chunks}, indice, Catalogo.montar([bula], ["captopril"]))
+    indice = InMemoryIndex([c.chunk_id for c in chunks], [c.principio_ativo for c in chunks], np.eye(len(chunks)))
+    return Corpus({bula.id: bula}, {c.chunk_id: c for c in chunks}, indice, Catalog.montar([bula], ["captopril"]))
 
 
 @pytest.fixture
@@ -48,13 +48,13 @@ def modelo(monkeypatch, acervo):
         monkeypatch.setattr(ollama, "embed", lambda textos, s=None: [vetor.tolist()])
 
         def chat(sistema, usuario, formato, s=None, modelo=None):
-            if sistema == grafo.SISTEMA_VERIFICACAO:
+            if sistema == graph.SISTEMA_VERIFICACAO:
                 preparar.verificacoes.append((usuario, modelo))
-                return ollama.RespostaLLM(json.dumps(verificacao), 200, 10, 4.0, 1.0)
+                return ollama.LLMResponse(json.dumps(verificacao), 200, 10, 4.0, 1.0)
             chamadas.append(usuario)
             saida = saidas[min(len(chamadas), len(saidas)) - 1]
             texto = saida if isinstance(saida, str) else json.dumps(saida)
-            return ollama.RespostaLLM(texto, prompt_tokens=400, tokens_gerados=40, prompt_s=8.0, geracao_s=4.0)
+            return ollama.LLMResponse(texto, prompt_tokens=400, tokens_gerados=40, prompt_s=8.0, geracao_s=4.0)
 
         monkeypatch.setattr(ollama, "chat", chat)
         return chamadas
@@ -71,7 +71,7 @@ def test_resposta_com_citacao_por_frase(acervo, modelo):
     chamadas = modelo("interacoes", _resposta(
         ("Pode reduzir o efeito anti-hipertensivo.", 1), ("Pode piorar a função renal", 1),
     ))
-    # Sem o nome do outro remédio: com ele, a resposta é a frase da bula, sem o LLM (test_extrato).
+    # Sem o nome do outro remédio: com ele, a resposta é a frase da bula, sem o LLM (test_extract).
     r = rag.responder("Exemplol tem interações?", acervo, s=S)
     assert r.status == "respondida"
     assert r.resposta == "Pode reduzir o efeito anti-hipertensivo [1]. Pode piorar a função renal [1]."
@@ -86,7 +86,7 @@ def test_resposta_com_citacao_por_frase(acervo, modelo):
 
 
 def test_remedio_sem_bula_busca_nas_bulas_que_falam_dele(acervo, modelo):
-    acervo.catalogo = Catalogo.montar(list(acervo.bulas.values()), ["captopril", "ibuprofeno"])
+    acervo.catalogo = Catalog.montar(list(acervo.bulas.values()), ["captopril", "ibuprofeno"])
     chamadas = modelo("interacoes", _resposta(
         ("A bula do Exemplol diz que o uso com anti-inflamatórios como o ibuprofeno pode piorar a função renal", 1),
     ))
@@ -114,7 +114,7 @@ def test_resposta_que_e_so_o_nome_do_remedio_reprova(acervo, modelo):
     r = rag.responder("Qual o melhor remédio para pressão alta?", acervo, s=S)
     assert (r.status, r.rodadas, len(chamadas)) == ("respondida", 2, 2)
     assert "só o nome do medicamento" in r.tentativas[0].falha
-    assert grafo.DICA_SO_NOME in chamadas[1]  # o aviso diz o que corrigir, não o genérico
+    assert graph.DICA_SO_NOME in chamadas[1]  # o aviso diz o que corrigir, não o genérico
 
 
 def test_mistura_segue_com_o_indexado_e_avisa_do_outro(acervo, modelo):
@@ -135,16 +135,16 @@ def dois_remedios(monkeypatch):
     """Exemplol e Outrol (mesmo texto, princípios ativos diferentes), com um eixo por trecho.
     Devolve `apontar(pesos)`: a "pergunta" fica parecida com cada (princípio ativo, seção) pelo peso."""
     bulas = [
-        montar_bula(FIXTURES / "bula_exemplo.txt", nome, ativo, "Laboratório Teste", date(2025, 3, 15), [nome.split()[0]])
+        montar_bula(FIXTURES / "sample_leaflet.txt", nome, ativo, "Laboratório Teste", date(2025, 3, 15), [nome.split()[0]])
         for nome, ativo in [("Exemplol 50 mg", "maleato de exemplina"), ("Outrol 10 mg", "ácido outrínico")]
     ]
     chunks = [c for b in bulas for c in gerar_chunks(b, 300, 50)]
-    indice = IndiceEmMemoria([c.chunk_id for c in chunks], [c.principio_ativo for c in chunks], np.eye(len(chunks)))
-    acervo = Acervo({b.id: b for b in bulas}, {c.chunk_id: c for c in chunks}, indice, Catalogo.montar(bulas, []))
-    monkeypatch.setattr(ollama, "chat", lambda *a, **k: ollama.RespostaLLM(
+    indice = InMemoryIndex([c.chunk_id for c in chunks], [c.principio_ativo for c in chunks], np.eye(len(chunks)))
+    acervo = Corpus({b.id: b for b in bulas}, {c.chunk_id: c for c in chunks}, indice, Catalog.montar(bulas, []))
+    monkeypatch.setattr(ollama, "chat", lambda *a, **k: ollama.LLMResponse(
         json.dumps(_resposta(("O potássio no sangue deve ser monitorado", 1))), 1, 1, 0, 0))
 
-    def apontar(pesos: dict[tuple[str, str], float]) -> Acervo:
+    def apontar(pesos: dict[tuple[str, str], float]) -> Corpus:
         vetor = np.full(len(chunks), 0.01)
         for (ativo, secao), peso in pesos.items():
             vetor[next(i for i, c in enumerate(chunks) if c.principio_ativo == ativo and c.secao == secao)] = peso
@@ -232,17 +232,17 @@ def test_verificacao_negada_vira_502_com_explicacao(acervo, modelo):
     certa = _resposta(("A dose máxima é de 100 mg uma vez ao dia", 1))
     modelo("posologia", errada, errada, certa, verificacao={"a1": "nao"})
     r = rag.responder("Como tomar o Exemplol?", acervo, s=S)
-    assert (r.status, r.codigo_erro, r.resposta) == ("erro", CodigoErro.RESPOSTA_NAO_VERIFICADA, None)
+    assert (r.status, r.codigo_erro, r.resposta) == ("erro", ErrorCode.RESPOSTA_NAO_VERIFICADA, None)
     assert r.detalhe_erro.startswith("Nenhuma resposta passou na verificação em 3 rodada(s) (limite de rodadas).")
     assert "rodada 1: afirmação 1, trecho [1]: '300 mg' não está no trecho" in r.detalhe_erro
     assert "rodada 3: a verificação não confirmou a(s) afirmação(ões) 1" in r.detalhe_erro
 
 
 @pytest.mark.parametrize("saida, codigo", [
-    ("isto não é json", CodigoErro.SAIDA_INVALIDA),
-    ({"status": "respondida"}, CodigoErro.SAIDA_INVALIDA),
-    ({"status": "respondida", "afirmacoes": []}, CodigoErro.SAIDA_INVALIDA),
-    ({"status": "respondida", "afirmacoes": [{"texto": "Algo.", "trecho": 9}]}, CodigoErro.CITACAO_INVALIDA),
+    ("isto não é json", ErrorCode.SAIDA_INVALIDA),
+    ({"status": "respondida"}, ErrorCode.SAIDA_INVALIDA),
+    ({"status": "respondida", "afirmacoes": []}, ErrorCode.SAIDA_INVALIDA),
+    ({"status": "respondida", "afirmacoes": [{"texto": "Algo.", "trecho": 9}]}, ErrorCode.CITACAO_INVALIDA),
 ])
 def test_saida_invalida_em_todas_as_rodadas_vira_erro_com_a_saida_crua(acervo, modelo, saida, codigo):
     chamadas = modelo("posologia", saida)
@@ -254,17 +254,17 @@ def test_saida_invalida_em_todas_as_rodadas_vira_erro_com_a_saida_crua(acervo, m
 def test_orcamento_esgotado_nao_abre_outra_rodada(acervo, modelo):
     chamadas = modelo("posologia", _resposta(("A dose máxima é de 300 mg", 1)))
     r = rag.responder("Como tomar o Exemplol?", acervo, s=Settings(_env_file=None, top_k=2, orcamento_s=0))
-    assert (r.status, r.codigo_erro, r.rodadas, len(chamadas)) == ("erro", CodigoErro.RESPOSTA_NAO_VERIFICADA, 1, 1)
+    assert (r.status, r.codigo_erro, r.rodadas, len(chamadas)) == ("erro", ErrorCode.RESPOSTA_NAO_VERIFICADA, 1, 1)
     assert "(orçamento de 0 s)" in r.detalhe_erro
 
 
 def test_ollama_fora_do_ar(acervo, monkeypatch):
     def cair(*a, **k):
-        raise ollama.OllamaError(CodigoErro.OLLAMA_INDISPONIVEL, "fora do ar")
+        raise ollama.OllamaError(ErrorCode.OLLAMA_INDISPONIVEL, "fora do ar")
 
     monkeypatch.setattr(ollama, "embed", cair)
     r = rag.responder("Como tomar o Exemplol?", acervo, s=S)
-    assert (r.status, r.codigo_erro) == ("erro", CodigoErro.OLLAMA_INDISPONIVEL)
+    assert (r.status, r.codigo_erro) == ("erro", ErrorCode.OLLAMA_INDISPONIVEL)
 
 
 def test_filtro_aceita_nome_comercial_e_recusa_desconhecido(acervo, modelo):
@@ -272,7 +272,7 @@ def test_filtro_aceita_nome_comercial_e_recusa_desconhecido(acervo, modelo):
     r = rag.responder("Qual a dose inicial?", acervo, principios_ativos=["Exemplol"], s=S)
     assert r.status == "respondida" and r.principios_ativos == ["maleato de exemplina"]
     r = rag.responder("Qual a dose inicial?", acervo, principios_ativos=["captopril"], s=S)
-    assert (r.status, r.codigo_erro) == ("erro", CodigoErro.MEDICAMENTO_NAO_ENCONTRADO)
+    assert (r.status, r.codigo_erro) == ("erro", ErrorCode.MEDICAMENTO_NAO_ENCONTRADO)
 
 
 def test_abaixo_do_limiar_nao_chama_o_modelo(acervo, modelo):

@@ -17,11 +17,11 @@ from app.config import Settings
 from app.db.models import EMBED_DIM
 from app.llm import ollama
 from app.main import criar_app
-from app.schemas.api import CodigoErro
-from app.services import grafo
-from ingestao.carregar_banco import gravar
-from ingestao.gerar_chunks import gerar_chunks
-from ingestao.processar_bula import montar_bula
+from app.schemas.api import ErrorCode
+from app.services import graph
+from ingestion.generate_chunks import gerar_chunks
+from ingestion.load_database import gravar
+from ingestion.process_leaflet import montar_bula
 
 FIXTURES = Path(__file__).parent / "fixtures"
 S = Settings(_env_file=None, top_k=2)
@@ -31,7 +31,7 @@ RECUSA = {"status": "nao_encontrada", "afirmacoes": []}
 @pytest.fixture(scope="module")
 def dados():
     bula = montar_bula(
-        FIXTURES / "bula_exemplo.txt", "Exemplol 50 mg", "maleato de exemplina", "Laboratório Teste",
+        FIXTURES / "sample_leaflet.txt", "Exemplol 50 mg", "maleato de exemplina", "Laboratório Teste",
         date(2025, 3, 15), ["Exemplol"],
     )
     chunks = gerar_chunks(bula, 300, 50)
@@ -67,9 +67,9 @@ def modelo(monkeypatch, dados):
         monkeypatch.setattr(ollama, "embed", lambda textos, s=None: [vetor.tolist()])
 
         def chat(sistema, usuario, formato, s=None, modelo=None):
-            assert sistema != grafo.SISTEMA_VERIFICACAO, "nenhum teste daqui chega à rodada 3 aprovado"
+            assert sistema != graph.SISTEMA_VERIFICACAO, "nenhum teste daqui chega à rodada 3 aprovado"
             chamadas.append(usuario)
-            return ollama.RespostaLLM(json.dumps(saida), 400, 40, 8.0, 4.0)
+            return ollama.LLMResponse(json.dumps(saida), 400, 40, 8.0, 4.0)
 
         monkeypatch.setattr(ollama, "chat", chat)
         return chamadas
@@ -96,7 +96,7 @@ def test_saude(cliente, monkeypatch):
     assert (corpo["status"], corpo["modelos_faltando"]) == ("degradado", ["qwen2.5:1.5b"])
 
     def fora(s=None):
-        raise ollama.OllamaError(CodigoErro.OLLAMA_INDISPONIVEL, "Ollama fora do ar em http://localhost:11434")
+        raise ollama.OllamaError(ErrorCode.OLLAMA_INDISPONIVEL, "Ollama fora do ar em http://localhost:11434")
 
     monkeypatch.setattr(ollama, "modelos", fora)
     corpo = cliente.get("/api/v1/saude").json()
@@ -171,7 +171,7 @@ def test_rodadas_esgotadas_dao_502_explicado_e_ficam_no_historico(cliente, model
 
 def test_ollama_fora_do_ar_da_503_e_fica_no_historico(cliente, monkeypatch):
     def fora(textos, s=None):
-        raise ollama.OllamaError(CodigoErro.OLLAMA_INDISPONIVEL, "Ollama fora do ar")
+        raise ollama.OllamaError(ErrorCode.OLLAMA_INDISPONIVEL, "Ollama fora do ar")
 
     monkeypatch.setattr(ollama, "embed", fora)
     r = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol pode com ibuprofeno?"})
@@ -287,7 +287,7 @@ def test_interacao_vem_da_frase_da_bula_sem_llm(cliente, monkeypatch, modelo):
 
 def test_erro_traz_o_id_da_consulta_para_a_conversa_continuar(cliente, monkeypatch):
     def fora(textos, s=None):
-        raise ollama.OllamaError(CodigoErro.OLLAMA_INDISPONIVEL, "Ollama fora do ar")
+        raise ollama.OllamaError(ErrorCode.OLLAMA_INDISPONIVEL, "Ollama fora do ar")
 
     monkeypatch.setattr(ollama, "embed", fora)
     corpo = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol pode com álcool?"}).json()

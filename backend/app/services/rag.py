@@ -1,7 +1,7 @@
-"""Peças do RAG: prompt, JSON Schema da saída e o Resultado devolvido a quem pergunta.
+"""Peças do RAG: prompt, JSON Schema da saída e o Result devolvido a quem pergunta.
 
 A orquestração (detecção -> busca -> geração -> validação, em rodadas) é um grafo do LangGraph
-em services/grafo.py. `responder` continua sendo a porta de entrada.
+em services/graph.py. `responder` continua sendo a porta de entrada.
 """
 
 import json
@@ -10,9 +10,9 @@ from datetime import date
 from typing import Literal
 
 from app.config import Settings
-from app.schemas.api import CodigoErro
+from app.schemas.api import ErrorCode
 from app.schemas.dataset import ROTULO_SECAO, Chunk
-from app.services.acervo import Acervo
+from app.services.corpus import Corpus
 
 SISTEMA = (
     "Você responde perguntas de profissionais de farmácia sobre medicamentos consultando bulas. "
@@ -59,18 +59,18 @@ def formato(n_trechos: int) -> dict:
 
 
 @dataclass(frozen=True)
-class Fonte:
+class Source:
     posicao: int  # o [n] do prompt
     chunk: Chunk
     data_versao: date
     score: float
     citado: bool = False
-    # (início, fim) no texto do trecho das frases que sustentam a resposta (fundamentacao.destaques).
+    # (início, fim) no texto do trecho das frases que sustentam a resposta (grounding.destaques).
     destaques: tuple[tuple[int, int], ...] = ()
 
 
 @dataclass(frozen=True)
-class Tentativa:
+class Attempt:
     """Uma rodada: o que foi enviado ao modelo, o que voltou e por que foi aceito ou não."""
 
     rodada: int
@@ -82,23 +82,23 @@ class Tentativa:
 
 
 @dataclass(frozen=True)
-class Opcao:
+class Option:
     rotulo: str
     principios_ativos: list[str]
 
 
 @dataclass(frozen=True)
-class Esclarecimento:
+class Clarification:
     """`opcoes` vazio = resposta livre: a pessoa responde no chat, e a resposta volta com a
-    pergunta anterior (ver Anterior)."""
+    pergunta anterior (ver PreviousQuestion)."""
 
     motivo: Literal["medicamento_nao_reconhecido", "remedio_da_alergia"]
     pergunta: str
-    opcoes: list[Opcao]
+    opcoes: list[Option]
 
 
 @dataclass(frozen=True)
-class Anterior:
+class PreviousQuestion:
     """A pergunta anterior da mesma conversa, carregada do histórico pela API. A API continua sem
     estado: quem diz qual é a anterior é a tela (consulta_origem_id)."""
 
@@ -108,30 +108,30 @@ class Anterior:
 
 
 @dataclass
-class Resultado:
+class Result:
     status: Literal["respondida", "nao_encontrada", "precisa_esclarecimento", "erro"]
     # sem_outra_explicacao: "não ajudou" sem outro trecho que responda, além dos já citados.
     motivo: Literal["sem_contexto", "medicamento_nao_indexado", "sem_outra_explicacao"] | None = None
     resposta: str | None = None
-    fontes: list[Fonte] = field(default_factory=list)
+    fontes: list[Source] = field(default_factory=list)
     principios_ativos: list[str] = field(default_factory=list)  # filtro usado na busca
     medicamentos_nao_indexados: list[str] = field(default_factory=list)
-    esclarecimento: Esclarecimento | None = None
-    codigo_erro: CodigoErro | None = None
+    esclarecimento: Clarification | None = None
+    codigo_erro: ErrorCode | None = None
     detalhe_erro: str | None = None
     saida_bruta: str | None = None  # o que o modelo devolveu na última rodada, para depurar
     rodadas: int = 0
-    tentativas: list[Tentativa] = field(default_factory=list)
+    tentativas: list[Attempt] = field(default_factory=list)
     tempos_s: dict[str, float] = field(default_factory=dict)  # somados entre as rodadas
     prompt_tokens: int = 0  # somados entre as rodadas
     continuacao: bool = False  # usou a pergunta anterior (remédio herdado ou resposta a esclarecimento)
     alergia_a: str | None = None  # remédio da alergia: a resposta traz alternativas a ele
-    extrativa: bool = False  # a resposta são frases copiadas da bula, sem o LLM (services/extrato.py)
+    extrativa: bool = False  # a resposta são frases copiadas da bula, sem o LLM (services/extract.py)
     outra_explicacao: bool = False  # refez uma resposta que não ajudou, sem os trechos dela
 
 
 @dataclass(frozen=True)
-class OutraExplicacao:
+class AnotherExplanation:
     """O balconista disse que a resposta não ajudou (docs/DECISOES.md, seção 26)."""
 
     evitar: list[str]  # chunk_ids citados na resposta que não ajudou (e nas explicações antes dela)
@@ -139,7 +139,7 @@ class OutraExplicacao:
 
 
 def montar_prompt(
-    pergunta: str, fontes: list[Fonte], observacao: str | None = None, anterior: str | None = None
+    pergunta: str, fontes: list[Source], observacao: str | None = None, anterior: str | None = None
 ) -> str:
     """`anterior`: a pergunta anterior da conversa, quando esta continua dela ("e para criança?")."""
     trechos = "\n\n".join(
@@ -153,16 +153,16 @@ def montar_prompt(
 
 def responder(
     pergunta: str,
-    acervo: Acervo,
+    acervo: Corpus,
     principios_ativos: list[str] | None = None,
     s: Settings | None = None,
-    anterior: Anterior | None = None,
-    outra: OutraExplicacao | None = None,
-) -> Resultado:
+    anterior: PreviousQuestion | None = None,
+    outra: AnotherExplanation | None = None,
+) -> Result:
     """`principios_ativos` vazio = detectar o medicamento na própria pergunta.
     `anterior`: a pergunta anterior da conversa, se a tela mandou.
     `outra`: refazer uma resposta que não ajudou, sem os trechos que ela citou."""
-    from app.services.grafo import executar  # o grafo importa as peças deste módulo
+    from app.services.graph import executar  # o grafo importa as peças deste módulo
 
     return executar(pergunta, acervo, principios_ativos, s, anterior, outra)
 

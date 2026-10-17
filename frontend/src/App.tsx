@@ -1,27 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
 
-import { ErroApi, api } from "./api";
-import type { ConsultaResumo, Opcao, PerguntaIn, Saude } from "./api";
-import { BarraLateral } from "./componentes/BarraLateral";
-import { Conversa } from "./componentes/Conversa";
-import { IconeMenu, IconeNovo } from "./componentes/Icones";
-import { daResposta, doErro, doHistorico } from "./conversa";
-import type { Mensagem, Vista } from "./conversa";
+import { ApiError, api } from "./api";
+import type { Health, InquirySummary, Option, QuestionIn } from "./api";
+import { Conversation } from "./components/Conversation";
+import { IconeMenu, IconeNovo } from "./components/Icons";
+import { Sidebar } from "./components/Sidebar";
+import { daResposta, doErro, doHistorico } from "./conversation";
+import type { Message, View } from "./conversation";
 
 const INTERVALO_SAUDE_MS = 30_000;
 const NO_HISTORICO = 50;
 
-function comoErroApi(e: unknown): ErroApi {
-  return e instanceof ErroApi ? e : new ErroApi("API_FORA_DO_AR", String(e), 0);
+function comoErroApi(e: unknown): ApiError {
+  return e instanceof ApiError ? e : new ApiError("API_FORA_DO_AR", String(e), 0);
 }
 
 export function App() {
-  const [mensagens, setMensagens] = useState<Mensagem[]>([]);
+  const [mensagens, setMensagens] = useState<Message[]>([]);
   const [ocupado, setOcupado] = useState(false);
   const [aberta, setAberta] = useState<string | null>(null);
-  const [historico, setHistorico] = useState<ConsultaResumo[] | null>(null);
+  const [historico, setHistorico] = useState<InquirySummary[] | null>(null);
   const [erroHistorico, setErroHistorico] = useState<string | null>(null);
-  const [saude, setSaude] = useState<Saude | null>(null);
+  const [saude, setSaude] = useState<Health | null>(null);
   const [apiFora, setApiFora] = useState<string | null>(null);
   const [menuAberto, setMenuAberto] = useState(false);
 
@@ -32,7 +32,7 @@ export function App() {
         setHistorico(h.itens);
         setErroHistorico(null);
       })
-      .catch((e: ErroApi) => setErroHistorico(e.message));
+      .catch((e: ApiError) => setErroHistorico(e.message));
   }, []);
 
   // Saúde a cada 30 s: o banco ou o Ollama podem cair (ou subir) com a tela aberta.
@@ -44,7 +44,7 @@ export function App() {
           setSaude(s);
           setApiFora(null);
         })
-        .catch((e: ErroApi) => setApiFora(e.message));
+        .catch((e: ApiError) => setApiFora(e.message));
     conferir();
     const id = setInterval(conferir, INTERVALO_SAUDE_MS);
     return () => clearInterval(id);
@@ -54,7 +54,7 @@ export function App() {
     atualizarHistorico();
   }, [atualizarHistorico]);
 
-  async function perguntar(entrada: PerguntaIn, textoDoUsuario: string) {
+  async function perguntar(entrada: QuestionIn, textoDoUsuario: string) {
     if (ocupado) return;
     // A última resposta da conversa vai junto: a pergunta nova pode continuar dela ("e para
     // criança?") ou responder a um "a alergia é a qual remédio?". "Nova pergunta" zera a conversa.
@@ -70,7 +70,7 @@ export function App() {
       { id: `${id}-pergunta`, autor: "usuario", texto: textoDoUsuario },
       { id, autor: "assistente", pergunta: entrada, carregando: true, inicio: Date.now() },
     ]);
-    let vista: Vista;
+    let vista: View;
     try {
       vista = daResposta(await api.perguntar(entrada));
     } catch (e) {
@@ -82,7 +82,7 @@ export function App() {
     atualizarHistorico();
   }
 
-  function escolherOpcao(pergunta: PerguntaIn, vista: Vista, opcao: Opcao) {
+  function escolherOpcao(pergunta: QuestionIn, vista: View, opcao: Option) {
     // O reenvio leva o filtro escolhido: não há segundo esclarecimento para a mesma pergunta.
     perguntar(
       { pergunta: pergunta.pergunta, principios_ativos: opcao.principios_ativos, consulta_origem_id: vista.consultaId ?? undefined },
@@ -99,8 +99,8 @@ export function App() {
   async function abrirConsulta(id: string) {
     setMenuAberto(false);
     setAberta(id);
-    let vista: Vista;
-    let pergunta: PerguntaIn = { pergunta: "", principios_ativos: [] };
+    let vista: View;
+    let pergunta: QuestionIn = { pergunta: "", principios_ativos: [] };
     try {
       const c = await api.consulta(id);
       pergunta = { pergunta: c.pergunta, principios_ativos: c.principios_ativos_filtro };
@@ -118,7 +118,7 @@ export function App() {
 
   return (
     <div className={`app${menuAberto ? " menu-aberto" : ""}`}>
-      <BarraLateral
+      <Sidebar
         historico={historico}
         erroHistorico={erroHistorico}
         aberta={aberta}
@@ -149,7 +149,7 @@ export function App() {
           </div>
         )}
 
-        <Conversa
+        <Conversation
           mensagens={mensagens}
           ocupado={ocupado}
           bulas={saude?.bulas ?? null}

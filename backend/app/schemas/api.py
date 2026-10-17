@@ -12,7 +12,7 @@ from app.schemas.dataset import ROTULO_SECAO
 MAX_MEDICAMENTOS_POR_PERGUNTA = 3
 
 
-class CodigoErro(str, Enum):
+class ErrorCode(str, Enum):
     MEDICAMENTO_NAO_ENCONTRADO = "MEDICAMENTO_NAO_ENCONTRADO"
     CONSULTA_NAO_ENCONTRADA = "CONSULTA_NAO_ENCONTRADA"
     ENTRADA_INVALIDA = "ENTRADA_INVALIDA"
@@ -25,32 +25,32 @@ class CodigoErro(str, Enum):
     TEMPO_ESGOTADO = "TEMPO_ESGOTADO"
 
 
-HTTP_POR_CODIGO: dict[CodigoErro, int] = {
-    CodigoErro.MEDICAMENTO_NAO_ENCONTRADO: 404,
-    CodigoErro.CONSULTA_NAO_ENCONTRADA: 404,
-    CodigoErro.ENTRADA_INVALIDA: 422,
-    CodigoErro.SAIDA_INVALIDA: 502,
-    CodigoErro.CITACAO_INVALIDA: 502,
-    CodigoErro.RESPOSTA_NAO_VERIFICADA: 502,
-    CodigoErro.OLLAMA_INDISPONIVEL: 503,
-    CodigoErro.BANCO_INDISPONIVEL: 503,
-    CodigoErro.TEMPO_ESGOTADO: 504,
+HTTP_POR_CODIGO: dict[ErrorCode, int] = {
+    ErrorCode.MEDICAMENTO_NAO_ENCONTRADO: 404,
+    ErrorCode.CONSULTA_NAO_ENCONTRADA: 404,
+    ErrorCode.ENTRADA_INVALIDA: 422,
+    ErrorCode.SAIDA_INVALIDA: 502,
+    ErrorCode.CITACAO_INVALIDA: 502,
+    ErrorCode.RESPOSTA_NAO_VERIFICADA: 502,
+    ErrorCode.OLLAMA_INDISPONIVEL: 503,
+    ErrorCode.BANCO_INDISPONIVEL: 503,
+    ErrorCode.TEMPO_ESGOTADO: 504,
 }
 
 
-class ErroDetalhe(BaseModel):
-    codigo: CodigoErro
+class ErrorDetail(BaseModel):
+    codigo: ErrorCode
     mensagem: str
 
 
-class ErroOut(BaseModel):
-    erro: ErroDetalhe
+class ErrorOut(BaseModel):
+    erro: ErrorDetail
     # A consulta gravada no histórico (POST /perguntas que terminou em erro): a tela manda este id
     # como consulta_origem_id na pergunta seguinte, e a conversa continua depois do erro.
     consulta_id: UUID | None = None
 
 
-class PerguntaIn(BaseModel):
+class QuestionIn(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     pergunta: str = Field(min_length=5, max_length=500)
@@ -73,7 +73,7 @@ class PerguntaIn(BaseModel):
         return limpos
 
 
-class FonteOut(BaseModel):
+class SourceOut(BaseModel):
     posicao: int = Field(ge=1)  # o [n] da resposta
     chunk_id: str
     medicamento: str
@@ -96,31 +96,31 @@ class FonteOut(BaseModel):
         return ROTULO_SECAO.get(self.secao, self.secao)
 
 
-class OpcaoOut(BaseModel):
+class OptionOut(BaseModel):
     rotulo: str
     principios_ativos: list[str]
 
 
-class EsclarecimentoOut(BaseModel):
+class ClarificationOut(BaseModel):
     """O frontend mostra as opções e reenvia a pergunta com o filtro escolhido."""
 
     # opcoes vazio (remedio_da_alergia): a pessoa responde no chat, e a resposta vem com
     # consulta_origem_id desta consulta.
     motivo: Literal["medicamento_nao_reconhecido", "remedio_da_alergia"]
     pergunta: str
-    opcoes: list[OpcaoOut]
+    opcoes: list[OptionOut]
 
 
-class RespostaOut(BaseModel):
+class AnswerOut(BaseModel):
     consulta_id: UUID
     status: Literal["respondida", "nao_encontrada", "precisa_esclarecimento"]
     # Só preenchido quando status = precisa_esclarecimento.
-    esclarecimento: EsclarecimentoOut | None = None
+    esclarecimento: ClarificationOut | None = None
     rodadas: int = 0
     # Só preenchido quando status = nao_encontrada.
     motivo: Literal["sem_contexto", "medicamento_nao_indexado"] | None = None
     resposta: str | None
-    fontes: list[FonteOut]
+    fontes: list[SourceOut]
     # Medicamentos citados na pergunta que não têm bula indexada (o frontend avisa).
     medicamentos_nao_indexados: list[str] = Field(default_factory=list)
     # Para que serve cada um deles, pela classe terapêutica no registro da ANVISA (dados abertos):
@@ -134,7 +134,7 @@ class RespostaOut(BaseModel):
     latencia_ms: int
 
 
-class BulaResumo(BaseModel):
+class LeafletSummary(BaseModel):
     id: str
     medicamento: str
     fabricante: str
@@ -142,43 +142,43 @@ class BulaResumo(BaseModel):
     data_versao: date
 
 
-class MedicamentoOut(BaseModel):
+class MedicineOut(BaseModel):
     """Um item do seletor: um princípio ativo com as bulas indexadas dele."""
 
     principio_ativo: str
-    bulas: list[BulaResumo]
+    bulas: list[LeafletSummary]
 
 
-class ConsultaResumo(BaseModel):
+class InquirySummary(BaseModel):
     id: UUID
     pergunta: str
     status: Literal["respondida", "nao_encontrada", "precisa_esclarecimento", "erro"]
     criado_em: datetime
 
 
-class HistoricoOut(BaseModel):
-    itens: list[ConsultaResumo]  # da mais recente para a mais antiga
+class HistoryOut(BaseModel):
+    itens: list[InquirySummary]  # da mais recente para a mais antiga
     total: int
     pagina: int
     limite: int
 
 
-class ConsultaDetalhe(ConsultaResumo):
+class InquiryDetail(InquirySummary):
     """Uma consulta como foi respondida, com as fontes guardadas no momento (snapshot)."""
 
     principios_ativos_filtro: list[str]
     resposta: str | None
     motivo: str | None
-    codigo_erro: CodigoErro | None
+    codigo_erro: ErrorCode | None
     mensagem_erro: str | None
     rodadas: int
     modelo: str
     latencia_ms: int
     consulta_origem_id: UUID | None
-    fontes: list[FonteOut]
+    fontes: list[SourceOut]
 
 
-class SaudeOut(BaseModel):
+class HealthOut(BaseModel):
     status: Literal["ok", "degradado"]
     banco: bool
     ollama: bool

@@ -1,5 +1,5 @@
 {
-  "_aviso": "Entrada do lote (python -m ingestao.processar_lote). Procedência de cada PDF em data/FONTES.md. 'partes' = bulas dentro do PDF, na ordem em que aparecem. 'data_versao' vazia = tirada do código impresso pela Geolab (V.NN_MM/AAAA -> dia 01). 'medicamento' segue o que o PDF diz; 'nomes_comerciais' segue o CSV da ANVISA para o registro.",
+  "_aviso": "Entrada do lote (python -m ingestion.process_batch). Procedência de cada PDF em data/FONTES.md. 'partes' = bulas dentro do PDF, na ordem em que aparecem. 'data_versao' vazia = tirada do código impresso pela Geolab (V.NN_MM/AAAA -> dia 01). 'medicamento' segue o que o PDF diz; 'nomes_comerciais' segue o CSV da ANVISA para o registro.",
   "pasta": "data/raw/bulas",
   "bulas": [
     {

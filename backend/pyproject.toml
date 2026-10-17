@@ -1,4 +1,4 @@
-# Torna o pacote `app` importável por ingestao/ e benchmark/ (pip install -e backend),
+# Torna o pacote `app` importável por ingestion/ e benchmark/ (pip install -e backend),
 # para que os três compartilhem cliente do Ollama, schemas e config sem copiar código.
 [project]
 name = "farmarag-backend"
