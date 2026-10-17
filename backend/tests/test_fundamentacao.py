@@ -1,7 +1,14 @@
 import pytest
 
 from app.schemas.dataset import Chunk
-from app.services.fundamentacao import Referencia, checar, problemas_da_afirmacao
+from app.services.fundamentacao import (
+    Referencia,
+    checar,
+    destaques,
+    destaques_da_afirmacao,
+    frases_com_posicao,
+    problemas_da_afirmacao,
+)
 from app.services.intencao import inferir_secoes, termos_do_assunto
 
 
@@ -105,3 +112,63 @@ def test_alergia_vale_como_hipersensibilidade():
     assert problemas_da_afirmacao("É contraindicado em caso de alergia à exemplina", ref, 0.6) == []
     ref = Referencia.de_chunk(_chunk("Não usar em caso de alergia à exemplina."))
     assert problemas_da_afirmacao("Não usar em caso de hipersensibilidade", ref, 0.6) == []
+
+
+# ---- Destaque das frases que sustentam a resposta (docs/DECISOES.md, seção 26) -----------------
+
+POSOLOGIA = _chunk(
+    "Posologia A dose inicial usual é de 50 mg uma vez ao dia. A dose máxima é de 100 mg uma vez ao "
+    "dia. Os comprimidos podem ser tomados com ou sem alimentos."
+)
+ARMAZENAMENTO = _chunk(
+    "Conservar em temperatura ambiente (entre 15 °C e 30 °C), protegido da luz e da umidade. O prazo "
+    "de validade é de 24 meses a partir da data de fabricação."
+)
+ADVERTENCIAS = _chunk(
+    "Em pacientes com insuficiência renal, recomenda-se monitorar a creatinina e o potássio no sangue. "
+    "Posologia em idosos: não é necessário ajuste."
+)
+
+
+def _destacado(afirmacao: str, chunk: Chunk) -> list[str]:
+    return [chunk.texto[i:f] for i, f in destaques_da_afirmacao(afirmacao, chunk)]
+
+
+def test_frases_com_posicao_no_texto_original():
+    texto = "  Primeira frase. Segunda, com 2,5 mL.\nTerceira!  "
+    assert [texto[i:f] for i, f in frases_com_posicao(texto)] == ["Primeira frase.", "Segunda, com 2,5 mL.", "Terceira!"]
+    assert frases_com_posicao("   ") == []
+
+
+def test_destaca_a_frase_da_parafrase():
+    assert _destacado("A dose máxima do Exemplol é de 100 mg por dia", POSOLOGIA) == [
+        "A dose máxima é de 100 mg uma vez ao dia."
+    ]
+
+
+def test_frase_copiada_da_bula_destaca_onde_ela_esta():
+    # Resposta extrativa (services/extrato.py): "<medicamento>: <frase da bula>".
+    assert _destacado("Exemplol 50 mg: A dose inicial usual é de 50 mg uma vez ao dia", POSOLOGIA) == [
+        "Posologia A dose inicial usual é de 50 mg uma vez ao dia."
+    ]
+
+
+def test_afirmacao_que_junta_duas_frases_destaca_as_duas():
+    assert _destacado("Conservar entre 15 °C e 30 °C; a validade é de 24 meses", ARMAZENAMENTO) == [
+        "Conservar em temperatura ambiente (entre 15 °C e 30 °C), protegido da luz e da umidade.",
+        "O prazo de validade é de 24 meses a partir da data de fabricação.",
+    ]
+
+
+def test_uma_palavra_em_comum_nao_basta_para_destacar():
+    assert _destacado("A tontura é comum em idosos", ADVERTENCIAS) == []
+
+
+def test_destaques_de_varias_afirmacoes_sem_repetir_frase():
+    afirmacoes = ["A dose máxima é de 100 mg por dia", "A dose máxima do Exemplol é 100 mg"]
+    assert destaques(afirmacoes, POSOLOGIA) == destaques_da_afirmacao(afirmacoes[0], POSOLOGIA)
+    assert len(destaques(afirmacoes, POSOLOGIA)) == 1
+
+
+def test_trecho_vazio_nao_destaca_nada():
+    assert destaques_da_afirmacao("A dose máxima é de 100 mg por dia", _chunk("")) == []

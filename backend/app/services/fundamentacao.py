@@ -16,6 +16,9 @@ cabeçalho do trecho):
 Regras 3 e 4 entraram em 2026-10-16, com a busca em todas as bulas (docs/DECISOES.md, seção 20).
 
 É de propósito conservadora: paráfrase demais reprova, e a reprovação só custa outra rodada.
+
+`destaques` usa a mesma comparação para o caminho inverso: as frases inteiras do trecho que
+sustentam a afirmação, para a tela destacar na fonte (docs/DECISOES.md, seção 26).
 """
 
 import math
@@ -168,3 +171,98 @@ def checar(
             ]
         problemas += [f"afirmação {i}, trecho [{trecho}]: {p}" for p in achados]
     return problemas
+
+
+# ---- Destaque das frases que sustentam a resposta ------------------------------------------
+
+# Fim de frase como em extrato.unidades: ponto (ou ! ?) e a próxima começando por maiúscula ou número.
+_FIM_DE_FRASE = re.compile(r"(?<=[.!?])\s+(?=[A-ZÀ-Ú0-9])")
+# Frases destacadas por afirmação, no máximo: uma afirmação junta no máximo umas poucas frases da bula.
+MAX_FRASES_POR_AFIRMACAO = 3
+
+
+def frases_com_posicao(texto: str) -> list[tuple[int, int]]:
+    """(início, fim) de cada frase do texto, nas posições do texto original (o fim é exclusivo)."""
+    limites, inicio = [], 0
+    for m in _FIM_DE_FRASE.finditer(texto):
+        limites.append((inicio, m.start()))
+        inicio = m.end()
+    limites.append((inicio, len(texto)))
+    saida = []
+    for i, f in limites:
+        pedaco = texto[i:f]
+        if pedaco.strip():
+            saida.append((i + len(pedaco) - len(pedaco.lstrip()), f - (len(pedaco) - len(pedaco.rstrip()))))
+    return saida
+
+
+def _literal(afirmacao: str, chunk: Chunk) -> re.Match | None:
+    """A afirmação copiada do trecho (resposta extrativa: "Exemplol 50 mg: <frase da bula>"), com
+    qualquer espaço entre as palavras."""
+    frase = afirmacao.strip()
+    prefixo = f"{chunk.medicamento}: "
+    if frase.startswith(prefixo):
+        frase = frase[len(prefixo):]
+    palavras = frase.split()
+    if len(palavras) < 5:  # poucas palavras em sequência acham o lugar errado ("a dose máxima é")
+        return None
+    return re.search(r"\s+".join(map(re.escape, palavras)), chunk.texto, re.IGNORECASE)
+
+
+def _itens_da_afirmacao(afirmacao: str, chunk: Chunk) -> list[tuple[str, str]]:
+    """O que a afirmação diz, para procurar nas frases: termos de conteúdo (sem o nome do remédio,
+    que não ajuda a escolher a frase) e números."""
+    texto = _com_numeros_por_extenso(_preparar(afirmacao))
+    nome = {p[:_PREFIXO] for p in _PALAVRA.findall(_preparar(f"{chunk.medicamento} {chunk.principio_ativo}"))}
+    termos = sorted({p for p in _PALAVRA.findall(texto) if p not in _COMUNS and p[:_PREFIXO] not in nome})
+    numeros = sorted(set(_NUMERO.findall(texto)))
+    return [("termo", t) for t in termos] + [("numero", n) for n in numeros]
+
+
+def _itens_cobertos(itens: list[tuple[str, str]], frase: str) -> set[tuple[str, str]]:
+    """Os itens da afirmação que a frase do trecho tem (termo pelo começo da palavra, ou equivalente)."""
+    texto = _com_numeros_por_extenso(_preparar(frase))
+    palavras = set(_PALAVRA.findall(texto))
+    prefixos = {p[:_PREFIXO] for p in palavras}
+    numeros = {v for n in _NUMERO.findall(texto) for v in _variantes(n)}
+
+    def cobre(tipo: str, valor: str) -> bool:
+        if tipo == "numero":
+            return bool(_variantes(valor) & numeros)
+        if valor[:_PREFIXO] in prefixos:
+            return True
+        return any(valor.startswith(a) and any(p.startswith(b) for p in palavras) for a, b in _EQUIVALENTES)
+
+    return {it for it in itens if cobre(*it)}
+
+
+def destaques_da_afirmacao(afirmacao: str, chunk: Chunk) -> list[tuple[int, int]]:
+    """As frases inteiras do trecho que sustentam a afirmação, em posições do texto do trecho.
+
+    Afirmação copiada da bula: as frases onde ela está. Senão, as frases que mais cobrem os termos e
+    números da afirmação, uma de cada vez, até nenhuma acrescentar nada (no máximo
+    MAX_FRASES_POR_AFIRMACAO). A primeira frase precisa cobrir dois itens (ou todos, se a afirmação
+    tem um só): uma palavra solta em comum não basta para destacar. Sem LLM."""
+    frases = frases_com_posicao(chunk.texto)
+    if not frases:
+        return []
+    if m := _literal(afirmacao, chunk):
+        return [(i, f) for i, f in frases if i < m.end() and f > m.start()]
+    faltam = _itens_da_afirmacao(afirmacao, chunk)
+    cobertura = {(i, f): _itens_cobertos(faltam, chunk.texto[i:f]) for i, f in frases}
+    escolhidas: list[tuple[int, int]] = []
+    pendentes = set(faltam)
+    while pendentes and len(escolhidas) < MAX_FRASES_POR_AFIRMACAO:
+        # Empate: a frase que vem antes no trecho (max devolve a primeira).
+        melhor = max(frases, key=lambda fr: len(cobertura[fr] & pendentes))
+        ganho = len(cobertura[melhor] & pendentes)
+        if ganho == 0 or (not escolhidas and ganho < min(2, len(faltam))):
+            break
+        escolhidas.append(melhor)
+        pendentes -= cobertura[melhor]
+    return sorted(escolhidas)
+
+
+def destaques(afirmacoes: list[str], chunk: Chunk) -> list[tuple[int, int]]:
+    """Os destaques de todas as afirmações que citam o trecho, sem repetir frase."""
+    return sorted({d for a in afirmacoes for d in destaques_da_afirmacao(a, chunk)})

@@ -65,6 +65,8 @@ class Fonte:
     data_versao: date
     score: float
     citado: bool = False
+    # (início, fim) no texto do trecho das frases que sustentam a resposta (fundamentacao.destaques).
+    destaques: tuple[tuple[int, int], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -108,7 +110,8 @@ class Anterior:
 @dataclass
 class Resultado:
     status: Literal["respondida", "nao_encontrada", "precisa_esclarecimento", "erro"]
-    motivo: Literal["sem_contexto", "medicamento_nao_indexado"] | None = None
+    # sem_outra_explicacao: "não ajudou" sem outro trecho que responda, além dos já citados.
+    motivo: Literal["sem_contexto", "medicamento_nao_indexado", "sem_outra_explicacao"] | None = None
     resposta: str | None = None
     fontes: list[Fonte] = field(default_factory=list)
     principios_ativos: list[str] = field(default_factory=list)  # filtro usado na busca
@@ -124,6 +127,15 @@ class Resultado:
     continuacao: bool = False  # usou a pergunta anterior (remédio herdado ou resposta a esclarecimento)
     alergia_a: str | None = None  # remédio da alergia: a resposta traz alternativas a ele
     extrativa: bool = False  # a resposta são frases copiadas da bula, sem o LLM (services/extrato.py)
+    outra_explicacao: bool = False  # refez uma resposta que não ajudou, sem os trechos dela
+
+
+@dataclass(frozen=True)
+class OutraExplicacao:
+    """O balconista disse que a resposta não ajudou (docs/DECISOES.md, seção 26)."""
+
+    evitar: list[str]  # chunk_ids citados na resposta que não ajudou (e nas explicações antes dela)
+    enviados: list[str]  # chunk_ids consultados nela: continuam valendo, mas depois dos novos
 
 
 def montar_prompt(
@@ -145,12 +157,14 @@ def responder(
     principios_ativos: list[str] | None = None,
     s: Settings | None = None,
     anterior: Anterior | None = None,
+    outra: OutraExplicacao | None = None,
 ) -> Resultado:
     """`principios_ativos` vazio = detectar o medicamento na própria pergunta.
-    `anterior`: a pergunta anterior da conversa, se a tela mandou."""
+    `anterior`: a pergunta anterior da conversa, se a tela mandou.
+    `outra`: refazer uma resposta que não ajudou, sem os trechos que ela citou."""
     from app.services.grafo import executar  # o grafo importa as peças deste módulo
 
-    return executar(pergunta, acervo, principios_ativos, s, anterior)
+    return executar(pergunta, acervo, principios_ativos, s, anterior, outra)
 
 
 def afirmacoes(bruto: str) -> list[tuple[str, int]]:

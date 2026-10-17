@@ -542,3 +542,36 @@ paracetamol por apresentação em 2 s, e as outras perguntas do dia iguais ou me
 `FONTES.md`. Os sites dos outros detentores publicam só a bula do paciente (Cimed, Aché), não têm link
 direto (Prati-Donaduzzi) ou recusam cliente automático (Bayer, Kenvue, Eurofarma, Neo Química). As
 19 que faltam ficam para download manual no Bulário Eletrônico (Cloudflare: não automatizar).
+
+## 26. "Não ajudou" e o destaque na fonte (2026-10-17)
+Pedido do usuário em 2026-10-14, desenho decidido em 2026-10-15. Quem pede outra explicação é o
+balconista (botão "não ajudou, explique de outro jeito"); o agente não pede sozinho (resposta fraca
+continua sendo a verificação em rodadas da seção 14). Toda resposta segue com fonte; a única pergunta
+de volta continua sendo a de esclarecimento.
+
+**Destaque** (`fundamentacao.destaques`, sem LLM): de cada fonte citada, as frases inteiras do trecho
+que sustentam as afirmações que a citam, como posições (início, fim) no texto do trecho. Frase copiada
+da bula (resposta extrativa): as frases onde ela está. Paráfrase do modelo: as frases que mais cobrem
+os termos e números da afirmação, uma de cada vez, até nenhuma acrescentar nada (no máximo 3); a
+primeira precisa cobrir dois itens, porque uma palavra solta em comum não basta. O nome do remédio
+não conta (está no trecho todo).
+
+**Não ajudou** (`rag.OutraExplicacao`, grafo):
+- A pergunta roda de novo **sem os trechos citados** na resposta que não ajudou (e nas outras
+  explicações antes dela). Os enviados e não citados continuam valendo, mas depois dos que nunca foram
+  enviados: o grafo começa como numa rodada seguinte, com eles já "usados".
+- Com seção indicada, a seção vem antes da semelhança, como nas rodadas 2 e 3. Se a bula tem a seção
+  e todos os trechos dela já foram citados, **não há outra explicação**: `nao_encontrada` com motivo
+  `sem_outra_explicacao`, sem chamar o LLM. Na busca geral, os citados saem depois de escolhida a
+  seção, para não voltar o erro da seção 20 (o remédio que causa tontura listado como se a tratasse).
+- **Sem frases copiadas**: a cópia da bula pode ter sido o que não ajudou, e com outros trechos a
+  frase copiada seria a mesma (os trechos se sobrepõem). A outra explicação passa pelo LLM, com a
+  mesma validação de sempre.
+- Recusa do modelo também vira `sem_outra_explicacao` (não `sem_contexto`: a primeira resposta mostrou
+  que a bula fala disso).
+- O prompt não recebe a resposta anterior nem aviso de "explique de outro jeito": o modelo pequeno
+  copia o que vê no prompt (seções 15 e 16). A diferença vem dos trechos.
+
+Feito em 2026-10-17: destaque e grafo (`Resultado.outra_explicacao`, `Fonte.destaques`), 16 testes.
+Falta: a API (pedido de outra explicação a partir da consulta, destaques/fabricante/registro na
+fonte, gravar em `consulta_fontes`) e a tela (botão, trecho com a parte destacada).

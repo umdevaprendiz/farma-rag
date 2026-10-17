@@ -16,6 +16,11 @@ Conversa (docs/DECISOES.md, seção 23): a API recebe a pergunta anterior (`Ante
 na pergunta nova ("e para criança?"), continua sobre o da anterior; "alergia a um remédio" sem dizer
 qual pergunta de volta, e a resposta da pessoa chega junto com a pergunta que pediu o esclarecimento.
 
+"Não ajudou" (docs/DECISOES.md, seção 26): o balconista pede outra explicação (`OutraExplicacao`). A
+pergunta roda de novo sem os trechos citados na resposta que não ajudou; os enviados e não citados
+ainda valem, depois dos nunca enviados. Sem frases copiadas da bula (a cópia pode ter sido o que não
+ajudou). Sem trecho novo, "não há outra explicação", sem chamar o LLM.
+
 Só `gerar` e `verificar_llm` chamam o LLM. As decisões ficam nas funções `depois_de_*`
 (arestas condicionais), em código: com um modelo de 1,5B na CPU, cada chamada custa 30-45 s
 e o modelo não é confiável para escolher caminho.
@@ -54,6 +59,7 @@ from app.services.rag import (
     Anterior,
     Esclarecimento,
     Fonte,
+    OutraExplicacao,
     Resultado,
     Tentativa,
     _para_saida,
@@ -112,6 +118,7 @@ class Estado(TypedDict, total=False):
     filtro: list[str]
     inicio: float  # time.perf_counter() no começo, para o orçamento de tempo
     anterior: Anterior | None  # a pergunta anterior da conversa, se a tela mandou
+    outra: OutraExplicacao | None  # "não ajudou": refazer sem os trechos citados (seção 26)
     # entender
     texto: str  # o que vai para a busca: a pergunta, ou a anterior + a nova quando continua
     assunto: list[str]  # palavras que o trecho precisa ter na busca geral (termos_do_assunto)
@@ -127,7 +134,7 @@ class Estado(TypedDict, total=False):
     extrato: list[tuple[int, str]]  # (trecho, frase copiada da bula): a resposta sem o LLM
     extrativa: bool  # a resposta desta rodada veio do extrato
     fontes: list[Fonte]  # os trechos da rodada atual
-    usados: list[str]  # chunk_ids já enviados ao modelo em qualquer rodada
+    usados: list[str]  # chunk_ids já enviados ao modelo em qualquer rodada (e na resposta que não ajudou)
     saida_bruta: str | None
     falha: Falha | None  # o que reprovou a rodada atual (None = passou)
     dica: str | None  # o que a próxima geração vai ouvir sobre a falha
@@ -149,6 +156,20 @@ class Estado(TypedDict, total=False):
 
 def _erro(codigo: CodigoErro, detalhe: str) -> Estado:
     return {"desfecho": "erro", "codigo_erro": codigo, "detalhe_erro": detalhe}
+
+
+def _sem_os_citados(achados: list[Achado], e: Estado) -> list[Achado]:
+    """"Não ajudou": os trechos citados na resposta que não ajudou ficam fora da busca."""
+    if not (outra := e.get("outra")):
+        return achados
+    evitar = set(outra.evitar)
+    return [a for a in achados if a.chunk_id not in evitar]
+
+
+def _citada(f: Fonte, afirmacoes: list[tuple[str, int]]) -> Fonte:
+    """A fonte citada na resposta, com as frases do trecho que sustentam cada afirmação dela."""
+    deste = [texto for texto, trecho in afirmacoes if trecho == f.posicao]
+    return replace(f, citado=True, destaques=tuple(fundamentacao.destaques(deste, f.chunk)))
 
 
 def _somar_tempo(e: Estado, nome: str, inicio: float) -> dict[str, float]:
@@ -196,7 +217,8 @@ def montar_grafo(acervo: Acervo, s: Settings):
         texto = f"{anterior.pergunta} {pergunta}" if responde else pergunta
         inicial: Estado = {
             "texto": texto, "assunto": termos_do_assunto(texto), "secoes": inferir_secoes(texto),
-            "continuacao": responde, "alergia_a": None, "vetor_uso": None, "rodada": 0, "usados": [],
+            "continuacao": responde, "alergia_a": None, "vetor_uso": None, "rodada": 0,
+            "usados": list(e["outra"].enviados) if e.get("outra") else [],
             "tentativas": [], "tempos_s": {}, "prompt_tokens": 0, "principios_ativos": [], "nao_indexados": [],
         }
         if e["filtro"]:
@@ -262,7 +284,10 @@ def montar_grafo(acervo: Acervo, s: Settings):
 
     def buscar(e: Estado) -> Estado:
         """Com medicamento: rodada 1 por semelhança, depois os trechos ainda não usados das seções
-        indicadas. Sem medicamento: busca geral em todas as bulas."""
+        indicadas. Sem medicamento: busca geral em todas as bulas.
+
+        "Não ajudou": já começa como uma rodada seguinte (a resposta que não ajudou foi a primeira),
+        sem os trechos citados nela."""
         rodada = e["rodada"] + 1
         t = time.perf_counter()
         vetor_uso = e.get("vetor_uso")
@@ -272,18 +297,20 @@ def montar_grafo(acervo: Acervo, s: Settings):
                 vetor_uso = ollama.embed([uso], s)[0]
         except ollama.OllamaError as erro:
             return {"rodada": rodada} | _erro(erro.codigo, erro.detalhe)
-        extrato: list[tuple[str, str]] = []  # (chunk_id, frase): só na rodada 1; depois, o LLM tenta
+        # Os caminhos da primeira tentativa: frases copiadas da bula e o top-k direto.
+        primeira = rodada == 1 and not e.get("outra")
+        extrato: list[tuple[str, str]] = []  # (chunk_id, frase): só na primeira; depois, o LLM tenta
         if e.get("alergia_a"):
-            achados = _busca_alternativas(vetor, vetor_uso, e["alergia_a"])
-            if rodada == 1:
+            achados = _busca_alternativas(vetor, vetor_uso, e)
+            if primeira:
                 extrato = [(a.chunk_id, frase_da_alternativa(acervo.chunks[a.chunk_id])) for a in achados]
-        elif rodada == 1 and (interacao := _frases_da_interacao(vetor, e)):
+        elif primeira and (interacao := _frases_da_interacao(vetor, e)):
             achados, extrato = interacao
-        elif rodada == 1 and (dose := _frases_da_dose(vetor, e)):
+        elif primeira and (dose := _frases_da_dose(vetor, e)):
             achados, extrato = dose
         elif not e["principios_ativos"]:
-            achados = _busca_geral(vetor, e, rodada)
-        elif rodada == 1:
+            achados = _busca_geral(vetor, e)
+        elif primeira:
             achados = acervo.indice.buscar(vetor, s.top_k, e["principios_ativos"])
         else:
             achados = _nova_busca(vetor, e)
@@ -336,12 +363,19 @@ def montar_grafo(acervo: Acervo, s: Settings):
     def _nova_busca(vetor: list[float], e: Estado) -> list[Achado]:
         """Com seção indicada: só trechos dessa seção, os ainda não usados primeiro (o trecho
         certo pode ter vindo na rodada 1 e o erro ter sido do modelo). Sem seção: trechos ainda
-        não usados. Sem nada novo: os melhores de novo (a rodada ainda muda a observação ao modelo)."""
+        não usados. Sem nada novo: os melhores de novo (a rodada ainda muda a observação ao modelo).
+
+        "Não ajudou": sem os trechos citados. Se a bula tem a seção da pergunta e todos os trechos dela
+        já foram citados, nenhum (não há outra explicação; o resto da bula não fala disso)."""
 
         ativos = e["principios_ativos"]
-        candidatos = acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos)
+        todos = acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos)
+        tem_secao = any(acervo.chunks[a.chunk_id].secao in e["secoes"] for a in todos)
+        candidatos = _sem_os_citados(todos, e)
         novos = [a for a in candidatos if a.chunk_id not in e["usados"]]
         da_secao = [a for a in candidatos if acervo.chunks[a.chunk_id].secao in e["secoes"]]
+        if tem_secao and not da_secao:
+            return []
         # sorted é estável: dentro de cada grupo (novo / já usado) continua a ordem de score.
         escolhidos = sorted(da_secao, key=lambda a: a.chunk_id in e["usados"]) or novos or candidatos
         # Mesma divisão do k entre princípios ativos que o índice faz na rodada 1.
@@ -354,10 +388,12 @@ def montar_grafo(acervo: Acervo, s: Settings):
         juntos = sorted((a for lista in por_ativo.values() for a in lista), key=lambda a: -a.score)
         return juntos[: max(s.top_k, len(ativos))]
 
-    def _busca_geral(vetor: list[float], e: Estado, rodada: int) -> list[Achado]:
+    def _busca_geral(vetor: list[float], e: Estado) -> list[Achado]:
         """Todas as bulas, só nas seções que a pergunta indica (se indica alguma), só trechos que
         falam do assunto, e um trecho por princípio ativo: cada um é uma opção na resposta, em vez
         de três trechos do mesmo remédio. Da rodada 2 em diante, os ainda não usados vêm primeiro.
+        No "não ajudou", os citados saem depois de escolhida a seção: sem trecho novo nela, não
+        passa a valer a seção errada (o remédio que causa tontura como se a tratasse).
 
         "Fala do assunto" (busca híbrida: semelhança + palavra): se a pergunta cita remédio sem bula,
         o trecho tem de mencioná-lo, em qualquer seção (os da seção da pergunta primeiro); senão, ter
@@ -379,8 +415,9 @@ def montar_grafo(acervo: Acervo, s: Settings):
                 candidatos = [a for a in candidatos if na_secao(a)] or candidatos
             if e["assunto"]:
                 candidatos = [a for a in candidatos if menciona(texto(a), e["assunto"])]
-        if rodada > 1:
-            candidatos = sorted(candidatos, key=lambda a: a.chunk_id in e["usados"])  # estável
+        # Os ainda não usados primeiro (na primeira rodada, nenhum foi usado). sorted é estável: cada
+        # grupo continua na ordem de score.
+        candidatos = sorted(_sem_os_citados(candidatos, e), key=lambda a: a.chunk_id in e["usados"])
         escolhidos: dict[str, Achado] = {}
         for a in candidatos:
             escolhidos.setdefault(normalizar(acervo.chunks[a.chunk_id].principio_ativo), a)
@@ -400,7 +437,7 @@ def montar_grafo(acervo: Acervo, s: Settings):
         classe = acervo.catalogo.classe_de(nome)
         return f"Medicamento da classe {classe.lower()}" if classe else None
 
-    def _busca_alternativas(vetor: list[float], vetor_uso: list[float] | None, nome: str) -> list[Achado]:
+    def _busca_alternativas(vetor: list[float], vetor_uso: list[float] | None, e: Estado) -> list[Achado]:
         """Alergia a um remédio: a contraindicação da bula dele (se está no acervo), depois a indicação
         de outros remédios, um por princípio ativo.
 
@@ -409,19 +446,21 @@ def montar_grafo(acervo: Acervo, s: Settings):
         anti-inflamatório para quem tem alergia a um anti-inflamatório é arriscado (alergia cruzada).
         Sem nenhum da mesma classe, as indicações mais parecidas com o uso do remédio, só as próximas
         da melhor (a semelhança sozinha trazia o albendazol para a dipirona). O score das
-        alternativas é a semelhança com o uso do remédio, não com a pergunta."""
+        alternativas é a semelhança com o uso do remédio, não com a pergunta. No "não ajudou", sem os
+        trechos citados: vem outro trecho da contraindicação e da indicação, se a bula tiver."""
+        nome = e["alergia_a"]
         alvo = normalizar(nome)
-        achados = [
-            a for a in acervo.indice.buscar(vetor, K_AMPLO, [alvo]) if acervo.chunks[a.chunk_id].secao == "contraindicacoes"
-        ][:1]
+
+        def da_secao(referencia: list[float], ativo: str, secao: str) -> Achado | None:
+            achados = _sem_os_citados(acervo.indice.buscar(referencia, K_AMPLO, [ativo]), e)
+            return next((a for a in achados if acervo.chunks[a.chunk_id].secao == secao), None)
+
+        achados = [a] if (a := da_secao(vetor, alvo, "contraindicacoes")) else []
         referencia = vetor_uso if vetor_uso is not None else vetor
         vagas = s.top_k_geral - len(achados)
 
         def indicacao(ativo: str) -> Achado | None:
-            return next(
-                (a for a in acervo.indice.buscar(referencia, K_AMPLO, [ativo]) if acervo.chunks[a.chunk_id].secao == "indicacoes"),
-                None,
-            )
+            return da_secao(referencia, ativo, "indicacoes")
 
         classe = acervo.catalogo.classe_de(nome)
         do_acervo = sorted({normalizar(b.principio_ativo) for b in acervo.bulas.values()} - {alvo})
@@ -431,7 +470,7 @@ def montar_grafo(acervo: Acervo, s: Settings):
         if vetor_uso is None:
             return achados
         parecidos: dict[str, Achado] = {}
-        for a in acervo.indice.buscar(vetor_uso, len(acervo.chunks)):
+        for a in _sem_os_citados(acervo.indice.buscar(vetor_uso, len(acervo.chunks)), e):
             chunk = acervo.chunks[a.chunk_id]
             if chunk.secao == "indicacoes" and normalizar(chunk.principio_ativo) != alvo:
                 parecidos.setdefault(normalizar(chunk.principio_ativo), a)
@@ -566,6 +605,7 @@ def montar_grafo(acervo: Acervo, s: Settings):
             continuacao=e.get("continuacao", False),
             alergia_a=e.get("alergia_a"),
             extrativa=bool(e.get("resposta")) and e.get("extrativa", False),
+            outra_explicacao=bool(e.get("outra")),
         )
         if e.get("desfecho") == "erro":
             r.status, r.codigo_erro, r.detalhe_erro = "erro", e["codigo_erro"], e["detalhe_erro"]
@@ -576,7 +616,10 @@ def montar_grafo(acervo: Acervo, s: Settings):
             r.status, r.codigo_erro, r.detalhe_erro = "erro", e["falha"].codigo, _explicar(e, s)
         elif e.get("resposta"):
             r.status, r.resposta = "respondida", e["resposta"]
-            r.fontes = [replace(f, citado=f.posicao in e["citacoes"]) for f in r.fontes]
+            r.fontes = [_citada(f, e["afirmacoes"]) if f.posicao in e["citacoes"] else f for f in r.fontes]
+        elif e.get("outra"):
+            # Nenhum trecho além dos citados, ou o modelo disse que os outros não respondem.
+            r.motivo = "sem_outra_explicacao"
         elif e.get("nao_indexados") and not e.get("principios_ativos"):
             # A busca geral não achou nada sobre o remédio sem bula: a falta é da bula dele.
             r.motivo = "medicamento_nao_indexado"
@@ -633,9 +676,11 @@ def executar(
     principios_ativos: list[str] | None = None,
     s: Settings | None = None,
     anterior: Anterior | None = None,
+    outra: OutraExplicacao | None = None,
 ) -> Resultado:
     s = s or get_settings()
-    final = montar_grafo(acervo, s).invoke(
-        {"pergunta": pergunta, "filtro": principios_ativos or [], "inicio": time.perf_counter(), "anterior": anterior}
-    )
+    final = montar_grafo(acervo, s).invoke({
+        "pergunta": pergunta, "filtro": principios_ativos or [], "inicio": time.perf_counter(),
+        "anterior": anterior, "outra": outra,
+    })
     return final["resultado"]
