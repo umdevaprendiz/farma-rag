@@ -7,7 +7,7 @@ const TITULO: Record<ApiError["codigo"], string> = {
   OLLAMA_INDISPONIVEL: "O modelo de linguagem (Ollama) está fora do ar",
   BANCO_INDISPONIVEL: "O banco de dados não está disponível",
   TEMPO_ESGOTADO: "O modelo demorou demais para responder",
-  MEDICAMENTO_NAO_ENCONTRADO: "Medicamento sem bula indexada",
+  MEDICAMENTO_NAO_ENCONTRADO: "Medicamento não reconhecido",
   ENTRADA_INVALIDA: "Pergunta inválida",
   CONSULTA_NAO_ENCONTRADA: "Consulta não encontrada",
   API_FORA_DO_AR: "A API está fora do ar",

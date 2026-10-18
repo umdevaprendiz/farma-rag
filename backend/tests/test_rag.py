@@ -9,7 +9,7 @@ from app.config import Settings
 from app.db.vector_search import InMemoryIndex
 from app.llm import ollama
 from app.schemas.api import ErrorCode
-from app.services import graph, rag
+from app.services import graph, grounding, rag
 from app.services.corpus import Corpus
 from app.services.medicines import Catalog
 from ingestion.generate_chunks import gerar_chunks
@@ -115,6 +115,18 @@ def test_resposta_que_e_so_o_nome_do_remedio_reprova(acervo, modelo):
     assert (r.status, r.rodadas, len(chamadas)) == ("respondida", 2, 2)
     assert "só o nome do medicamento" in r.tentativas[0].falha
     assert graph.DICA_SO_NOME in chamadas[1]  # o aviso diz o que corrigir, não o genérico
+
+
+def test_resposta_que_nega_o_trecho_reprova(acervo, modelo):
+    chamadas = modelo(
+        "indicacoes",
+        _resposta(("O Exemplol não é indicado para o tratamento da hipertensão arterial", 1)),
+        _resposta(("O Exemplol é indicado para o tratamento da hipertensão arterial em adultos", 1)),
+    )
+    r = rag.responder("Qual o melhor remédio para pressão alta?", acervo, s=S)
+    assert (r.status, r.rodadas, len(chamadas)) == ("respondida", 2, 2)
+    assert r.tentativas[0].falha.endswith(grounding.NEGA)
+    assert graph.DICA_NEGACAO in chamadas[1]
 
 
 def test_mistura_segue_com_o_indexado_e_avisa_do_outro(acervo, modelo):
@@ -267,11 +279,14 @@ def test_ollama_fora_do_ar(acervo, monkeypatch):
     assert (r.status, r.codigo_erro) == ("erro", ErrorCode.OLLAMA_INDISPONIVEL)
 
 
-def test_filtro_aceita_nome_comercial_e_recusa_desconhecido(acervo, modelo):
+def test_filtro_aceita_nome_comercial_e_sem_bula_e_recusa_desconhecido(acervo, modelo):
     modelo("posologia", _resposta(("50 mg ao dia.", 1)))
     r = rag.responder("Qual a dose inicial?", acervo, principios_ativos=["Exemplol"], s=S)
     assert r.status == "respondida" and r.principios_ativos == ["maleato de exemplina"]
+    # Conhecido sem bula: como na pergunta escrita (docs/DECISOES.md, seção 28; antes era erro).
     r = rag.responder("Qual a dose inicial?", acervo, principios_ativos=["captopril"], s=S)
+    assert (r.status, r.motivo, r.medicamentos_nao_indexados) == ("nao_encontrada", "medicamento_nao_indexado", ["captopril"])
+    r = rag.responder("Qual a dose inicial?", acervo, principios_ativos=["remediox"], s=S)
     assert (r.status, r.codigo_erro) == ("erro", ErrorCode.MEDICAMENTO_NAO_ENCONTRADO)
 
 

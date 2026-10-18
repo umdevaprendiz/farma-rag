@@ -53,12 +53,13 @@ from app.services.intent import (
     termos_do_assunto,
     texto_apos_alergia,
 )
-from app.services.medicines import detectar, formas_do_nome, normalizar
+from app.services.medicines import Suggestion, detectar, formas_do_nome, normalizar, sugerir
 from app.services.rag import (
     SISTEMA,
     AnotherExplanation,
     Attempt,
     Clarification,
+    Option,
     PreviousQuestion,
     Result,
     Source,
@@ -92,12 +93,30 @@ DICA_SO_NOME = (
     "A tentativa anterior respondeu só com nomes de medicamentos. Cada afirmação deve ser uma frase "
     "que diz, com as palavras do trecho, o que o trecho diz sobre aquele medicamento."
 )
+# Regra 5 da fundamentação: "não é indicado para dor no ouvido" citando um trecho que diz "é indicado".
+DICA_NEGACAO = (
+    "A tentativa anterior negou o que o trecho não nega. Escreva só o que o trecho diz, sem acrescentar "
+    "\"não\"; se nenhum trecho responde à pergunta, devolva \"nao_encontrada\"."
+)
 
 # Alternativas por semelhança (sem remédio da mesma classe no acervo): só as que ficam a até esta
 # distância da melhor. Calibrar com o benchmark.
 MARGEM_PARECIDOS = 0.05
 PERGUNTA_REMEDIO = "Sobre qual remédio é a pergunta? Me diga o nome."
 PERGUNTA_ALERGIA = "A alergia é a qual remédio? Me diga o nome, que eu procuro nas bulas o que serve para o mesmo uso."
+
+
+def esclarecer_nome(parecidos: list[Suggestion]) -> Clarification:
+    """"Tomei rocutan...": nenhum remédio reconhecido, mas "rocutan" parece Roacutan no registro da
+    ANVISA. Pergunta em vez de adivinhar; cada opção reenvia a pergunta com o princípio ativo como
+    filtro (docs/DECISOES.md, seção 28)."""
+    rotulos = [f"{p.nome} ({p.principio_ativo})" for p in parecidos]
+    qual = f"É o {rotulos[0]}?" if len(rotulos) == 1 else "É um destes?"
+    return Clarification(
+        "medicamento_nao_reconhecido",
+        f'Não reconheci "{parecidos[0].palavra}". {qual} Se não for, escreva o nome do remédio.',
+        [Option(r, [p.principio_ativo]) for r, p in zip(rotulos, parecidos)],
+    )
 
 SISTEMA_VERIFICACAO = (
     "Você confere respostas sobre bulas. Para cada afirmação numerada, leia o trecho que vem com ela "
@@ -214,7 +233,8 @@ def montar_grafo(acervo: Corpus, s: Settings):
         # Resposta a um esclarecimento ("A alergia é a qual remédio?" -> "dipirona"): vale a
         # pergunta que pediu o esclarecimento junto com a resposta.
         responde = anterior is not None and anterior.pediu_esclarecimento
-        texto = f"{anterior.pergunta} {pergunta}" if responde else pergunta
+        # O botão de uma opção reenvia a mesma pergunta (com o filtro): não repetir o texto.
+        texto = f"{anterior.pergunta} {pergunta}" if responde and pergunta != anterior.pergunta else pergunta
         inicial: State = {
             "texto": texto, "assunto": termos_do_assunto(texto), "secoes": inferir_secoes(texto),
             "continuacao": responde, "alergia_a": None, "vetor_uso": None, "rodada": 0,
@@ -222,19 +242,27 @@ def montar_grafo(acervo: Corpus, s: Settings):
             "tentativas": [], "tempos_s": {}, "prompt_tokens": 0, "principios_ativos": [], "nao_indexados": [],
         }
         if e["filtro"]:
-            # O filtro aceita qualquer nome que o catálogo conheça ("losartana", "Cozaar").
-            achados = {p: acervo.catalogo.indexados.get(normalizar(p)) for p in e["filtro"]}
-            desconhecidos = [p for p, ativo in achados.items() if ativo is None]
+            # O filtro aceita qualquer nome que o catálogo conheça ("losartana", "Cozaar"). Remédio
+            # conhecido sem bula ("isotretinoína", escolhido no "é o Roacutan?") segue como na
+            # pergunta escrita: busca nas bulas que falam dele (seção 28; antes era 404).
+            achados = {p: acervo.catalogo.resolver(p) for p in e["filtro"]}
+            desconhecidos = [p for p, nomes in achados.items() if not any(nomes)]
             if desconhecidos:
                 return inicial | _erro(
-                    ErrorCode.MEDICAMENTO_NAO_ENCONTRADO, f"sem bula indexada para: {', '.join(desconhecidos)}"
+                    ErrorCode.MEDICAMENTO_NAO_ENCONTRADO, f"medicamento desconhecido: {', '.join(desconhecidos)}"
                 )
-            return inicial | {"principios_ativos": sorted(set(achados.values()))}
+            return inicial | {
+                "principios_ativos": sorted({a for a, _ in achados.values() if a}),
+                "nao_indexados": sorted({n for _, n in achados.values() if n}),
+            }
 
         # Sem medicamento indexado (nenhum nome, ou só remédio sem bula), principios_ativos fica
         # vazio e a busca vai a todas as bulas.
         deteccao = detectar(texto, acervo.catalogo)
         ativos, nao_indexados = deteccao.indexados[:MAX_MEDICAMENTOS_POR_PERGUNTA], deteccao.nao_indexados
+        if not responde and not ativos and not nao_indexados and (parecidos := sugerir(pergunta, acervo.catalogo)):
+            # Antes da conversa: "e o rocutan?" não é continuação da pergunta anterior.
+            return inicial | {"desfecho": "esclarecer", "esclarecimento": esclarecer_nome(parecidos)}
         continua = False
         if anterior and not responde and not pede_remedio(pergunta):
             if not ativos and not nao_indexados and (anterior.principios_ativos or eliptica(pergunta)):
@@ -534,8 +562,13 @@ def montar_grafo(acervo: Corpus, s: Settings):
             permitidos=[e["alergia_a"]] if e.get("alergia_a") else None,
         )
         if problemas:
-            so_nomes = all(p.endswith(grounding.SO_NOME) for p in problemas)
-            return reprovar(ErrorCode.RESPOSTA_NAO_VERIFICADA, "; ".join(problemas), DICA_SO_NOME if so_nomes else DICA_FUNDAMENTACAO)
+            if all(p.endswith(grounding.SO_NOME) for p in problemas):
+                dica = DICA_SO_NOME
+            elif all(p.endswith(grounding.NEGA) for p in problemas):
+                dica = DICA_NEGACAO
+            else:
+                dica = DICA_FUNDAMENTACAO
+            return reprovar(ErrorCode.RESPOSTA_NAO_VERIFICADA, "; ".join(problemas), dica)
         termos = _termos_da_pergunta(e)
         citadas = {f.chunk.secao for f in fontes if f.posicao in saida.citacoes}
         if not e.get("extrativa") and termos and not responde_ao_assunto([f for f, _ in frases], termos, citadas, e["secoes"]):

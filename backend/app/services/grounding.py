@@ -13,7 +13,11 @@ cabeçalho do trecho):
    [2]" passava como resposta a "estou tonto, qual o melhor?" (o nome está no cabeçalho).
 4. (com o catálogo) Remédio citado na afirmação é o do trecho ou aparece no texto dele. Sem isso,
    "a dipirona é contraindicada para crianças" passava citando a bula do omeprazol.
-Regras 3 e 4 entraram em 2026-10-16, com a busca em todas as bulas (docs/DECISOES.md, seção 20).
+5. Afirmação que nega ("não", "nunca", "nem") só passa se a frase do trecho que a sustenta também
+   nega ("não", "contraindicado", "evitar"...). As regras 1 a 3 comparam palavras, e "não é
+   indicado para dor no ouvido" tem as mesmas palavras de "é indicado para... ouvido".
+Regras 3 e 4 entraram em 2026-10-16, com a busca em todas as bulas (docs/DECISOES.md, seção 20);
+a 5, em 2026-10-18 (seção 28).
 
 É de propósito conservadora: paráfrase demais reprova, e a reprovação só custa outra rodada.
 
@@ -46,8 +50,13 @@ _PREFIXO = 5
 # Termos que a bula escreve de outro jeito: "alergia" na resposta, "hipersensibilidade" na bula.
 # (começo do termo na afirmação, começo da palavra que vale no trecho)
 _EQUIVALENTES = (("alerg", "hipersensib"), ("hipersensib", "alerg"))
-# Mensagem da regra 3 (o grafo reconhece por ela e manda um aviso específico na próxima rodada).
+# Mensagens das regras 3 e 5 (o grafo reconhece por elas e manda um aviso específico na próxima rodada).
 SO_NOME = "não diz nada do texto do trecho, só o nome do medicamento"
+NEGA = "nega o que o trecho não nega"
+# Regra 5. Na afirmação, só a negação explícita; no trecho, também as formas da bula de proibir
+# ("Não use na gravidez" diz o mesmo que "contraindicado na gravidez").
+_NEGA_NA_AFIRMACAO = re.compile(r"\b(?:nao|nunca|jamais|nem|nenhum|nenhuma)\b")
+_NEGA_NO_TRECHO = re.compile(r"\b(?:nao|nunca|jamais|nem|nenhum|nenhuma|contra-?indic\w*|evit\w*|proib\w*)\b")
 # Palavras de 4+ letras que não carregam informação da bula.
 _COMUNS = {
     "para", "como", "pode", "podem", "deve", "devem", "mais", "menos", "pelo", "pela", "pelos",
@@ -162,8 +171,10 @@ def checar(
     problemas = []
     for i, (texto, trecho) in enumerate(afirmacoes, start=1):
         achados = problemas_da_afirmacao(texto, refs[trecho], min_termos)
+        chunk = chunks_por_posicao[trecho]
+        if nega_sem_o_trecho(texto, chunk):
+            achados.append(NEGA)
         if catalogo is not None:
-            chunk = chunks_por_posicao[trecho]
             achados += [
                 f"fala de {nome}, mas o trecho é da bula de {chunk.medicamento}"
                 for nome in remedios_de_outra_bula(texto, chunk, catalogo)
@@ -266,3 +277,19 @@ def destaques_da_afirmacao(afirmacao: str, chunk: Chunk) -> list[tuple[int, int]
 def destaques(afirmacoes: list[str], chunk: Chunk) -> list[tuple[int, int]]:
     """Os destaques de todas as afirmações que citam o trecho, sem repetir frase."""
     return sorted({d for a in afirmacoes for d in destaques_da_afirmacao(a, chunk)})
+
+
+def nega_sem_o_trecho(afirmacao: str, chunk: Chunk) -> bool:
+    """Regra 5: uma frase da afirmação nega, mas nenhuma frase do trecho que sustenta ela nega.
+
+    Frase por frase: com a afirmação inteira, a outra frase dela puxa outras frases do trecho para o
+    apoio, e um "não" qualquer delas salvava a negação inventada. As frases que sustentam são as do
+    destaque; sem nenhuma (pouco em comum com o trecho), vale o trecho inteiro."""
+    for i, f in frases_com_posicao(afirmacao):
+        frase = afirmacao[i:f]
+        if not _NEGA_NA_AFIRMACAO.search(_preparar(frase)):
+            continue
+        apoio = [chunk.texto[a:b] for a, b in destaques_da_afirmacao(frase, chunk)] or [chunk.texto]
+        if not any(_NEGA_NO_TRECHO.search(_preparar(t)) for t in apoio):
+            return True
+    return False

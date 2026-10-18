@@ -187,9 +187,27 @@ def test_remedio_sem_bula_que_nenhuma_bula_cita(cliente, modelo):
     )
 
 
-def test_filtro_sem_bula_da_404(cliente):
-    r = cliente.post("/api/v1/perguntas", json={"pergunta": "Qual a dose máxima?", "principios_ativos": ["dipirona"]})
+def test_filtro_desconhecido_da_404(cliente):
+    r = cliente.post("/api/v1/perguntas", json={"pergunta": "Qual a dose máxima?", "principios_ativos": ["remediox"]})
     assert _erro(r) == (404, "MEDICAMENTO_NAO_ENCONTRADO")
+
+
+def test_nome_parecido_pergunta_qual_e_e_a_opcao_traz_a_classe_da_anvisa(cliente, modelo):
+    # Caso real (consulta b14b2d1a, 18/10; seção 28), com o catálogo real de data/.
+    pergunta = "Tomei rocutan para dor no ouvido, fiz certo?"
+    corpo = cliente.post("/api/v1/perguntas", json={"pergunta": pergunta}).json()
+    assert (corpo["status"], corpo["esclarecimento"]["opcoes"]) == (
+        "precisa_esclarecimento", [{"rotulo": "Roacutan (isotretinoína)", "principios_ativos": ["isotretinoína"]}],
+    )
+
+    # O botão: a mesma pergunta, com o princípio ativo da opção (sem bula: antes era 404).
+    modelo("indicacoes", RECUSA)
+    opcao = cliente.post("/api/v1/perguntas", json={
+        "pergunta": pergunta, "principios_ativos": ["isotretinoína"], "consulta_origem_id": corpo["consulta_id"],
+    }).json()
+    assert (opcao["status"], opcao["motivo"], opcao["classes_terapeuticas"]) == (
+        "nao_encontrada", "medicamento_nao_indexado", {"isotretinoina": "PRODUTOS ANTI-ACNE"},
+    )
 
 
 @pytest.mark.parametrize("corpo, campo", [

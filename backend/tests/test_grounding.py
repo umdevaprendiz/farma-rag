@@ -2,11 +2,13 @@ import pytest
 
 from app.schemas.dataset import Chunk
 from app.services.grounding import (
+    NEGA,
     Reference,
     checar,
     destaques,
     destaques_da_afirmacao,
     frases_com_posicao,
+    nega_sem_o_trecho,
     problemas_da_afirmacao,
 )
 from app.services.intent import inferir_secoes, termos_do_assunto
@@ -112,6 +114,50 @@ def test_alergia_vale_como_hipersensibilidade():
     assert problemas_da_afirmacao("É contraindicado em caso de alergia à exemplina", ref, 0.6) == []
     ref = Reference.de_chunk(_chunk("Não usar em caso de alergia à exemplina."))
     assert problemas_da_afirmacao("Não usar em caso de hipersensibilidade", ref, 0.6) == []
+
+
+# ---- Regra 5: negação (docs/DECISOES.md, seção 28) ---------------------------------------------
+
+# Caso real (consulta b14b2d1a, 18/10): "tomei rocutan para dor no ouvido, fiz certo?" foi respondida
+# com "Não, RoctoN não é indicado para dor no ouvido [...]" citando este trecho do diclofenaco, que diz
+# o contrário. As regras 1 a 4 aprovavam: as palavras são as mesmas, e "RoctoN" não está no catálogo.
+DICLOFENACO = _chunk(
+    "Este medicamento está indicado para o tratamento de: Formas degenerativas e inflamatórias de reumatismo: "
+    "artrite reumatoide; Crises agudas de gota; Como auxiliar no tratamento de processos infecciosos acompanhados "
+    "de dor e inflamação de ouvido, nariz ou garganta, como por exemplo, faringoamigdalites, otites. De acordo "
+    "com os princípios terapêuticos gerais, a doença de fundo deve ser tratada com a terapia básica "
+    "adequadamente. Febre isolada não é uma indicação."
+)
+
+
+def test_negacao_que_o_trecho_nao_tem_reprova():
+    resposta = (
+        "Não, RoctoN não é indicado para dor no ouvido. É recomendado consultar um médico para a avaliação "
+        "e tratamento adequado"
+    )
+    assert problemas_da_afirmacao(resposta, Reference.de_chunk(DICLOFENACO), 0.6) == []  # as regras 1-3 passam
+    assert checar([(resposta, 1)], {1: DICLOFENACO}, 0.6) == [f"afirmação 1, trecho [1]: {NEGA}"]
+
+
+def test_negacao_em_outra_frase_do_trecho_nao_vale():
+    # "Febre isolada não é uma indicação" nega outra coisa: quem sustenta a afirmação é a 1ª frase.
+    assert nega_sem_o_trecho("O medicamento não é indicado para inflamação de ouvido", DICLOFENACO)
+
+
+@pytest.mark.parametrize("afirmacao, trecho", [
+    ("Não use durante a gravidez", "Este medicamento é contraindicado durante a gravidez."),
+    ("Não deve ser usado na gravidez", "Este medicamento é contra-indicado durante a gravidez."),  # grafia antiga
+    ("Nunca use com álcool", "Evite o consumo de bebidas alcoólicas durante o tratamento."),
+    ("Exemplol 50 mg: Não usar em crianças com menos de 20 kg.", "Não usar em crianças com menos de 20 kg."),  # copiada
+    ("Febre isolada não é indicação para o uso", DICLOFENACO.texto),
+    ("Não há interação com alimentos", "Interações com alimentos: não foram observadas."),
+])
+def test_negacao_que_o_trecho_tambem_tem_passa(afirmacao, trecho):
+    assert not nega_sem_o_trecho(afirmacao, _chunk(trecho))
+
+
+def test_afirmacao_sem_negacao_nao_passa_pela_regra_5():
+    assert not nega_sem_o_trecho("É indicado como auxiliar no tratamento de otites", DICLOFENACO)
 
 
 # ---- Destaque das frases que sustentam a resposta (docs/DECISOES.md, seção 26) -----------------

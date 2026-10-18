@@ -15,7 +15,7 @@ from app.services import graph, rag
 from app.services.corpus import Corpus
 from app.services.intent import eliptica, pede_remedio, responde_ao_assunto, texto_apos_alergia
 from app.services.medicines import Catalog
-from app.services.rag import PreviousQuestion
+from app.services.rag import Option, PreviousQuestion
 from ingestion.generate_chunks import gerar_chunks
 from ingestion.process_leaflet import montar_bula
 
@@ -226,3 +226,40 @@ def test_pergunta_eliptica_sem_anterior_pergunta_o_remedio(acervo, monkeypatch):
     monkeypatch.setattr(ollama, "embed", lambda *a, **k: pytest.fail("não devia buscar"))
     r = rag.responder("E para criança?", acervo, s=S)
     assert (r.status, r.esclarecimento.pergunta, r.esclarecimento.opcoes) == ("precisa_esclarecimento", graph.PERGUNTA_REMEDIO, [])
+
+
+ROACUTAN_ANVISA = {
+    "associacao": False, "classe_terapeutica": "PRODUTOS ANTI-ACNE", "n_registros": 1,
+    "nome_produto": "ROACUTAN", "principios_ativos": ["isotretinoína"],
+}
+
+
+def test_nome_parecido_com_marca_pergunta_qual_e_e_a_opcao_segue_sem_bula(acervo, modelo, monkeypatch):
+    # Caso real (consulta b14b2d1a, 18/10; docs/DECISOES.md, seção 28): "rocutan" não era reconhecido,
+    # a busca geral achou "otites" na bula do diclofenaco e o modelo respondeu sobre "RoctoN".
+    acervo.catalogo = Catalog.montar(list(acervo.bulas.values()), ["dipirona"], [DIPIRONA_ANVISA, ROACUTAN_ANVISA])
+    pergunta = "Tomei rocutan para dor no ouvido, fiz certo?"
+    monkeypatch.setattr(ollama, "embed", lambda *a, **k: pytest.fail("pergunta antes de buscar"))
+    r = rag.responder(pergunta, acervo, s=S)
+    assert (r.status, r.esclarecimento.motivo, r.esclarecimento.opcoes) == (
+        "precisa_esclarecimento", "medicamento_nao_reconhecido", [Option("Roacutan (isotretinoína)", ["isotretinoína"])],
+    )
+    assert r.esclarecimento.pergunta == (
+        'Não reconheci "rocutan". É o Roacutan (isotretinoína)? Se não for, escreva o nome do remédio.'
+    )
+
+    # O botão reenvia a mesma pergunta com o princípio ativo da opção, que não tem bula: segue como
+    # remédio sem bula (nenhuma bula fala dele: "não encontrei", sem o LLM).
+    chamadas = modelo({(EXEMPLINA, "indicacoes"): 1.0}, ("Algo", 1))
+    anterior = PreviousQuestion(pergunta, [], True)
+    r = rag.responder(pergunta, acervo, ["isotretinoína"], s=S, anterior=anterior)
+    assert (r.status, r.motivo, r.medicamentos_nao_indexados) == ("nao_encontrada", "medicamento_nao_indexado", ["isotretinoina"])
+    assert (chamadas["embed"], chamadas["chat"]) == ([pergunta], [])  # a pergunta não vai repetida
+
+
+def test_resposta_a_um_esclarecimento_nao_pergunta_de_novo(acervo, modelo):
+    acervo.catalogo = Catalog.montar(list(acervo.bulas.values()), ["dipirona"], [DIPIRONA_ANVISA, ROACUTAN_ANVISA])
+    modelo({(EXEMPLINA, "indicacoes"): 1.0}, ("Algo", 1))
+    anterior = PreviousQuestion("Tomei rocutan para dor no ouvido, fiz certo?", [], True)
+    r = rag.responder("é outro, rocutan mesmo", acervo, s=S, anterior=anterior)
+    assert r.status != "precisa_esclarecimento"

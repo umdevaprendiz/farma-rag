@@ -128,7 +128,8 @@ ativos distintos) é versionado. Ao adaptar `Catalog.montar` para usá-lo:
 - `data/aliases_ignorados.txt`: nomes do catálogo que são palavra comum na pergunta (glicose,
   cafeína). Cresce conforme o benchmark mostrar falso positivo.
 - **Limites:** marca de medicamento não indexado não é reconhecida ("Dorflex", "Cataflam",
-  "Clavulin"): a pergunta segue sem filtro. Princípio ativo que só existe em associação
+  "Clavulin"): a pergunta segue sem filtro. **Mudou em 2026-10-18 (seção 28):** sem nenhum remédio
+  reconhecido, uma marca parecida com palavra da pergunta vira pergunta de volta ("é o Roacutan?"). Princípio ativo que só existe em associação
   ("clavulanato") também não. Formas diferentes do mesmo princípio ativo ("Voltaren gel") caem na
   mesma bula: quem resolve é o esclarecimento da rodada 0 (seção 14).
 
@@ -616,3 +617,52 @@ O arquivo de dados `data/processed/catalogo_anvisa.jsonl` mantém o nome (gerado
 
 As seções anteriores e o README foram atualizados onde citam classe, arquivo ou comando. Onde "bula", "fonte" ou
 "consulta" aparecem como palavra (e não como classe), continuam em português.
+
+## 28. Negação na fundamentação e nome parecido com marca da ANVISA (2026-10-18)
+Caso real (consulta `b14b2d1a`, teste pela tela): "tomei rocutan para dor no ouvido, fiz certo?" foi
+respondida com "Não, RoctoN não é indicado para dor no ouvido. É recomendado consultar um médico [...]
+[1]", citando as indicações do **diclofenaco**, que dizem o contrário ("auxiliar no tratamento de
+[...] inflamação de ouvido [...] otites"). Três falhas juntas:
+1. "rocutan" (Roacutan, isotretinoína) não foi reconhecido: nem "roacutan" escrito certo é, porque
+   marca de remédio sem bula fica fora do catálogo (seção 13). Sem remédio, a busca geral achou
+   "ouvido" no diclofenaco, e o modelo inventou o nome "RoctoN".
+2. A fundamentação compara palavras: "não é indicado para dor no ouvido" tem as palavras do trecho e
+   passava, assim como o contrário dela. "Médico" casava com "medicamento" pelo prefixo de 5 letras.
+3. A regra 4 (remédio certo) só pega nome que o catálogo conhece; "RoctoN" não é.
+
+**Regra 5 da fundamentação** (`grounding.nega_sem_o_trecho`): frase da afirmação que nega ("não",
+"nunca", "jamais", "nem", "nenhum") só passa se alguma frase do trecho que a sustenta (as do destaque,
+seção 26) também nega; no trecho também valem "contraindicado" (e "contra-indicado"), "evitar" e
+"proibido". A checagem é frase por frase da afirmação: com a afirmação inteira, a outra frase dela
+puxava outras frases do trecho para o apoio, e o "não" de qualquer uma ("Febre isolada não é uma
+indicação") salvava a negação inventada. Reprovação só por ela leva o aviso `DICA_NEGACAO`.
+- Conferida nas 81 respostas aprovadas do histórico (125 afirmações, 44 com negação): reprova 2, e as
+  2 estavam erradas ("não há dados [...] em crianças" citando estudo em ratos; "omeprazol com
+  clopidogrel não é recomendado" citando um trecho que não fala de clopidogrel).
+- **Limite:** o caminho inverso (a bula nega, a afirmação não: "pode usar na gravidez" citando "não
+  use na gravidez") não é checado; com cláusulas longas, reprovaria paráfrase certa demais. Fica para
+  o benchmark.
+
+**Nome parecido com marca da ANVISA** (`medicines.sugerir`, `graph.esclarecer_nome`): quando nenhum
+remédio é reconhecido e a pergunta não responde a um esclarecimento, palavras de 6+ letras que não
+são nome conhecido nem palavra das bulas são comparadas às marcas de uma palavra do registro da ANVISA
+(`Catalog.marcas`: 3.245, de um só princípio ativo, fora de associação, inclusive de remédio sem
+bula). Parecida (difflib, 0,85) → `precisa_esclarecimento` com motivo `medicamento_nao_reconhecido`:
+'Não reconheci "rocutan". É o Roacutan (isotretinoína)? Se não for, escreva o nome do remédio.', com
+uma opção por princípio ativo (até 3). Pergunta em vez de adivinhar: a marca não decide nada sozinha,
+e por isso a seção 13 continua valendo para a detecção.
+- 0,85 porque uma letra trocada numa marca de 8 letras dá 0,875 ("buscopam"). Medido com 159
+  perguntas (110 do histórico, 49 de balcão): o único falso positivo era palavra + sufixo ("herpes
+  labial" → HERPESIL), descartado (marca que começa com a palavra e tem 2+ letras a mais).
+- A sugestão vem antes da conversa: "e o rocutan?" não continua a pergunta anterior.
+- **Filtro (seção 5):** o botão reenvia a pergunta com o princípio ativo da opção. O filtro passa a
+  aceitar remédio conhecido sem bula, que segue como na pergunta escrita (busca nas bulas que falam
+  dele, `medicamentos_nao_indexados`, classe terapêutica da ANVISA); só nome desconhecido dá 404
+  `MEDICAMENTO_NAO_ENCONTRADO`. Antes, todo nome sem bula dava 404.
+- O reenvio pelo botão traz a mesma pergunta com `consulta_origem_id` do esclarecimento: o texto não
+  é repetido na busca.
+- Resultado no caso real: depois do botão, "não encontrei nas bulas" (nenhuma bula fala de
+  isotretinoína, sem LLM) e "Para que serve, pelo registro na ANVISA: isotretinoina: PRODUTOS
+  ANTI-ACNE", que é o porquê de não servir para dor de ouvido.
+- Ainda não: o conselho genérico do modelo ("consulte um médico") passa pelas regras 1 a 3; fica para
+  o aviso fixo da tela (F2) e o prompt.

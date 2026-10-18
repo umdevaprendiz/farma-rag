@@ -3,7 +3,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 from app.services.medicines import (
-    Catalog, carregar_catalogo_anvisa, carregar_conhecidos, chave_principio, detectar, normalizar,
+    Catalog, Suggestion, carregar_catalogo_anvisa, carregar_conhecidos, chave_principio, detectar, normalizar, sugerir,
 )
 
 RAIZ = Path(__file__).resolve().parents[2]
@@ -234,6 +234,55 @@ def test_classe_terapeutica_do_registro_anvisa():
     assert cat.classe_de("dipirona") == "ANALGESICOS NAO NARCOTICOS"  # a mais registrada
     assert cat.classe_de("Loperamida") == "ANTIDIARREICOS"  # pelo núcleo, sem o sal
     assert cat.classe_de("captopril") is None
+
+
+# --- Sugestão de marca do registro da ANVISA (docs/DECISOES.md, seção 28) ---
+
+def test_marca_sem_bula_com_erro_de_digitacao_vira_sugestao():
+    # A detecção não usa marca de remédio sem bula (seção 13); a sugestão só pergunta de volta.
+    assert detectar("tomei meticortem para dor no ouvido", CAT_ANVISA) == NADA
+    assert sugerir("tomei meticortem para dor no ouvido", CAT_ANVISA) == [
+        Suggestion("meticortem", "Meticorten", "prednisona")
+    ]
+
+
+def test_marca_sem_bula_escrita_certo_tambem_vira_sugestao():
+    assert sugerir("Cataflam serve para dor?", CAT_ANVISA) == [
+        Suggestion("cataflam", "Cataflam", "diclofenaco potássico")
+    ]
+
+
+def test_marca_de_indexado_com_erro_de_digitacao_vira_sugestao():
+    assert sugerir("buscopam pra cólica", CAT_ANVISA) == [
+        Suggestion("buscopam", "Buscopan", "butilbrometo de escopolamina")
+    ]
+
+
+def test_sem_sugestao_para_palavra_das_bulas_nome_conhecido_ou_marca_ambigua():
+    cat = Catalog.montar(BULAS_ANVISA, anvisa=ANVISA, vocabulario=["intestino"])
+    assert sugerir("isso prende o intestino?", cat) == []  # "intestino" x INTESTIN
+    assert sugerir("prednisona dá sono?", CAT_ANVISA) == []  # já é nome conhecido
+    assert sugerir("alivum serve?", CAT_ANVISA) == []  # ALIVIUM em dois princípios ativos
+
+
+def test_resolver_diz_se_o_nome_tem_bula():
+    assert CAT_ANVISA.resolver("Novalgina") == ("dipirona monoidratada", None)
+    assert CAT_ANVISA.resolver("prednisona") == (None, "prednisona")
+    assert CAT_ANVISA.resolver("remediox") == (None, None)
+
+
+def test_rocutan_no_catalogo_real():
+    # Caso real (consulta b14b2d1a, 18/10): "rocutan" não era reconhecido e a resposta veio da bula
+    # do diclofenaco. "herpes labial" não pode perguntar "é o Herpesil?": é a palavra, com sufixo.
+    cat = Catalog.montar(
+        [], carregar_conhecidos(RAIZ / "data/medicamentos_conhecidos.txt"),
+        carregar_catalogo_anvisa(RAIZ / "data/processed/catalogo_anvisa.jsonl"),
+        carregar_conhecidos(RAIZ / "data/aliases_ignorados.txt"),
+    )
+    assert sugerir("tomei rocutan para dor no ouvido, fiz certo?", cat) == [
+        Suggestion("rocutan", "Roacutan", "isotretinoína")
+    ]
+    assert sugerir("herpes labial", cat) == []
 
 
 def test_nome_com_sal_do_catalogo_e_reconhecido_sem_o_sal():

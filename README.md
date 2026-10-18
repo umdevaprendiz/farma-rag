@@ -185,7 +185,7 @@ Cada falha tem código próprio e status HTTP definido (`app/schemas/api.py`):
 
 | Código | HTTP | Quando |
 |---|---|---|
-| `MEDICAMENTO_NAO_ENCONTRADO` | 404 | Filtro com princípio ativo sem bula indexada |
+| `MEDICAMENTO_NAO_ENCONTRADO` | 404 | Filtro com um nome que o catálogo não conhece (conhecido sem bula segue como remédio sem bula) |
 | `CONSULTA_NAO_ENCONTRADA` | 404 | `GET /historico/{id}` de uma consulta que não existe |
 | `ENTRADA_INVALIDA` | 422 | Pergunta fora de 5–500 caracteres, filtro vazio, mais de 3 medicamentos, paginação inválida |
 | `SAIDA_INVALIDA` | 502 | O modelo devolveu JSON quebrado até a última rodada |

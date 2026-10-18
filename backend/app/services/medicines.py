@@ -2,8 +2,9 @@
 
 Três resultados possíveis por pergunta:
 - medicamentos indexados encontrados -> busca filtrada por eles;
-- só medicamentos conhecidos, mas sem bula indexada -> nao_encontrada, sem chamar o LLM;
-- nenhum medicamento reconhecido -> o grafo pede esclarecimento (services/graph.py, nó esclarecer).
+- só medicamentos conhecidos, mas sem bula indexada -> busca geral, nas bulas que falam deles;
+- nenhum medicamento reconhecido -> busca geral; antes, se uma palavra parece uma marca do
+  registro da ANVISA (`sugerir`), o grafo pergunta "é o Roacutan (isotretinoína)?".
 """
 
 import difflib
@@ -39,6 +40,13 @@ _PALAVRAS_GENERICAS = {"acido", "vitamina", "sodio", "potassio", "calcio"}
 _MIN_ALIAS_PALAVRA = 5
 _MIN_ALIAS_FUZZY = 6
 _CUTOFF_FUZZY = 0.88
+# Sugestão de nome (marca do registro da ANVISA parecida com uma palavra da pergunta): mais
+# tolerante que a detecção, porque só pergunta de volta. Uma letra trocada numa marca de 8 letras
+# dá 0,875 ("buscopam"); "rocutan" x "roacutan", 0,933. Medido em 2026-10-18 com 159 perguntas
+# (110 do histórico): o único falso positivo era palavra + sufixo ("herpes" -> HERPESIL), que
+# `sugerir` descarta.
+_CUTOFF_SUGESTAO = 0.85
+_MAX_SUGESTOES = 3
 
 
 def normalizar(texto: str) -> str:
@@ -114,10 +122,22 @@ class Catalog:
     # alias -> classe terapêutica no registro da ANVISA ("dipirona" -> "ANALGESICOS NAO NARCOTICOS").
     # É o que se sabe de um remédio sem bula no acervo: para que ele serve, por fonte oficial.
     classes: dict[str, str] = field(default_factory=dict)
+    # Marca de uma palavra do registro da ANVISA -> (nome para mostrar, princípio ativo), também as
+    # de remédio sem bula, que a detecção não usa (seção 13). Só para perguntar de volta "é o
+    # Roacutan (isotretinoína)?" quando nenhum remédio foi reconhecido (seção 28).
+    marcas: dict[str, tuple[str, str]] = field(default_factory=dict)
 
     def classe_de(self, nome: str) -> str | None:
         """Classe terapêutica mais registrada para o princípio ativo (sem acento, como no CSV)."""
         return next((self.classes[a] for a in sorted(_aliases(nome), key=len, reverse=True) if a in self.classes), None)
+
+    def resolver(self, nome: str) -> tuple[str | None, str | None]:
+        """(princípio ativo indexado, nome conhecido sem bula): no máximo um dos dois; os dois None =
+        nome desconhecido."""
+        alias = normalizar(nome)
+        if alias in self.indexados:
+            return self.indexados[alias], None
+        return None, self.nao_indexados.get(alias)
 
     @cached_property
     def max_palavras(self) -> int:
@@ -199,7 +219,57 @@ class Catalog:
             if nome not in indexados and _contem(nome.split(" "), indexados, max_palavras):
                 nao_indexados.setdefault(nome, nome)
         classes = {alias: c.most_common(1)[0][0] for alias, c in contagem_classes.items()}
-        return cls(indexados, nao_indexados, so_exato, set(vocabulario), classes)
+        catalogo = cls(indexados, nao_indexados, so_exato, set(vocabulario), classes)
+        catalogo.marcas = _marcas_para_sugerir(anvisa, catalogo, ignorar)
+        return catalogo
+
+
+def _marcas_para_sugerir(anvisa: Iterable[dict], catalogo: Catalog, ignorar: set[str]) -> dict[str, tuple[str, str]]:
+    """Marcas de uma palavra, de 6+ letras, de um único princípio ativo (nem em associação), que não
+    são palavra das bulas e cujo princípio o catálogo conhece (o filtro da API aceita a escolha)."""
+    principios: dict[str, set[str]] = defaultdict(set)
+    nomes: dict[str, str] = {}
+    for item in anvisa:
+        alias = normalizar(item["nome_produto"])
+        if " " in alias or len(alias) < _MIN_ALIAS_FUZZY or not _serve(alias, ignorar) or alias in catalogo.vocabulario:
+            continue
+        principios[alias].add("+" if item["associacao"] else item["principios_ativos"][0])
+        nomes[alias] = item["nome_produto"].strip().title()
+    marcas = {}
+    for alias, ps in principios.items():
+        principio = next(iter(ps))
+        if len(ps) == 1 and principio != "+" and any(catalogo.resolver(principio)):
+            marcas[alias] = (nomes[alias], principio)
+    return marcas
+
+
+@dataclass(frozen=True)
+class Suggestion:
+    palavra: str  # como veio na pergunta, normalizada ("rocutan")
+    nome: str  # a marca no registro da ANVISA ("Roacutan")
+    principio_ativo: str  # como no catálogo ("isotretinoína")
+
+
+def sugerir(pergunta: str, catalogo: Catalog) -> list[Suggestion]:
+    """Marcas do registro da ANVISA parecidas com palavras da pergunta que não são nome conhecido
+    nem palavra das bulas: "rocutan" -> Roacutan (isotretinoína). No máximo _MAX_SUGESTOES, uma
+    por princípio ativo."""
+    candidatas = list(catalogo.marcas)
+    saida: dict[str, Suggestion] = {}
+    for palavra in dict.fromkeys(normalizar(pergunta).split(" ")):
+        if (
+            len(palavra) < _MIN_ALIAS_FUZZY
+            or palavra in catalogo.vocabulario
+            or palavra in catalogo.indexados
+            or palavra in catalogo.nao_indexados
+        ):
+            continue
+        for alias in difflib.get_close_matches(palavra, candidatas, n=_MAX_SUGESTOES + 2, cutoff=_CUTOFF_SUGESTAO):
+            if alias.startswith(palavra) and len(alias) - len(palavra) >= 2:
+                continue  # palavra + sufixo é a palavra, não erro de digitação ("herpes" x HERPESIL)
+            nome, principio = catalogo.marcas[alias]
+            saida.setdefault(normalizar(principio), Suggestion(palavra, nome, principio))
+    return list(saida.values())[:_MAX_SUGESTOES]
 
 
 def carregar_conhecidos(caminho: str | Path) -> list[str]:
