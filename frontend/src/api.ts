@@ -44,6 +44,8 @@ export interface Answer {
   esclarecimento: Clarification | null;
   rodadas: number;
   motivo: "sem_contexto" | "medicamento_nao_indexado" | null;
+  // Pergunta de para que serve: o veredito montado pelo sistema a partir das indicações da bula.
+  conclusao: string | null;
   resposta: string | null;
   fontes: Source[];
   medicamentos_nao_indexados: string[];
@@ -87,6 +89,7 @@ export interface History {
 
 export interface InquiryDetail extends InquirySummary {
   principios_ativos_filtro: string[];
+  conclusao: string | null;
   resposta: string | null;
   motivo: string | null;
   codigo_erro: ErrorCode | null;

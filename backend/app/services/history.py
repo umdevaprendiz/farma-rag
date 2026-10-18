@@ -42,6 +42,7 @@ def gravar(
         principios_ativos_filtro=entrada.principios_ativos,
         principios_ativos=r.principios_ativos,
         resposta=r.resposta,
+        conclusao=r.conclusao,
         status=r.status,
         motivo=r.motivo or (r.esclarecimento.motivo if r.esclarecimento else None),
         codigo_erro=r.codigo_erro.value if r.codigo_erro else None,

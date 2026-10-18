@@ -208,6 +208,22 @@ def test_nome_parecido_pergunta_qual_e_e_a_opcao_traz_a_classe_da_anvisa(cliente
     assert (opcao["status"], opcao["motivo"], opcao["classes_terapeuticas"]) == (
         "nao_encontrada", "medicamento_nao_indexado", {"isotretinoina": "PRODUTOS ANTI-ACNE"},
     )
+    # Pergunta de para que serve, sem a bula no acervo: a classe, sem concluir (seção 29).
+    assert opcao["conclusao"] == (
+        "A bula de isotretinoina não está no acervo, então não dá para dizer se é indicado para dor no ouvido. "
+        "Pelo registro na ANVISA, é da classe produtos anti-acne."
+    )
+
+
+def test_pergunta_de_uso_traz_a_conclusao_e_o_historico_guarda(cliente, monkeypatch, modelo):
+    modelo("indicacoes", RECUSA)
+    monkeypatch.setattr(ollama, "chat", lambda *a, **k: pytest.fail("a resposta vem das indicações, sem o LLM"))
+    corpo = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol serve para ansiedade?"}).json()
+    assert (corpo["status"], corpo["extrativa"]) == ("respondida", True)
+    assert corpo["conclusao"].startswith("Não. Ansiedade não está entre as indicações da bula de exemplina")
+    assert corpo["fontes"][0]["rotulo_secao"] == "Indicações"
+    detalhe = cliente.get(f"/api/v1/historico/{corpo['consulta_id']}").json()
+    assert detalhe["conclusao"] == corpo["conclusao"]
 
 
 @pytest.mark.parametrize("corpo, campo", [

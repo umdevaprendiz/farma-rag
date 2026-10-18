@@ -66,6 +66,9 @@ _RODAPES_COLADOS = [
 ]
 _FIM_DE_BULA = re.compile(r"historico de alteracao")
 _INICIO_DE_BULA = re.compile(r"modelo de bula (?:para|do) (?:o )?profissiona")
+# A EMS não imprime "MODELO DE BULA...": cada bula do PDF começa em "I - IDENTIFICAÇÃO DO MEDICAMENTO"
+# (o AAS traz a de 500 mg e a de 100 mg, com indicações diferentes).
+_IDENTIFICACAO = re.compile(r"^i identificacao do medicamento$")
 _REGISTRO = re.compile(
     r"(?:M\.?\s?S\.?|Reg(?:istro)?\.?)[^\d\n]{0,25}(\d\.\s?\d{4}\.\s?\d{4})(?:\.\d{3}-\d)?", re.IGNORECASE
 )
@@ -213,7 +216,8 @@ def _partes(paginas: list[str]) -> list[tuple[list[tuple[int, str]], str | None]
     """Linhas (página, texto) de cada bula do PDF, com o código de versão Geolab dela.
 
     Do "Histórico de Alteração" até o próximo "MODELO DE BULA..." tudo é descartado. Um novo
-    "MODELO DE BULA..." no meio de uma bula também abre outra (PDF sem a tabela entre elas).
+    "MODELO DE BULA..." no meio de uma bula também abre outra (PDF sem a tabela entre elas). Depois
+    do histórico, "I - IDENTIFICAÇÃO DO MEDICAMENTO" também abre a próxima (bula sem esse cabeçalho).
     """
     partes: list[tuple[list[tuple[int, str]], str | None]] = []
     atual: list[tuple[int, str]] = []
@@ -226,6 +230,8 @@ def _partes(paginas: list[str]) -> list[tuple[list[tuple[int, str]], str | None]
                 if dentro and any(_titulo(l) for _, l in atual):
                     partes.append((atual, versao))
                     atual, versao = [], None
+                dentro = True
+            elif not dentro and _IDENTIFICACAO.match(norm):
                 dentro = True
             if _FIM_DE_BULA.search(norm):
                 if atual:

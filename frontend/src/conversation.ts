@@ -7,6 +7,7 @@ import type { Answer, ApiError, Clarification, ErrorCode, InquiryDetail, Questio
 export interface View {
   consultaId: string | null; // nulo quando a pergunta nem chegou à API
   status: "respondida" | "nao_encontrada" | "precisa_esclarecimento" | "erro";
+  conclusao: string | null; // pergunta de para que serve: o veredito pelas indicações da bula
   texto: string | null;
   motivo: string | null;
   fontes: Source[];
@@ -31,6 +32,7 @@ export function daResposta(r: Answer): View {
   return {
     consultaId: r.consulta_id,
     status: r.status,
+    conclusao: r.conclusao,
     texto: r.resposta,
     motivo: r.motivo,
     fontes: r.fontes,
@@ -51,6 +53,7 @@ export function doHistorico(c: InquiryDetail): View {
   return {
     consultaId: c.id,
     status: c.status,
+    conclusao: c.conclusao ?? null, // consulta antiga, de antes da coluna, vem sem
     texto: c.resposta,
     motivo: c.motivo,
     fontes: c.fontes,
@@ -71,6 +74,7 @@ export function doErro(e: ApiError): View {
   return {
     consultaId: e.consultaId, // a pergunta seguinte continua desta, mesmo depois do erro
     status: "erro",
+    conclusao: null,
     texto: null,
     motivo: null,
     fontes: [],

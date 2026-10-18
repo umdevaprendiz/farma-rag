@@ -26,6 +26,7 @@ _COLUNAS_NOVAS = (
     ("consulta_fontes", "fabricante", "text"),
     ("consulta_fontes", "numero_registro", "text"),
     ("consulta_fontes", "destaques", "jsonb"),
+    ("consultas", "conclusao", "text"),
 )
 
 

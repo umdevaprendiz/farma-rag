@@ -28,6 +28,7 @@ Três regras definem o projeto e moldam o código:
 | Só responde com base nas bulas indexadas | O prompt recebe apenas os trechos recuperados; o JSON Schema da saída só aceita números de trechos que foram enviados |
 | Toda frase traz a fonte (medicamento, fabricante, registro, seção, página, data da versão) | O modelo devolve afirmações `{texto, trecho}`; o marcador `[n]` é montado no código; `validar_saida` recusa citação inexistente e a checagem de fundamentação recusa frase que não está no trecho, frase que é só o nome do remédio e frase sobre um remédio citando a bula de outro |
 | Responde qualquer pergunta sobre remédio, sempre com o que as bulas dizem | Sem remédio na pergunta ("melhor remédio pra dor de cabeça", "tenho alergia, posso tomar outro?"), **busca híbrida** em todas as bulas: semelhança, seção que a pergunta indica, palavra do assunto no trecho ("tonto" → tontura, vertigem) e um trecho por medicamento. Se nenhuma bula fala do assunto, "não encontrei", sem chamar o LLM |
+| Para que serve: o que não está nas indicações da bula não é indicado | Pergunta de uso ("paracetamol serve para ansiedade?", "tomei X para Y") é respondida pela seção de indicações, sem LLM: as frases da bula e uma conclusão montada no código (citado, só dor em geral, ou "não está entre as indicações: pela bula, não é indicado"). Remédio sem bula: a classe da ANVISA, sem concluir. Pergunta com outra condição junto ("se tenho dengue", "estando grávida", "para criança") segue o caminho normal |
 
 Tudo roda na própria máquina com [Ollama](https://ollama.com), sem API paga e sem nuvem. O hardware de desenvolvimento é só CPU (i5-10210U, 16 GB, sem GPU NVIDIA), e isso pesa em quase todas as decisões de latência.
 
@@ -63,12 +64,13 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 | Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citations.py` |
 | Agente em grafo (LangGraph, 6 nós, rodadas 1 a 3) | ✅ pronto, testado com LLM falso e com o LLM real nas 24 bulas | `app/services/graph.py` |
 | Teste manual pelo terminal | ✅ pronto | `python -m benchmark.ask` |
-| Testes automáticos | ✅ 246 testes; os 30 de banco rodam num schema temporário e são pulados sem o PostgreSQL | `backend/tests/` |
-| Bulas reais: 21 PDFs → 25 bulas, 906 trechos com embedding, no banco; tabela de interações lida como tabela | ✅ 21 de 40 medicamentos | `data/bulas_manifesto.json`, `data/processed/bulas/`, `ingestion/extract_pdf.py` |
+| Testes automáticos | ✅ 303 testes; os de banco rodam num schema temporário e são pulados sem o PostgreSQL | `backend/tests/` |
+| Bulas reais: 31 PDFs → 37 bulas, 1.384 trechos com embedding, no banco; tabela de interações lida como tabela | ✅ 28 de 40 medicamentos do MVP, mais zolpidem, sertralina e isotretinoína | `data/bulas_manifesto.json`, `data/processed/bulas/`, `ingestion/extract_pdf.py` |
 | Checagem de fundamentação (números, doses, termos, "só o nome" não vale, remédio certo) e de assunto (a resposta responde à pergunta) | ✅ pronto | `app/services/grounding.py`, `app/services/intent.py` |
 | Pergunta sem remédio ou com remédio sem bula: busca híbrida em todas as bulas, um trecho por medicamento | ✅ pronto, testado com o LLM real | `app/services/graph.py`, `app/services/intent.py` |
 | Conversa: pergunta seguinte ("e para criança?"), alergia com pergunta de volta e alternativas da mesma classe | ✅ pronto, testado com o LLM real | `app/services/graph.py`, `app/services/intent.py` |
 | Respostas copiadas da bula, sem LLM (dose, interação entre remédios citados, alternativas na alergia) | ✅ pronto | `app/services/extract.py` |
+| Para que serve, pelas indicações da bula, com conclusão (citado / geral / não indicado) | ✅ pronto, testado com LLM falso | `app/services/indication.py` |
 | Para que serve o remédio sem bula: classe terapêutica do registro na ANVISA | ✅ pronto | `app/services/medicines.py` |
 | "Não ajudou": outra explicação sem os trechos citados, e destaque das frases da bula que sustentam cada afirmação | 🟡 pronto no grafo, testado com LLM falso; faltam a API e a tela | `app/services/graph.py`, `app/services/grounding.py` |
 | Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metrics.py` |
@@ -132,7 +134,7 @@ A busca fica atrás do `Protocol` `VectorSearch`. `InMemoryIndex` (numpy) e `Pgv
 |---|---|---|
 | Validar o PDF | `ingestion/validate_leaflet_pdf.py` | Checagem de segurança antes de abrir: procura JavaScript, ações automáticas e arquivos embutidos (inclusive com nome ofuscado e dentro de streams comprimidos) e calcula o SHA-256 |
 | Extrair texto | `ingestion/extract_pdf.py` | `pdfplumber`, texto por página |
-| Separar bulas | `ingestion/split_sections.py` | Um PDF pode trazer várias bulas (Tylalgin: gotas, comprimido e sachê). Cada uma termina na tabela "Histórico de Alteração", que é descartada, e a próxima começa em "MODELO DE BULA...". Lê também o código de versão impresso e o nº de registro de cada uma |
+| Separar bulas | `ingestion/split_sections.py` | Um PDF pode trazer várias bulas (Tylalgin: gotas, comprimido e sachê). Cada uma termina na tabela "Histórico de Alteração", que é descartada, e a próxima começa em "MODELO DE BULA..." (ou, na EMS, que não imprime esse cabeçalho, em "I - IDENTIFICAÇÃO DO MEDICAMENTO": AAS 500 e 100 mg no mesmo PDF). Lê também o código de versão impresso e o nº de registro de cada uma |
 | Separar seções | `ingestion/split_sections.py` | Regex sobre os títulos padronizados pela ANVISA, com as variações das bulas reais (singular, erro de digitação, rodapé colado no título). Remissão "(veja o item 8. POSOLOGIA...)" não abre seção; referências bibliográficas são puladas; hífen de palavra composta no fim da linha é mantido. Guarda `\f` onde a página vira |
 | Montar as bulas | `ingestion/process_batch.py` | Lê `data/bulas_manifesto.json` e, antes de gravar, confere SHA-256 (o mesmo do `FONTES.md`), quantas bulas há no PDF e o registro impresso em cada uma. Gera `data/processed/bulas/<id>.json` pelo contrato `Leaflet`, com registro, forma farmacêutica e versão. `process_leaflet.py` faz o mesmo para uma bula avulsa |
 | Dividir em trechos | `ingestion/generate_chunks.py` | ~300 tokens com sobreposição de 50, sem misturar seções; cada trecho guarda a página em que começa. Tokens estimados em 3,3 caracteres por token |
@@ -162,7 +164,7 @@ flowchart TD
 | Nó | LLM | O que faz |
 |---|---|---|
 | `entender` | não | Detecta o medicamento (ou aplica o filtro) e infere as seções da pergunta (`services/intent.py`: "gravidez" → contraindicações e advertências, "dose" → posologia…) |
-| `buscar` | não (embedding, 1 vez só) | Com medicamento indexado: rodada 1 top_k por semelhança na bula dele; rodadas seguintes, trechos das seções indicadas, os ainda não usados primeiro. Sem medicamento indexado (nenhum nome, ou só remédio sem bula): **busca geral**, todas as bulas, só nas seções indicadas e um trecho por princípio ativo (`TOP_K_GERAL=4`), para a resposta trazer as opções. No "não ajudou", começa como numa rodada seguinte: sem os trechos citados na resposta anterior e com os já enviados no fim da fila |
+| `buscar` | não (embedding, 1 vez só) | Pergunta de para que serve: as frases da seção de indicações e a conclusão (`services/indication.py`), sem LLM; de remédio sem bula, nem busca. Com medicamento indexado: rodada 1 top_k por semelhança na bula dele; rodadas seguintes, trechos das seções indicadas, os ainda não usados primeiro. Sem medicamento indexado (nenhum nome, ou só remédio sem bula): **busca geral**, todas as bulas, só nas seções indicadas e um trecho por princípio ativo (`TOP_K_GERAL=4`), para a resposta trazer as opções. No "não ajudou", começa como numa rodada seguinte: sem os trechos citados na resposta anterior e com os já enviados no fim da fila |
 | `gerar` | **sim** | Geração com JSON Schema. Da rodada 2 em diante, uma observação genérica diz o que falhou (sem repetir a afirmação errada, que o modelo copiaria). Se a pergunta cita remédio sem bula, a observação avisa que não há trechos dele, para o modelo não atribuir a ele o que a bula de outro diz |
 | `validar` | não | `validar_saida` + checagem de fundamentação (`services/grounding.py`): todo número tem de estar no trecho citado, todo número com unidade de dose com a mesma unidade, a maioria dos termos da frase também, algum termo além do nome do remédio tem de estar no texto do trecho, e remédio citado na frase tem de ser o do trecho ou aparecer nele |
 | `verificar_llm` | **sim** | Só na rodada 3: "o trecho diz isso? sim/não" por afirmação. Pode usar um modelo maior (`LLM_MODELO_VERIFICACAO`) sem deixar a pergunta comum mais lenta |
@@ -357,7 +359,7 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 
 ### 1. Bulas reais
 
-21 dos 40 medicamentos do MVP (`data/medicamentos_mvp.json`) viraram 25 bulas, com trechos e embeddings no banco (a dipirona entrou no lote 2). As 19 restantes (AAS, amoxicilina, loperamida...) não têm bula do profissional em site oficial aberto: ficam para download manual no Bulário Eletrônico, com a verificação de segurança de `data/FONTES.md` antes de entrar no manifesto. A tabela de interações já é lida como tabela; as outras (ex.: doses por peso) ainda saem como texto corrido.
+28 dos 40 medicamentos do MVP (`data/medicamentos_mvp.json`), mais zolpidem, sertralina e isotretinoína (perguntas reais que voltavam "não encontrei"), viraram 37 bulas, com trechos e embeddings no banco. O lote 3 (2026-10-18) teve a procedência de cada site analisada antes do download (`data/FONTES.md`): Geolab, o portal de bulas da EMS (sara.com.br) e Libbs. Dos 12 restantes, 3 aguardam decisão por ressalva de procedência (Abbott, Germed, Sandoz) e os outros ficam para download manual no Bulário Eletrônico. A tabela de interações já é lida como tabela; as outras (ex.: doses por peso) ainda saem como texto corrido.
 
 ### 2. O que falta do agente
 

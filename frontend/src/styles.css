@@ -416,6 +416,10 @@ button {
   line-height: 1.7;
 }
 
+.conclusao {
+  font-weight: 600;
+}
+
 .citacao {
   display: inline-flex;
   align-items: center;

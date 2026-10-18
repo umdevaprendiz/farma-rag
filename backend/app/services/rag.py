@@ -127,6 +127,9 @@ class Result:
     continuacao: bool = False  # usou a pergunta anterior (remédio herdado ou resposta a esclarecimento)
     alergia_a: str | None = None  # remédio da alergia: a resposta traz alternativas a ele
     extrativa: bool = False  # a resposta são frases copiadas da bula, sem o LLM (services/extract.py)
+    # Pergunta de para que serve (services/indication.py): o veredito montado no código pela seção
+    # de indicações ("Não. Ansiedade não está entre as indicações da bula de paracetamol...").
+    conclusao: str | None = None
     outra_explicacao: bool = False  # refez uma resposta que não ajudou, sem os trechos dela
 
 

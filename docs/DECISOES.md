@@ -666,3 +666,57 @@ e por isso a seção 13 continua valendo para a detecção.
   ANTI-ACNE", que é o porquê de não servir para dor de ouvido.
 - Ainda não: o conselho genérico do modelo ("consulte um médico") passa pelas regras 1 a 3; fica para
   o aviso fixo da tela (F2) e o prompt.
+
+## 29. Para que serve: o que não está nas indicações não é indicado, e o lote 3 (2026-10-18)
+
+**Caso real (18/10, depois do §28):** "oque acha de eu tomar zolpidem para nauséa?", "certralina é pra
+vomito?" e "paracetamol serve para ansiedade?" voltaram "não encontrei". Os dois primeiros não tinham
+bula; no terceiro, a rodada 2 enviou as três indicações do Tylalgin e o modelo recusou, porque
+nenhum trecho fala de ansiedade. Pedido do usuário: "o que cada medicamento faz, pra que serve; e se
+não está escrito para que serve, não é indicado".
+
+**A regra** (`services/indication.py`, caminho novo no `buscar`, sem LLM): a bula do profissional lista
+as indicações aprovadas; o que não está nela é uso fora da bula. Pergunta de uso ("X serve para Y?",
+"é pra", "é bom para", "tomei X para Y", "para que serve X?") é respondida com as frases da seção de
+indicações, copiadas como estão (no máximo 2 por bula, 4 no total), e uma **conclusão montada no
+código** (`Result.conclusao`, `AnswerOut.conclusao`, coluna `consultas.conclusao`), que a tela mostra
+em negrito antes das frases:
+- **citado** (metade ou mais das palavras do uso aparecem numa frase sem negação): "Sim. Pela bula
+  de paracetamol, é indicado para isso:" (sem dizer que a palavra está na bula: "espinha" casa com
+  "acne" pelo sinônimo);
+- **ressalva** (só aparece em frase que nega: "não é recomendado trocar ... na insuficiência
+  cardíaca", Cozaar): mostra a frase, sem sim nem não;
+- **geral** (o uso é uma dor que a bula não cita, mas ela indica para dor: "dor no ouvido" e o
+  paracetamol, "dores leves a moderadas"): "não cita dor no ouvido; indica para dor de forma geral";
+- **ausente**: "Não. Ansiedade não está entre as indicações da bula de paracetamol: pela bula, não é
+  indicado para isso. A bula indica:" e as frases.
+- **Remédio sem bula no acervo**: sem busca (as outras bulas só o citam de passagem, numa interação)
+  e sem concluir: "A bula de X não está no acervo, então não dá para dizer se é indicado para Y. Pelo
+  registro na ANVISA, é da classe ...". Decisão do usuário: a classe é grosseira (o clonazepam é
+  "anticonvulsivante" e a bula dele indica pânico), concluir por ela seria inventar.
+
+Cuidados:
+- **Pergunta com outra condição não entra** ("ibuprofeno para dor se tenho dengue?", "dipirona para
+  dor de cabeça estando grávida?", "para criança?", dose, interação): segue o caminho normal, que lê
+  contraindicação, advertência ou posologia. Senão o "sim, é indicado" esconderia a contraindicação.
+- Comparação por começo de palavra, como a busca, com sinônimos de como a pessoa fala ("ouvido" →
+  otite, "insônia", "espinha" → acne). Falsos amigos tratados: "febre do feno" (loratadina) e "febre
+  ou outras alergias" (oximetazolina) são rinite alérgica, não febre.
+- "Não" que descreve a doença ("reumatismo não articular", "diabetes não dependente de insulina") não
+  é negação da indicação; só "não é", "não deve", "não é recomendado", "contraindicado".
+- "E para dor de cabeça?" depois de uma pergunta de uso é outra pergunta de uso do mesmo remédio;
+  depois de outra pergunta, não.
+- O uso volta como a pessoa escreveu ("pressão alta", "nauséa"); a conclusão repete o nome do
+  princípio ativo sem o sal ("sertralina").
+- **Limite**: sinônimo que a lista não tem dá "ausente" para um uso que a bula cita com outra palavra.
+  A conclusão mostra as indicações logo abaixo, e o balconista vê a frase da bula. Medir no benchmark.
+
+**Lote 3** (procedência analisada antes de baixar, a pedido do usuário; detalhes em `data/FONTES.md`):
+10 PDFs, 12 bulas (sertralina e zolpidem da Geolab; isotretinoína 10 e 20 mg, AAS 500 e 100 mg,
+amoxicilina, clotrimazol, nitazoxanida, oximetazolina e nafazolina da EMS pelo sara.com.br, portal de
+bulas da EMS; Pozato Uni da Libbs). Banco com 37 bulas. Os PDFs da EMS sem "MODELO DE BULA..." trazem
+duas bulas: o separador abre a seguinte em "I - IDENTIFICAÇÃO DO MEDICAMENTO" depois do histórico
+(as 25 anteriores, reprocessadas, ficaram idênticas). Pendentes: Abbott, Germed e Sandoz (ressalvas
+de procedência, decisão do usuário), Natulab (domínio em nome de outra empresa, CNPJ baixado) e
+Eurofarma (bloqueia cliente automático); cetirizina, bisacodil, escopolamina, dimenidrinato, ácido
+ascórbico, guaifenesina e sulfato ferroso pelo Bulário, à mão.

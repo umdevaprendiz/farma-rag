@@ -237,6 +237,111 @@
       "partes": [
         {"medicamento": "Dorageo 1 g", "forma_farmaceutica": "comprimido"}
       ]
+    },
+    {
+      "arquivo": "sertralina_generico-geolab_profissional.pdf",
+      "sha256": "587c9aecbf2aa9903a16a4e08a7b5bc068e1bb11e32e2c0b4ebb16a75481656d",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0225",
+      "principio_ativo": "cloridrato de sertralina",
+      "partes": [
+        {"medicamento": "Cloridrato de sertralina 50 mg e 100 mg", "forma_farmaceutica": "comprimido revestido"}
+      ]
+    },
+    {
+      "arquivo": "zolpidem_generico-geolab_profissional.pdf",
+      "sha256": "e95ce1fd4f44863c429210a25789e64f66d1e6a83c4be3a39b065a4b3c5b8b56",
+      "fabricante": "Geolab",
+      "numero_registro": "1.5423.0303",
+      "principio_ativo": "hemitartarato de zolpidem",
+      "partes": [
+        {"medicamento": "Hemitartarato de zolpidem 10 mg", "forma_farmaceutica": "comprimido revestido"}
+      ]
+    },
+    {
+      "arquivo": "isotretinoina_generico-ems_profissional.pdf",
+      "sha256": "0f77756c16cde34662ac3544fdd23ebbc91f3e6920f6b874f61cbb2bfb248797",
+      "fabricante": "EMS",
+      "numero_registro": "1.0235.1120",
+      "principio_ativo": "isotretinoína",
+      "nota": "Duas bulas no PDF (10 mg e 20 mg), cada uma com a sua Bula Padrão.",
+      "partes": [
+        {"medicamento": "Isotretinoína 10 mg cápsula mole", "forma_farmaceutica": "cápsula mole", "data_versao": "2025-08-01", "versao": "Bula Padrão de 01/08/2025"},
+        {"medicamento": "Isotretinoína 20 mg cápsula mole", "forma_farmaceutica": "cápsula mole", "data_versao": "2022-10-24", "versao": "Bula Padrão de 24/10/2022"}
+      ]
+    },
+    {
+      "arquivo": "acido-acetilsalicilico_generico-ems_profissional.pdf",
+      "sha256": "772f5440dc8de432c3c30d74dc5b6109a9f7780e1378dde321ddcf7476f7e646",
+      "fabricante": "EMS",
+      "numero_registro": "1.0235.0508",
+      "principio_ativo": "ácido acetilsalicílico",
+      "nota": "Duas bulas no PDF: 500 mg (analgésico e antitérmico) e 100 mg (também antiagregante plaquetário).",
+      "partes": [
+        {"medicamento": "Ácido acetilsalicílico 500 mg", "forma_farmaceutica": "comprimido", "data_versao": "2024-12-12", "versao": "Bula Padrão de 12/12/2024"},
+        {"medicamento": "Ácido acetilsalicílico 100 mg", "forma_farmaceutica": "comprimido", "data_versao": "2025-06-13", "versao": "aprovada em 13/06/2025"}
+      ]
+    },
+    {
+      "arquivo": "amoxicilina_generico-ems_profissional.pdf",
+      "sha256": "2f2e510f74f6f4abc2f740098583d8a407fa35995cdcb06b68b9c1bbedd5b8d2",
+      "fabricante": "EMS",
+      "numero_registro": "1.0235.0455",
+      "principio_ativo": "amoxicilina tri-hidratada",
+      "partes": [
+        {"medicamento": "Amoxicilina 500 mg cápsula dura", "forma_farmaceutica": "cápsula dura", "data_versao": "2025-07-28", "versao": "histórico de 28/07/2025"}
+      ]
+    },
+    {
+      "arquivo": "clotrimazol_generico-ems_profissional.pdf",
+      "sha256": "df91c210c86f89964ebc90e070b21382f91a66a3901393e6f6e3fa6e910b3d9d",
+      "fabricante": "EMS",
+      "numero_registro": "1.0235.0712",
+      "principio_ativo": "clotrimazol",
+      "partes": [
+        {"medicamento": "Clotrimazol 10 mg/g creme vaginal", "forma_farmaceutica": "creme vaginal", "data_versao": "2024-10-23", "versao": "Bula Padrão de 23/10/2024"}
+      ]
+    },
+    {
+      "arquivo": "nitazoxanida_generico-ems_profissional.pdf",
+      "sha256": "17b93f647d2355905388b6a5a2de3264de7b30f16654f5ac607dcfa6445de4bd",
+      "fabricante": "EMS",
+      "numero_registro": "1.0235.1352",
+      "principio_ativo": "nitazoxanida",
+      "partes": [
+        {"medicamento": "Nitazoxanida 500 mg e 20 mg/mL", "forma_farmaceutica": "comprimido revestido e pó para suspensão oral", "data_versao": "2024-05-22", "versao": "Bula Padrão de 22/05/2024"}
+      ]
+    },
+    {
+      "arquivo": "oximetazolina_generico-ems_profissional.pdf",
+      "sha256": "dc1c4e6d49119eb31636486371e699b2ae922b5ab613f3c928933c05e49ca94f",
+      "fabricante": "EMS",
+      "numero_registro": "1.0235.0782",
+      "principio_ativo": "cloridrato de oximetazolina",
+      "partes": [
+        {"medicamento": "Cloridrato de oximetazolina 0,25 mg/mL e 0,5 mg/mL", "forma_farmaceutica": "solução nasal", "data_versao": "2021-04-23", "versao": "Bula Padrão de 23/04/2021"}
+      ]
+    },
+    {
+      "arquivo": "nafazolina_generico-ems_profissional.pdf",
+      "sha256": "5aa31beb386ce63c74d72397289c42438e149cdca422a540a2fd659e173aaf26",
+      "fabricante": "EMS",
+      "numero_registro": "1.0235.0718",
+      "principio_ativo": "cloridrato de nafazolina",
+      "partes": [
+        {"medicamento": "Cloridrato de nafazolina 0,5 mg/mL", "forma_farmaceutica": "solução nasal", "data_versao": "2023-07-12", "versao": "Bula Padrão de 12/07/2023"}
+      ]
+    },
+    {
+      "arquivo": "levonorgestrel_pozato-uni-libbs_profissional.pdf",
+      "sha256": "75426f9c8addb3b38eda82c210cafd55f29acea50817027be2666a253ea1caaa",
+      "fabricante": "Libbs",
+      "numero_registro": "1.0033.0125",
+      "principio_ativo": "levonorgestrel",
+      "nomes_comerciais": ["Pozato Uni"],
+      "partes": [
+        {"medicamento": "Pozato Uni 1,5 mg", "forma_farmaceutica": "comprimido revestido", "data_versao": "2024-12-05", "versao": "aprovada em 05/12/2024"}
+      ]
     }
   ]
 }

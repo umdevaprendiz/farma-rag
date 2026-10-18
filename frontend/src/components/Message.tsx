@@ -126,15 +126,19 @@ function Resposta({ vista: v, aoEscolherOpcao }: AnswerProps) {
         </p>
       )}
 
+      {/* Pergunta de para que serve: o veredito vem antes das frases da bula que o sustentam. */}
+      {v.conclusao && <p className="resposta-texto conclusao">{v.conclusao}</p>}
+
       {v.status === "respondida" && v.texto && <TextoComCitacoes texto={v.texto} ativa={ativa} aoCitar={abrir} />}
 
-      {v.status === "nao_encontrada" && (
+      {v.status === "nao_encontrada" && !v.conclusao && (
         <p className="resposta-texto">
           Não encontrei isso nas bulas do acervo. {ROTULO_MOTIVO[v.motivo ?? ""] ?? ""}
         </p>
       )}
 
-      {classes.length > 0 && (
+      {/* A conclusão de remédio sem bula já diz a classe. */}
+      {classes.length > 0 && !v.conclusao && (
         <p className="meta" title="Classe terapêutica no registro de medicamentos da ANVISA (dados abertos)">
           Para que serve, pelo registro na ANVISA: {classes.join("; ")}.
         </p>

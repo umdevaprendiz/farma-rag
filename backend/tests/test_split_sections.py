@@ -131,6 +131,31 @@ def test_pdf_com_duas_bulas_separadas_pelo_historico():
         separar_secoes(paginas)
 
 
+def test_bula_sem_modelo_de_bula_recomeca_na_identificacao_depois_do_historico():
+    # Formato da EMS (AAS 500 mg + 100 mg no mesmo PDF): sem "MODELO DE BULA...".
+    paginas = [
+        "ácido acetilsalicílico\nEMS S/A\nI - IDENTIFICAÇÃO DO MEDICAMENTO\nAPRESENTAÇÕES\nComprimido de 500 mg.\n"
+        "1. INDICAÇÕES\nDor e febre.\nRegistro: 1.0235.0508",
+        "Histórico de alteração para a bula\n13/06/2025 Notificação\nácido acetilsalicílico\nEMS S/A\n100 mg\n"
+        "I- IDENTIFICAÇÃO DO MEDICAMENTO\nAPRESENTAÇÕES\nComprimido de 100 mg.\n1. INDICAÇÕES\nInibe a agregação plaquetária.\n"
+        "Registro: 1.0235.0508\nHistórico de alteração para a bula\nlixo",
+    ]
+    quinhentos, cem = separar_bulas(paginas)
+    assert (quinhentos.apresentacao, cem.apresentacao) == ("Comprimido de 500 mg.", "Comprimido de 100 mg.")
+    assert [s.texto.splitlines()[0] for s in cem.secoes if s.secao == "indicacoes"] == ["Inibe a agregação plaquetária."]
+    texto = " ".join(s.texto for p in (quinhentos, cem) for s in p.secoes)
+    assert "Notificação" not in texto and "lixo" not in texto
+
+
+def test_identificacao_dentro_da_bula_nao_abre_outra():
+    # Geolab e Organon têm "MODELO DE BULA..." e depois a identificação: continua uma bula só.
+    partes = separar_bulas([
+        "MODELO DE BULA PARA O PROFISSIONAL DE SAÚDE\nI - IDENTIFICAÇÃO DO MEDICAMENTO\n1. INDICAÇÕES\nDor.\n"
+        "I - IDENTIFICAÇÃO DO MEDICAMENTO\n4. CONTRAINDICAÇÕES\nAlergia."
+    ])
+    assert len(partes) == 1
+
+
 def test_referencias_bibliograficas_sao_puladas_ate_o_proximo_titulo():
     secoes = separar_secoes([
         "2. RESULTADOS DE EFICÁCIA\nReduziu a dor.\nReferências bibliográficas:\n1. Silva A. J Med 2001.\n"

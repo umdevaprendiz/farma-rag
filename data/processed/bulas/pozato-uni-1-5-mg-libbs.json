@@ -1,0 +1,116 @@
+{
+  "id": "pozato-uni-1-5-mg-libbs",
+  "medicamento": "Pozato Uni 1,5 mg",
+  "principio_ativo": "levonorgestrel",
+  "nomes_comerciais": [
+    "Pozato Uni"
+  ],
+  "fabricante": "Libbs",
+  "tipo_bula": "profissional",
+  "data_versao": "2024-12-05",
+  "fonte_pdf": "data/raw/bulas/levonorgestrel_pozato-uni-libbs_profissional.pdf",
+  "processado_em": "2026-10-18T10:47:45-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 1,
+      "pagina_fim": 1,
+      "texto": "POZATO® UNI levonorgestrel"
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "APRESENTAÇÃO",
+      "pagina_inicio": 1,
+      "pagina_fim": 1,
+      "texto": "Comprimidos revestidos com 1,5 mg de levonorgestrel. Embalagem contendo um comprimido revestido.\nUSO ORAL USO ADULTO"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 1,
+      "pagina_fim": 1,
+      "texto": "Cada comprimido revestido contém 1,5 mg de levonorgestrel.\nExcipientes: amido, polissorbato 80, celulose microcristalina, lactose monoidratada, estearato de magnésio, croscarmelose sódica, edetato dissódico di-hidratado, dióxido de silício, azul brilhante 133 laca de alumínio, macrogol e copolímero de metacrilato de butila, metacrilato de dimetilaminoetila e metacrilato de metila."
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 1,
+      "pagina_fim": 1,
+      "texto": "Pozato® Uni é destinado à profilaxia de gravidez, após uma relação sexual sem proteção por método contraceptivo, ou quando há suspeita de falha do método anticoncepcional rotineiramente utilizado.\nPozato® Uni é um contraceptivo de emergência e deve ser utilizado apenas nas seguintes situações:\nem casos de suspeita de falha do método contraceptivo normalmente utilizado (por exemplo: ruptura ou deslocamento do preservativo masculino ou feminino, que tenha permitido contato do esperma na genitália feminina; deslocamento, ruptura ou remoção antecipada do diafragma ou capuz cervical; falha na interrupção o coito com contato do esperma na genitália feminina, cálculo incorreto do método periódico de abstinência; expulsão/extrusão de D.I.U ou implante subcutâneo; em caso de ter ocorrido relação sexual desprotegida em momento de uso incorreto da pílula anticoncepcional rotineira);\nem casos de relação sexual sem proteção por método contraceptivo;\nem casos de agressão sexual por meio de força física."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2. RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 1,
+      "pagina_fim": 2,
+      "texto": "Após um coito único, a probabilidade de ocorrer gravidez, desde que nenhum método contraceptivo tenha sido utilizado, é de aproximadamente 8%, considerando um ciclo menstrual regular, sendo que com a substância ativa levonorgestrel (1,5 mg em uma única dose e utilizado dentro de 72 horas após coito desprotegido) é de 2%. Quanto mais tardio for o uso em relação ao ato sexual desprotegido, maior o índice de falha. Dessa forma, após um único ato de coito desprotegido, o levonorgestrel pode falhar em cerca de 2% das mulheres que o usam corretamente (as chances de gravidez são aproximadamente quatro vezes maiores quando nenhum contraceptivo de emergência é usado).\nApós um único ato de coito desprotegido, o tratamento pode falhar em cerca de 2% das mulheres que usam este medicamento mesmo dentro do prazo de administração de 72 horas após o coito. O índice de falha deste medicamento está baseado em uma única utilização do medicamento. Caso este medicamento seja usado em mais que uma ocasião, o índice de falha cumulativo poderá ser mais elevado.\nEm geral, as pílulas contraceptivas de emergência são menos eficazes que os métodos contraceptivos regulares. Uma vez que o índice de gravidez é baseado em uma única utilização, tais índices não podem ser comparados com os índices de falha dos contraceptivos usados regularmente, os quais são baseados em um ano completo de uso.\nSe as pílulas utilizadas para contracepção de emergência tivessem a indicação para serem usadas frequentemente, o índice de falha durante um ano completo de uso seria mais elevado do que o dos contraceptivos hormonais regulares. Portanto, as pílulas contraceptivas de emergência são inapropriadas para uso regular, não devendo ser utilizadas como método contraceptivo de rotina. O tratamento não deve ser desnecessariamente tardio já que a eficácia pode declinar com o tempo.\nNão há recomendação para aumento da dose de levonorgestrel (1,5 mg em uma única dose) em mulheres obesas ou com sobrepeso. Até o momento, não foram observados maiores índices de falhas com levonorgestrel (1,5 mg em uma única dose) nesse subgrupo populacional, de acordo com dados clínicos de farmacovigilância pós-comercialização do produto.\nOs métodos de contracepção de emergência em dose única ou duas doses de levonorgestrel foram avaliados em estudo randomizado com 118 voluntárias alocadas entre dois grupos: levonorgestrel, duas doses de 0,75 mg, em intervalo de 12 horas (grupo A) e levonorgestrel, dose única de 1,5 mg (grupo B). Onze casos de gestação (1,0%) foram relatados (7 no grupo A e 4 no grupo B). O risco relativo bruto de gestações foi similar nos dois grupos (RR = 0,71, 95% CI = 0,32-1,55, p > 0,05). Por outro lado, a taxa de eficácia estimada de 86,80% no grupo A foi significativamente inferior ao de 92,99% (p < 0,05) do grupo B. As taxas de gravidez aumentaram com atraso no início do tratamento e se atos de relação sexual desprotegida ocorreram após o tratamento. Concluiu-se que ambos os regimes eram eficazes e seguros.\nO levonorgestrel foi comparado ao acetato de ulipristal na prevenção da gravidez, quando administrado 72 horas após coito desprotegido, de acordo com um estudo randomizado, simples-cego (n=2221). O estudo era cego para os participantes,\fmas não para os investigadores. As pacientes foram randomizadas, baseadas no local do estudo e no tempo do coito desprotegido (dentro de 72 horas e de 72 a 120 horas), para receberem acetato de ulipristal 30 mg (n=844) ou levonorgestrel 1,5 mg (n=852). Na análise de eficácia avaliável da população que recebeu contracepção de emergência dentro de 72 horas após o coito (endpoint primário), houve 22 casos de gravidez (2,6%; 95% de intervalo de confiança, 1,7 a 3,9) no grupo de levonorgestrel. Ambos os grupos de tratamento tiveram taxas significativamente baixas observadas em comparação com a taxa esperada de gravidez na ausência de contracepção de emergência dentro de 72 horas do coito desprotegido; sendo de 2,6% taxa de gravidez observada VS 5,4% de taxa de gravidez esperada, para o grupo de levonorgestrel (p=0,001). A menstruação apresentou atraso após a contracepção de emergência em 2,1 +/- 8,2 dias no grupo de ulipristal e ocorreu 1,2 +/- 7,9 dias mais cedo que o esperado no grupo de levonorgestrel (p=0,001). A duração do sangramento não foi afetada.\nUm estudo esclareceu se o levonorgestrel possui efeito sobre a fertilização ou implantação. Nesse estudo, 99 mulheres participaram, sendo recrutadas no momento em que precisaram de contracepção de emergência. Todas as mulheres receberam levonorgestrel 1,5 mg em dose única durante a consulta clínica. Amostras sanguíneas foram colhidas imediatamente antes da ingestão do comprimido para estimativa do LH sérico, níveis de estradiol e progesterona para o cálculo do dia da ovulação. Baseando-se nos dados endócrinos, os autores estimaram que o tempo de ovulação se manteve em torno do período de ± 24 horas com acurácia em torno de 80%. As mulheres foram seguidas por 4 a 6 semanas para averiguação da ocorrência de gravidez. A efetividade do método contraceptivo, quando tomado antes e após a ovulação, foi determinada. Três mulheres engravidaram, apesar do uso de levonorgestrel (taxa de gravidez: 3,0%). O dia 0 foi determinado como dia da ovulação. As três mulheres que engravidaram tiveram ato sexual desprotegido entre os dias 1 e 0 e tomaram o levonorgestrel no dia 2, baseados nos dados endócrinos. Entre as 17 mulheres que tiveram o ato no período fértil do ciclo e que utilizaram o levonorgestrel após a ovulação (dia 1 a 2), os autores puderam esperar três ou quatro casos de gravidez, sendo constatados três casos. Entre as 34 mulheres que se submeteram ao intercurso sexual nos dias -5 e -2 do período fértil e que utilizaram o levonorgestrel antes ou no dia da ovulação, quatro casos de gravidez foram esperados, mas não foram observados. Concluindo, o fato de que todos os três casos de gravidez deste estudo ocorreram quando as mulheres utilizaram o levonorgestrel por volta de 2 dias após a ovulação sugerem que o levonorgestrel pode ser menos eficaz ou ineficaz se tomado no período pós fertilização."
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Propriedades Farmacodinâmicas O mecanismo de ação do levonorgestrel quando usado na contracepção de emergência pode variar dependendo da fase do ciclo menstrual em que for utilizado. Sua ação pode se dar: inibindo ou retardando a ovulação; alterando a motilidade tubária e, com isso, dificultando a passagem do óvulo e/ou do espermatozoide pela mesma; dificultando a penetração do espermatozoide no muco cervical. O levonorgestrel não exerce efeitos de interrupção sobre uma gravidez após a implantação da blástula no endométrio.\nPropriedades Farmacocinéticas Quimicamente o levonorgestrel é a d(-)-13-beta-etil-17-alfa-etinil-17-beta-hidroxigon-4-en-3-ona, um progestogênio totalmente sintético. Sua absorção é rápida e completa após administração oral com biodisponibilidade de quase 100%.\nDiferentemente do norgestrel, o levonorgestrel não sofre efeito de primeira passagem, um importante contribuidor para a variabilidade interindividual, e apresenta alta taxa de ligação às proteínas plasmáticas (97,5%).\nApós uma única dose de levonorgestrel (1,5 mg), os parâmetros farmacocinéticos obtidos foram: Cmáx = 39,3 nmol/L;\nTmáx = 2,5 horas; Vd = 260,0 L; T1/2 = 43,3 horas; AUC nas primeiras 12 horas foi de 282,4 nmol/L/h e nas primeiras 24 horas foi de 415,9 nmol/L/h.\nO levonorgestrel apresenta vários metabólitos, sendo os principais, 3a,5b e 3a,5a-tetraidrolevonorgestrel, que são excretados principalmente pela urina e, em menor proporção, pelas fezes. Não está ainda determinado se seus metabólitos são biologicamente ativos ou não. O levonorgestrel radiomarcado penetra no leite materno.\nO tempo médio estimado para início da ação terapêutica após a administração de Pozato® Uni é de uma hora."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4. CONTRAINDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 3,
+      "texto": "Pozato® Uni não deve ser utilizado quando houver sangramento genital anormal ou de origem desconhecida ou quando há hipersensibilidade a quaisquer dos componentes de sua fórmula. Pozato® Uni não deve ser utilizado durante a gravidez.\nPozato® Uni não deve ser administrado em casos de gravidez confirmada ou suspeita.\nCategoria de risco na gravidez: X. Em estudos em animais e mulheres grávidas, o fármaco provocou anomalias fetais, havendo clara evidência de risco para o feto que é maior do que qualquer benefício possível para a paciente.\fEmbora tenha sido identificada a ocorrência de riscos fetais em pacientes que utilizaram outras preparações de progestagênio que não foram utilizadas para contracepção de emergência, de acordo com um estudo observacional, não houve incidência de malformações congênitas com o uso do medicamento neste tipo de preparação.\nEste medicamento não deve ser utilizado por mulheres grávidas ou que possam ficar grávidas durante o tratamento.\nO levonorgestrel pode passar para o leite humanoEm caso de uso de Pozato® Uni é recomendável suspender a amamentação temporariamente.\nUso contraindicado no aleitamento ou na doação de leite humano: Este medicamento é contraindicado durante o aleitamento ou doação de leite, pois é excretado no leite humano e pode causar reações indesejáveis no bebê. Seu médico ou cirurgião-dentista deve apresentar alternativas para o seu tratamento ou para a alimentação do bebê.\nEste medicamento é contraindicado para uso por homens."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 4,
+      "texto": "Pozato® Uni não deve ser utilizado como método anticoncepcional de rotina.\nPozato® Uni tem taxas elevadas de hormônio e seu uso repetido ainda não têm sua segurança estabelecida. Para uso rotineiro há outros métodos anticoncepcionais mais eficazes.\nPozato® Uni não protege para risco de gravidez por relações sexuais sem proteção anticoncepcional que tenham ocorrido antes do período para o qual foi indicado, e nem protege para relações sexuais desprotegidas que ocorram após seu uso.\nApós o uso de Pozato® Uni deve-se usar outros métodos anticoncepcionais (por exemplo, o preservativo) até a próxima menstruação.\nPozato® Uni não protege contra doenças sexualmente transmissíveis.\nInforme ao paciente que este medicamento não protege contra infecções sexualmente transmissíveis, recomendando o uso de preservativo sempre que for necessário.\nAntes de iniciar o tratamento é aconselhável fazer exame de laboratório para verificar se já existe gravidez.\nEste medicamento causa malformação ao bebê se usado durante a gravidez.\nPozato® Uni não deve ser usado em casos de gravidez confirmada ou suspeita. Nestes casos ele não impede a evolução da gravidez.\nO levonorgestrel pode passar para o leite humano. Em caso de uso do Pozato® Uni é recomendável suspender a amamentação temporariamente (ver item “4. Contraindicações”).\nEstudo em lactentes de usuárias portadoras de implantes de levonorgestrel não evidenciou alterações nos bebês. Entretanto, não foram estudados os efeitos sobre o lactente e sobre a lactação em usuárias de levonorgestrel no esquema posológico empregado para contracepção de emergência. Recomenda-se interrupção temporária da amamentação em caso de uso do Pozato® Uni.\nSe após o uso de Pozato® Uni a menstruação atrasar mais de sete dias da data prevista, deve-se avaliar a possibilidade de ocorrência de gravidez.\nEm caso de falha da contracepção de emergência, com ocorrência de gravidez, recomenda-se avaliação por exame complementar para verificar a posição normal da gravidez (gestação tópica ou ectópica).\nSe após o uso de Pozato® Uni houver atraso ou irregularidade menstrual acompanhados de dor no abdômen inferior, a possibilidade de gravidez ectópica deverá ser excluída.\nEm pacientes portadoras ou com história de doenças hepáticas ativas ou tumores hepáticos; em doenças da vesícula biliar;\ncarcinoma de mama, útero ou ovário; tromboflebite ativa ou doenças tromboembólicas, cardiopatia isquêmica, acidente vascular cerebral, trombose de retina, embolia pulmonar prévia; diátese hemorrágica; história prévia de hipertensão intracraniana idiopática, de gestação ectópica, de icterícia gravídica ou decorrente do uso de anticoncepcionais, Pozato® Uni deve ser administrado após consideração cautelosa da relação risco/benefício.\nOutras condições que também requerem observação cautelosa são: asma, doenças cardiovasculares graves, hipertensão, enxaqueca, epilepsia, doenças renais, diabetes mellitus, hiperlipidemias (hipertrigliceridemia, hipercolesterolemia) e história de estados depressivos graves.\nA eficácia de Pozato® Uni pode ficar reduzida nas seguintes situações:\nse ocorrer vômitos dentro de 3-4 horas da ingestão do medicamento;\nnos casos de síndromes mal absortivas (como Doença de Crohn e retocolite ulcerativa);\ncom o uso concomitantes com medicamentos que interagem com o levonorgestrel (ver item: “6. Interações medicamentosas”);\nse utilizado de maneira não adequada (após 72 horas do intercurso sexual, antes de intercurso sexual desprotegido, após a ocorrência de concepção – ver item “8. Posologia e modo de usar”).\nO tratamento não deve ser tardio já que a eficácia pode declinar se o mesmo for iniciado após as primeiras 24 horas.\nPozato® Uni é recomendado somente para as situações de emergência listadas acima (ver item “1. Indicações”), não sendo indicado para o uso rotineiro como contraceptivo.\fUso em idosos, crianças e outros grupos de risco: este medicamento é para uso em mulheres adultas em idade fértil. Os dados de segurança obtidos com emprego deste medicamento em mulheres jovens com potencial para engravidar e menores de 17 anos de idade são limitados, não estando definida a segurança quanto ao emprego nesta faixa etária.\nAtenção: Contém o corante azul brilhante 133 laca de alumínio que pode, eventualmente, causar reações alérgicas.\nAtenção: Contém lactose. Este medicamento não deve ser usado por pessoas com síndrome de má-absorção de glicose-galactose."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Medicamento-medicamento: gravidade moderada Efeito da interação: algumas drogas podem acelerar o metabolismo de contraceptivos orais quando tomados concomitantemente, sendo assim, estas têm capacidade de reduzir a eficácia dos contraceptivos orais.\nMedicamentos: barbitúricos, fenitoína, fenilbutazona, rifampicina, griseofulvina, determinados antibióticos das classes de penicilâmicos, cefalosporinas e tetraciclinas (amoxicilina, ampicilina, oxacilina, penicilina G, penicilina G procaína, penicilina V, ticarcilina, ácido clavulânico, cefaclor, cefadroxila, cefixima, ceftazidima, cefuroxima, tetraciclina, oxitetraciclina, cloxacilina, dicloxacilina, doxiciclina, eritromicina, limeciclina, tigeciclina ou minociclina), oxcarbazepina, carbamazepina, primidona, clobazam, antirretrovirais (delavirdina, efavirenz, nelfinavir, nevirapina, ritonavir), griseofulvina, goma guar, isotretinoína, micofenolato mofetila e aminoglutetimida.\nEfeito da interação: aumento da exposição aos contraceptivos orais.\nMedicamentos: amiodarona, teriflunomida.\nEfeito da interação: aumento da exposição ao medicamento e sua toxicidade (não contraceptivo).\nMedicamentos: ciclosporina, fentanila.\nEfeito da interação: aumento do risco tromboembólico.\nMedicamento: ácido tranexâmico.\nEfeito da interação: aumenta exposição ao medicamento (não contraceptivo).\nMedicamento: betametasona, hidrocortisona, prednisona, prednisolona, clomipramina, lamotrigina, metoprolol.\nEfeito da interação: aumenta ou diminui a eficácia anticoagulante.\nMedicamento: dicumarol, varfarina."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Armazenar em temperatura ambiente (de 15°C a 30°C).\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\nOs comprimidos de Pozato® Uni são circulares, biconvexos, de cor azul, revestidos e sem sulco.\nAntes de usar, observe o aspecto do medicamento.\nTodo medicamento deve ser mantido fora do alcance das crianças."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "O comprimido de Pozato® Uni deve ser administrado por via oral o mais breve possível após a relação sexual desprotegida, não ultrapassando 72 horas, pois ocorre diminuição da eficácia significativa quando há demora para a administração do comprimido. Quanto mais longe do momento do intercurso sexual desprotegido for a administração do medicamento, menor será sua eficácia.\nSe ocorrer vômito dentro de 3-4 horas após a ingestão do comprimido, deve-se repetir a dose.\nA segurança e eficácia de Pozato® Uni somente são garantidas na administração por via oral.\nPozato® Uni deve ser administrado no limite máximo de um comprimido de 1,5 mg ao dia e em dose única.\nEste medicamento não deve ser partido, aberto ou mastigado."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 5,
+      "texto": "Reações adversas muito comuns (≥ 1/10): sangramento uterino irregular (alterações do padrão menstrual, menstruação irregular, menorragia) Alterações no volume ou duração do fluxo menstrual ou na data esperada para o início do ciclo menstrual seguinte ao uso do Pozato® Uni. Algumas mulheres podem experimentar pequenos sangramentos de escape após tomar Pozato® Uni.\fA maioria das mulheres terá seu período menstrual seguinte ao uso deste medicamento na data esperada ou mais cedo. A menstruação pode se alterar após a utilização de Pozato® Uni. Em geral, o fluxo menstrual será semelhante ao habitual, porém em alguns casos, o fluxo poderá ser maior ou menor. Os padrões de menstruação podem ser irregulares entre as mulheres que fizeram uso da medicação. A maioria das mulheres terá sua menstruação ocorrendo dentro do prazo previsto.\nEm 57% dos casos, a menstruação ocorrerá dentro de um intervalo de dois dias em relação ao dia esperado. Em 5% dos casos, pode ocorrer atraso superior a sete dias. Em casos de atraso menstrual superior a uma semana, deve-se considerar a possibilidade de ocorrência de gravidez. Antecipação da menstruação também pode ocorrer.\nOutras reações adversas muito comuns: náusea, fadiga, dor abdominal inferior, cefaleia e tontura.\nReações adversas comuns (≥ 1/100 e < 1/10): sensibilidade mamária, diarreia e vômito.\nReações adversas sem frequência conhecida: aumento de peso, icterícia, elevação da pressão arterial, elevação do colesterol, elevação da glicemia, gestação ectópica.\nEm casos de eventos adversos, notifique pelo Sistema VigiMed, disponível no Portal da Anvisa."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "Efeitos adversos graves não têm sido relatados após a ingestão aguda de doses grandes de contraceptivos orais A superdose pode causar náusea e pode acarretar hemorragia genital.\nEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações."
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "DIZERES LEGAIS",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "Registro: 1.0033.0125 Registrado por:\nLibbs Farmacêutica Ltda.\nAv. Marquês de São Vicente, 2219, 2º andar, São Paulo – SP CNPJ: 61.230.314/0001-75 Produzido por:\nLibbs Farmacêutica Ltda.\nEmbu das Artes – SP Indústria Brasileira www.libbs.com.br Venda sob prescrição.\nEsta bula foi aprovada pela Anvisa em 05/12/2024."
+    }
+  ],
+  "numero_registro": "1.0033.0125",
+  "forma_farmaceutica": "comprimido revestido",
+  "versao": "aprovada em 05/12/2024"
+}

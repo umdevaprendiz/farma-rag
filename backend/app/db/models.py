@@ -77,6 +77,8 @@ class Inquiry(Base):
     # conversa herda daqui ("e para criança?"). Nulo nas consultas gravadas antes da coluna.
     principios_ativos: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
     resposta: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Pergunta de para que serve: o veredito montado no código pela seção de indicações.
+    conclusao: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(Text)  # respondida | nao_encontrada | precisa_esclarecimento | erro
     motivo: Mapped[str | None] = mapped_column(Text, nullable=True)
     codigo_erro: Mapped[str | None] = mapped_column(Text, nullable=True)

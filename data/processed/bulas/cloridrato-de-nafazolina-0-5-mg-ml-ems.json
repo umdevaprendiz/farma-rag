@@ -1,0 +1,114 @@
+{
+  "id": "cloridrato-de-nafazolina-0-5-mg-ml-ems",
+  "medicamento": "Cloridrato de nafazolina 0,5 mg/mL",
+  "principio_ativo": "cloridrato de nafazolina",
+  "nomes_comerciais": [],
+  "fabricante": "EMS",
+  "tipo_bula": "profissional",
+  "data_versao": "2023-07-12",
+  "fonte_pdf": "data/raw/bulas/nafazolina_generico-ems_profissional.pdf",
+  "processado_em": "2026-10-18T10:47:42-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 1,
+      "pagina_fim": 2,
+      "texto": "cloridrato de nafazolina EMS S/A Solução nasal 0,5 mg/mL\fI - IDENTIFICAÇÃO DO MEDICAMENTO cloridrato de nafazolina “Medicamento Genérico, Lei nº. 9.787, de 1999”"
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "APRESENTAÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Solução nasal de 0,5 mg/mL. Embalagem contendo 1 frasco com 30 mL.\nUSO NASAL USO ADULTO"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Cada mL (30 gotas) de solução nasal contém:\ncloridrato de nafazolina ............................................................................................................................................... 0,5 mg veículo* q.s.p...................................................................................................................................................................1 mL *cloreto de sódio, ácido clorídrico, cloreto de benzalcônio e água purificada.\n*9 mg de cloreto de sódio + água purificada = solução isotônica de cloreto de sódio q.s.p. 1 mL.\nCada mL de cloridrato de nafazolina corresponde a 30 gotas e contém 0,5 mg de cloridrato de nafazolina e cada gota contém 0,017 mg de cloridrato de nafazolina.\nII - INFORMAÇÕES TÉCNICAS AOS PROFISSIONAIS DE SAÚDE"
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "O cloridrato de nafazolina de uso adulto é um descongestionante nasal de uso local, com um rápido início de ação vasoconstritora (aproximadamente 10 minutos) e com efeito prolongado (entre 2 a 6 horas).\nÉ indicado no tratamento da congestão nasal para alívio dos sintomas em resfriados, quadros alérgicos nasais, rinites e rinossinusites."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2. RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Em estudo realizado com 40 pacientes, demonstrou-se que após a instilação nasal de nafazolina a 0,025%, houve, após 10 minutos, diminuição da espessura da mucosa de septo e concha nasal inferior em 17 ± 2,8% (p < 0,001) e 25 ± 2,6% (p < 0,001) e diminuição da perfusão de septo e concha nasal inferior em 33 ± 3,3% (p < 0,001), sendo as variações de estereometria medidas através de sequências B-mode de dopplerssonografia, variações de perfusão aferidas por estudo de clearance de LDF e Xenon, e fluxo sanguíneo avaliado através de pD-sonografia.\nOutro estudo também utilizando a dopplerssonografia e B-mode na avaliação de 10 pacientes após utilização de nafazolina nasal demonstrou diminuição da congestão das mucosas de concha nasal inferior e septo nasal em 17 a 43% e 4 a 27%, respectivamente.\nEstudo realizado com 108 voluntários saudáveis (nove grupos com 12 adultos em cada) utilizando 6 diferentes vasoconstritores nasais da classe dos imidazolínicos foi realizado objetivando avaliar a duração de ação e potencial descongestionante através da medida volumétrica do lúmen nasal realizado através de rinometria acústica. O efeito descongestionante das preparações foi relativamente uniforme com aproximadamente 60% do efeito máximo obtido após 20 minutos, e efeito máximo obtido em 40 minutos, com aumento médio de volume do lúmen nasal de 20%. Em contraste, a duração de ação variou entre as diferentes preparações: indanazolina 0,118%, nafazolina 0,02 e tetrizolina 0,1% não tiveram efeito após 4 horas. Oximetazolina 0,05% e 0,01%, xilometazolina 0,025% e 0,1% e tramazolina 0,1264% apresentaram efeito razoável após 4 horas, enquanto só a oximetazolina 0,05% e 0,01% apresentaram efeito descongestionante razoável após 8 horas. Um efeito rebote associado à hiperemia reativa foi observado após 8 horas nos agentes de curta duração (indanazolina, nafazolina, tetrizolina e tramazolina). Todos os derivados imidazolínicos tiveram efeitos estatisticamente significativos quando comparados ao cloreto de sódio a 0,9%.\nO cloreto de benzalcônio, excipiente utilizado como conservante na composição do medicamento, é amplamente utilizado em solução nasal. Uma recente revisão da literatura validou diversos estudos para determinar se produtos de aplicação intranasal de cloreto de benzalcônio são seguros para o epitélio nasal ou se exacerbam algum sintoma da rinite medicamentosa. A revisão de 18 estudos da literatura demonstrou que o cloreto de benzalcônio não é nocivo ou prejudicial para o epitélio nasal nem exacerba os sintomas da rinite medicamentosa. Dessa forma, produtos que contenham cloreto de benzalcônio parecem ser seguros e bem tolerados para tratamentos de uso tópico nasal agudo ou de longo prazo.\nA nafazolina é eficaz também quando utilizada como descongestionante nasal no alívio dos sintomas da gripe comum, alergias em geral e sinusite. Apresenta ação terapêutica também no tratamento para combater as reações alérgicas promovidas pela exposição ao pólen."
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Propriedades farmacodinâmicas e farmacocinéticas: O cloridrato de nafazolina é classificado como derivado imidazolínico, simpatomimético, descongestionante, com ação agonista alfa -adrenérgica. A nafazolina age sobre os 2 receptores adrenérgicos da mucosa, sem efeito sobre os receptores beta-adrenérgicos, gerando constrição do leito vascular nasal, com consequente limitação do fluxo sanguíneo, reduzindo o edema e a obstrução, resultando no alívio da congestão nasal. A inervação da mucosa nasal já apresenta, sob condições normais, tônus predominantemente simpático, com efeito vasoconstritor na vascularização da mucosa. Esse efeito é potencializado com a utilização da nafazolina. O início de ação da nafazolina após instilação nasal é de 10 minutos, com duração de ação de 2 a 6 horas. Apesar de existir alguma absorção do medicamento, quer através da mucosa nasal, quer da porção deglutida que é absorvida por via digestiva, a maior parte da ação farmacológica se limita ao plexo vascular superficial das fossas nasais."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4. CONTRAINDICAÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "O cloridrato de nafazolina de uso adulto é contraindicado em pacientes com hipersensibilidade conhecida a quaisquer dos componentes da fórmula. O uso da nafazolina é contraindicado em pacientes com glaucoma de ângulo estreito, ângulo estreito anatômico e hipersensibilidade a agentes adrenérgicos.\nO cloridrato de nafazolina de uso adulto destina-se ao uso tópico nasal, sendo contraindicado seu uso em inaloterapia.\nEste medicamento é contraindicado para menores de 12 anos.\nEste medicamento não deve ser ingerido, sendo destinado apenas para uso nasal."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 4,
+      "texto": "Recomenda-se precaução no uso do produto nos pacientes em tratamento com inibidores da monoaminoxidase como, por exemplo, a fenelzina, tranilcipromina e moclobemida que podem potencializar os efeitos de elevação pressórica da nafazolina.\nO cloreto de benzalcônio, presente no cloridrato de nafazolina de uso adulto, pode ocasionar um quadro de rinite medicamentosa caracterizada por: inflamação, inchaço e congestão nasal, quando a exposição é feita de forma repetida.\nUtilizar com cautela em pacientes com doenças cardiovasculares, doença da tireoide, hipertensão, diabetes mellitus, arteriosclerose cerebral, asma brônquica, hipertrofia prostática, pacientes que apresentem forte reação a agentes simpatomiméticos (evidenciada por sinais de insônia ou vertigem), e em pacientes que estejam em uso de anestesia com agentes que sensibilizam o miocárdio (como o tricloroetileno, ciclopropano e halotano).\nA nafazolina pode provocar sonolência. Durante o tratamento com cloridrato de nafazolina de uso adulto, o paciente não deve dirigir veículos ou operar máquinas, pois a sua habilidade e atenção podem estar prejudicadas.\nNão utilizar o produto por mais de 3 a 5 dias.\nO frasco não deve ser utilizado por mais de uma pessoa com a finalidade de diminuir o risco de contaminação e transmissão do processo infeccioso, quando houver.\nCategoria de risco na gravidez: categoria C em todos os trimestres.\nA nafazolina é absorvida sistemicamente após administração tópica, e dados sobre a substância atravessando a placenta são desconhecidos. Estudos em animais revelaram efeitos adversos sobre o feto, e não existem estudos controlados em mulheres grávidas. Desta forma, até que outros dados sejam obtidos, este medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista, que devem avaliar o potencial benefício frente ao risco para o feto.\nNão há evidências conclusivas sobre o risco no uso da nafazolina durante a amamentação. O profissional prescritor deve considerar o risco potencial frente aos benefícios na sua administração durante a amamentação.\nEste medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista.\nEste medicamento não deve ser ingerido, sendo destinado apenas para uso nasal.\fAs consequências decorrentes da ingestão de cloridrato de nafazolina de uso adulto podem incluir náusea, vômito, letargia, taquicardia, diminuição da respiração, bradicardia, hipotensão, hipertensão, sedação sonolência, midríase, estupor, hipotermia e coma.\nEste medicamento é contraindicado para menores de 12 anos."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Medicamentos: Alguns antidepressivos (como bupropiona, desvenlafaxina, duloxetina, levomilnaciprana, milnaciprana, sibutramina, venlafaxina); alcaloides do ergot (ex: di-hidroergotamina, ergonovina, ergotamina, metilergonovina, metisergida); deserpidina; guanadrel; guanetidina; cetamina; reserpina; solriamfetol; tapentadol.\nEfeitos da interação: O uso concomitante com nafazolina nasal pode ter efeito aditivo no aumento da pressão arterial, frequência cardíaca e eventos adversos cardiovasculares.\nMedicamentos: Agonistas adrenérgicos beta-2 (ex: albuterol/salbutamol, formoterol, salmeterol, terbutalina); inibidores da MAO (ex: furazolidona, fenelzina, isocarboxazida, selegilina, rasagilina, tranilcipromina, safinamida); linezolida; azul metileno; ozanimod; procarbazina; racepinefrina; ritodrina; midodrina.\nEfeitos da interação: O uso concomitante com nafazolina nasal pode aumentar o risco de efeitos adversos cardiovasculares, como elevações na frequência cardíaca e pressão arterial ou ritmo cardíaco irregular.\nMedicamento: escetamina Efeito da interação: Não se sabe como a escetamina e a nafazolina nasal podem afetar uns aos outros quando são usados ao mesmo tempo. Usar nafazolina pelo menos uma hora antes da escetamina.\nMedicamento: citrato de fentanila Efeito da interação: Efeito analgésico reduzido.\nMedicamento: Iobenguane Efeito da interação: Cálculos de dosimetria imprecisos ou eficácia reduzida."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Conservar em temperatura ambiente (temperatura entre 15 e 30°C). Proteger da luz e umidade.\nO prazo de validade do medicamento a partir da data de fabricação é de 24 meses.\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\nCaracterísticas físicas e organolépticas:\nLíquido incolor, límpido, inodoro, isento de partículas e material estranho.\nAntes de usar, observe o aspecto do medicamento.\nTODO MEDICAMENTO DEVE SER MANTIDO FORA DO ALCANCE DAS CRIANÇAS."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Gotejar 1 a 2 gotas em cada narina, 4 a 6 vezes ao dia.\nO intervalo de tempo entre as administrações não deve ser menor do que 3 horas.\nA dose máxima diária não deverá ultrapassar 24 gotas.\nNão utilizar o produto por mais de 3 a 5 dias. Não exceder a dose recomendada.\nApós o uso, limpar o aplicador com um lenço de papel seco e recolocar a tampa protetora.\nO frasco não deve ser utilizado por mais de uma pessoa com a finalidade de diminuir o risco de contaminação e transmissão do processo infeccioso, quando houver.\nO cloridrato de nafazolina de uso adulto destina-se ao uso tópico nasal, sendo contraindicado seu uso em inaloterapia.\nEste medicamento não deve ser ingerido, sendo destinado apenas para uso nasal.\nA duração do tratamento dependerá da gravidade do quadro e da prescrição médica. Recomenda-se que cloridrato de nafazolina de uso adulto seja utilizado por um período não superior a 5 dias salvo se indicado pelo profissional de saúde e sob sua supervisão."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 5,
+      "texto": "Pode ocorrer irritação local passageira (queimação, ardência, espirros). Já foram descritas as ocorrências de náusea e cefaleia.\nPacientes diabéticos podem ter o valor da glicemia elevados com o uso crônico da nafazolina.\nO uso crônico de cloridrato de nafazolina de uso adulto pode promover congestão nasal por efeito rebote e seu uso prolongado pode acarretar rinite medicamentosa.\nReações adversas ao uso da nafazolina\fA literatura cita as seguintes reações adversas, sem frequência conhecida:\nReações cardiovasculares: Foram relatados hipertensão arterial e taquicardia. Os medicamentos contendo nafazolina devem ser usados com cuidado por pacientes idosos com doença cardiovascular grave, incluindo arritmias e hipertensão, uma vez que a absorção sistêmica pode exacerbar estas condições.\nReações endócrinas/metabólicas: Foi relatado na literatura que em pacientes com diabetes, particularmente os que apresentam desenvolvimento de cetoacidose diabética, a absorção sistêmica de nafazolina pode piorar o quadro de hiperglicemia.\nReações respiratórias: Foi relatado que o uso de nafazolina pode promover queimação nasal, dor nasal, espirro, aumento da descarga nasal, desconforto nasal, rinite e epistaxe.\nReações neurológicas: Foram descritos efeitos da nafazolina no sistema nervoso central como: sedação, depressão do sistema nervoso central, hipotermia, coma e insônia.\nReações oftálmicas: Foram descritos os seguintes efeitos da nafazolina: conjuntivite, dor ocular, alteração visual, vermelhidão e irritação ocular, dilatação na pupila e aumento na pressão intraocular.\nAs seguintes reações adversas foram descritas, conforme experiência pós-comercialização, em uma frequência não conhecida: dispneia, palidez, algidez periférica, hiperidrose, insônia, irritação e dor ocular, epistaxe e desconforto nasal.\nEm casos de eventos adversos, notifique pelo Sistema VigiMed, disponível no Portal da Anvisa."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "Nos casos de superdosagem com cloridrato de nafazolina de uso adulto, podem ocorrer arritmias cardíacas, cefaleia, náuseas e vômitos, bradicardia, hipotensão ou hipertensão, hiperemia e depressão do sistema nervoso central. O tratamento é sintomático e de suporte.\nInicialmente, a toxicidade pode causar vasoconstrição periférica generalizada e agitação. Esses efeitos geralmente não requerem terapia. Em casos de toxicidade grave, as principais preocupações são a depressão do CNS com perda de reflexos das vias aéreas e depressão respiratória. O oxigênio suplementar deve ser administrado conforme necessário.\nHipotensão geralmente responde apenas ao suporte de fluidos intravenosos, mas incomum pode exigir um vasopressor como a dopamina. A hipertensão é geralmente transitória e não requer tratamento. No entanto, se houver sinais de comprometimento do órgão final da hipertensão, um anti-hipertensivo de ação curta (ou seja, nitroprusside ou fentolamina) pode ser usado com monitoramento.\nRecomenda-se procurar o serviço médico o mais rápido possível, para monitoração e medicação apropriada conforme a gravidade do quadro clínico. De maneira geral, nos casos de superdosagem não é recomendada a lavagem gastrointestinal, uma vez que a ingestão na forma líquida de cloridrato de nafazolina é rapidamente absorvido e pode causar depressão do CNS, o risco da descontaminação geralmente excede qualquer benefício potencial. Em alguns casos específicos, pode ser necessário a lavagem gástrica e o uso de carvão ativado.\nExperiência pós comercialização Os seguintes sintomas foram observados durante o período de comercialização de cloridrato de nafazolina de uso adulto após a utilização de doses acima das recomendadas: algidez periférica e sonolência.\nEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações.\nIII - DIZERES LEGAIS MS-1.0235.0718 Farm. Resp.: Dra. Telma Elaine Spina CRF-SP nº 22.234 Registrado, fabricado e embalado por: EMS S/A Rod. Jornalista Francisco Aguirre Proença, KM 08 Bairro Chácara Assay Hortolândia/SP - CEP: 13186-901 CNPJ: 57.507.378/0003-65 INDÚSTRIA BRASILEIRA Ou Fabricado e embalado por: MULTILAB INDÚSTRIA E COMÉRCIO DE PRODUTOS FARMACÊUTICOS LTDA São Jerônimo/RS"
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "(dizeres legais sem título)",
+      "pagina_inicio": 6,
+      "pagina_fim": 9,
+      "texto": "VENDA SOB PRESCRIÇÃO MÉDICA Esta bula foi atualizada conforme Bula Padrão aprovada pela Anvisa em 12/07/2023.\nbula-prof-197089-EMS-v1\fHistórico de Alterações da Bula Dados da submissão eletrônica Dados da petição/notificação que altera a bula Dados das alterações de bulas Data do Nº do Data do Nº do Data de Versões Apresentações Assunto Assunto Itens de bula expediente expediente expediente expediente aprovação (VP/VPS) relacionadas 10459 - Solução nasal 0,5 GENÉRICO Submissão eletrônica apenas para mg/mL: embalagem 22/02/2017 0294541/17-0 Inclusão Inicial N/A N/A N/A N/A disponibilização do texto de bula no VP/VPS contendo frasco de Texto de Bula bulário eletrônico da ANVISA. gotejador de 20 ml ou – RDC 60/12 30 ml.\nVP 4. O que devo saber antes de usar este medicamento?\n10452 – 8. Quais os males que este medicamento Solução nasal 0,5 GENÉRICO pode me causar mg/mL: embalagem Notificação de 07/06/2017 1129479/17-5 N/A N/A N/A N/A VP/VPS contendo frasco Alteração de VPS gotejador de 20 ml ou Texto de Bula – 4. Contraindicações 30 ml.\nRDC 60/12 5. Advertências e precauções 6. Interações medicamentosas 8. Posologia e modo de usar 9. Reações adversas 10452 – GENÉRICO Solução nasal 0,5 Notificação de Apresentação do medicamento mg/mL: embalagem 19/09/2018 0912036/18-0 N/A N/A N/A N/A VP/VPS Alteração de Dizeres legais contendo frasco Texto de Bula – gotejador de 30 ml.\nRDC 60/12 VP COMPOSIÇÃO Mudança 3. QUANDO NÃO DEVO USAR ESTE 10452 – maior de MEDICAMENTO?\nGENÉRICO Solução nasal 0,5 excipientes 5.\nNotificação de VP/VPS mg/mL: embalagem 18/11/2020 4066936/20-0 30/12/2019 3611323/19-9 para formas 19/06/2020 6. 5. ONDE, COMO E POR Alteração de contendo frasco farmacêuticas QUANTO TEMPO POSSO GUARDAR Texto de Bula – gotejador de 30 ml.\nem ESTE MEDICAMENTO?\nRDC 60/12 solução DIZERES LEGAIS\fVPS COMPOSIÇÃO 7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO 9. REAÇÕES ADVERSAS DIZERES LEGAIS 10452 - GENÉRICO - Notificação de Solução nasal 0,5 Alteração de mg/mL: embalagem 15/04/2021 1442739/21-7 N/A N/A N/A N/A 9. REAÇÕES ADVERSAS VPS Texto de Bula – contendo frasco publicação no gotejador de 30 ml.\nBulário RDC 60/12 11022 - RDC 10452 - 73/2016 - GENÉRICO - GENÉRICO Notificação de Solução gotas de 0,5 - Inclusão de Alteração de mg/mL. Embalagem 21/07/2023 0760479/23-2 23/06/2023 0641060/23-0 local de 23/06/2023 III- DIZERES LEGAIS VP/VPS Texto de Bula – contendo um frasco fabricação de publicação no com 30 mL.\nmedicamento Bulário RDC de liberação 60/12 convencional 3. QUANDO NÃO DEVO USAR ESTE MEDICAMENTO?\n4. O QUE DEVO SABER ANTES DE 10452 - USAR ESTE MEDICAMENTO?\nGENÉRICO - 8. QUAIS OS MALES QUE ESTE Notificação de MEDICAMENTO PODE ME CAUSAR? Solução nasal de 0,5 Alteração de 9. O QUE FAZER SE ALGUÉM VP/VPS mg/mL. Embalagem - - N/A N/A N/A N/A Texto de Bula – USAR UMA QUANTIDADE MAIOR contendo 1 frasco publicação no DO QUE A INDICADA DESTE com 30 mL.\nBulário RDC MEDICAMENTO?\n60/12 2. RESULTADOS DE EFICÁCIA 4. CONTRAINDICAÇÕES 5. ADVERTÊNCIAS E PRECAUÇÕES\f6. INTERAÇÕES MEDICAMENTOSAS 9. REAÇÕES ADVERSAS 10. SUPERDOSE"
+    }
+  ],
+  "numero_registro": "1.0235.0718",
+  "forma_farmaceutica": "solução nasal",
+  "versao": "Bula Padrão de 12/07/2023"
+}

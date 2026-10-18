@@ -141,6 +141,7 @@ def perguntar(entrada: QuestionIn, sv: Services = Depends(servicos)) -> AnswerOu
         ),
         rodadas=r.rodadas,
         motivo=r.motivo,
+        conclusao=r.conclusao,
         resposta=r.resposta,
         # As mesmas fontes que o histórico vai mostrar: as do snapshot gravado.
         fontes=[SourceOut.model_validate(f, from_attributes=True) for f in consulta.fontes],

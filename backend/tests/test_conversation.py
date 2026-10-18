@@ -248,13 +248,17 @@ def test_nome_parecido_com_marca_pergunta_qual_e_e_a_opcao_segue_sem_bula(acervo
         'Não reconheci "rocutan". É o Roacutan (isotretinoína)? Se não for, escreva o nome do remédio.'
     )
 
-    # O botão reenvia a mesma pergunta com o princípio ativo da opção, que não tem bula: segue como
-    # remédio sem bula (nenhuma bula fala dele: "não encontrei", sem o LLM).
+    # O botão reenvia a mesma pergunta com o princípio ativo da opção, que não tem bula aqui. É pergunta
+    # de para que serve: a classe da ANVISA, sem busca nem LLM (docs/DECISOES.md, seção 29).
     chamadas = modelo({(EXEMPLINA, "indicacoes"): 1.0}, ("Algo", 1))
     anterior = PreviousQuestion(pergunta, [], True)
     r = rag.responder(pergunta, acervo, ["isotretinoína"], s=S, anterior=anterior)
     assert (r.status, r.motivo, r.medicamentos_nao_indexados) == ("nao_encontrada", "medicamento_nao_indexado", ["isotretinoina"])
-    assert (chamadas["embed"], chamadas["chat"]) == ([pergunta], [])  # a pergunta não vai repetida
+    assert (chamadas["embed"], chamadas["chat"]) == ([], [])
+    assert r.conclusao == (
+        "A bula de isotretinoina não está no acervo, então não dá para dizer se é indicado para dor no ouvido. "
+        "Pelo registro na ANVISA, é da classe produtos anti-acne."
+    )
 
 
 def test_resposta_a_um_esclarecimento_nao_pergunta_de_novo(acervo, modelo):

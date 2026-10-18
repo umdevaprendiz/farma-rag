@@ -1,0 +1,107 @@
+{
+  "id": "clotrimazol-10-mg-g-creme-vaginal-ems",
+  "medicamento": "Clotrimazol 10 mg/g creme vaginal",
+  "principio_ativo": "clotrimazol",
+  "nomes_comerciais": [],
+  "fabricante": "EMS",
+  "tipo_bula": "profissional",
+  "data_versao": "2024-10-23",
+  "fonte_pdf": "data/raw/bulas/clotrimazol_generico-ems_profissional.pdf",
+  "processado_em": "2026-10-18T10:47:35-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 1,
+      "pagina_fim": 2,
+      "texto": "clotrimazol EMS S/A Creme vaginal 10 mg/g\fI- IDENTIFICAÇÃO DO MEDICAMENTO clotrimazol “medicamento genérico Lei n° 9.787, de 1999”"
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "APRESENTAÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Creme vaginal 10mg/g. Embalagem com 35 g de creme vaginal + 6 aplicadores descartáveis.\nUSO VAGINAL USO ADULTO"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Cada g do creme vaginal contém:\nclotrimazol ...........................................................................................................................................10mg excipiente q.s.p. ......................................................................................................................................1g *álcool cetoestearilíco, cetomacrogol 1000, oleato de decila, metilparabeno, propilparabeno, edetato dissódico, álcool etílico, simeticona, glicerol, ácido cítrico e água purificada.\nII- INFORMAÇÕES TÉCNICAS AOS PROFISSIONAIS DE SAÚDE"
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "O clotrimazol é indicado para o tratamento de infecções da região genital (vaginite) e corrimento vaginal infeccioso causados por fungos (geralmente Candida).\nO clotrimazol também é indicado para o tratamento de infecções da área vulvar e áreas adjacentes e também inflamação da glande e prepúcio do parceiro sexual, causadas por fungos (vulvite e balanite por Candida)."
+    },
+    {
+      "secao": "resultados_eficacia",
+      "titulo_original": "2. RESULTADOS DE EFICÁCIA",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Estudos clínicos foram realizados com comprimido vaginal de clotrimazol 500 mg e creme vaginal de clotrimazol 1% ou 2% em pacientes com candidíase vulvovaginal (p.ex. Mendling et al. 2004, Becker et al. 1996, Petersen 1994, Romanowski 1994, Arendt 1989, Weisberg 1989, Hajman 1988, Brewster et al. 1986, Lebherz et al. 1985, Loendersloot et al. 1985, Siedentopf 1985, Palacio-Hernanz et al. 1984, Granitzka 1982, Keuser 1981, Wurst 1980). Esses estudos clínicos foram conduzidos com diferentes desenhos:\nabertos, controlados e, parte deles, como duplo-cegos. O diagnóstico clínico foi confirmado microscopicamente. Clotrimazol foi aplicado tanto em infecções primárias como em casos de reinfecções, sendo a maioria das pacientes tratadas em ambulatório. Em muitos estudos, além do tratamento intravaginal, o creme vaginal de clotrimazol 1% ou 2% foi também aplicado às partes externas comprometidas da pele (p.ex. Mendling et al. 2004, Woolley et al. 1995, Lawrence et al. 1990, Pavic et al. 1988, Loendersloot et al.\n1985). Para se impedir reinfecção, em alguns estudos, o parceiro foi tratado concomitantemente com creme vaginal de clotrimazol 1% (Wallin et al 1977).\nEstudos em pacientes com micose vulvovaginal aguda compararam clotrimazol com o tratamento placebo.\nDois estudos usaram o tratamento de dose única com comprimido vaginal de clotrimazol 500 mg em comparação com o placebo.\nNestes estudos clínicos duplo-cegos randomizados, as taxas de cura clínica e micológica foram significativamente mais altas com clotrimazol. Em um estudo, as taxas de cura micológica foram de 90% com clotrimazol (comprimido) e 0% com placebo e em outro estudo os valores correspondentes foram de 62% versus 25% (Hughes et al. 1984, Bro 1990). Em outros dois estudos randomizados abertos, os comprimidos vaginais de 200 mg de clotrimazol por 3 dias foram comparados com itraconazol oral e placebo oral. Em um estudo, observaram-se taxas de cura micológica de 95% para o clotrimazol (comprimido) contra 44% para o placebo no primeiro acompanhamento e 80% versus 44% no segundo acompanhamento (Stein et al. 1989). Em outro estudo, as taxas de cura clínica e micológica foram significativamente maiores nos grupos de tratamento ativo em comparação com o placebo. As taxas de cura micológica foram de 95% para clotrimazol (comprimido) quando comparado a placebo (32%). Dos pacientes com cura micológica, 17% tiveram recidiva versus 43% do grupo de placebo no segundo acompanhamento, 4 semanas após o término do tratamento (Stein et al. 1993).\nO tratamento com comprimido vaginal de 500 mg de clotrimazol e creme vaginal de clotrimazol 1% ou 2% correlacionou-se a índices elevados de cura micológica (83 – 94%). Em estudos controlados por placebo, os índices de cura micológica do placebo variaram de 0 a 44%. A melhora do quadro clínico foi observada dentro de um período de três dias a 5 dias após o início da terapia.\nA tolerabilidade foi boa.\nDe acordo com Sobel e outros pesquisadores importantes neste campo, as diferenças nas formulações não são consideradas relevantes no resultado terapêutico e a escolha do tratamento é questão de preferência da paciente (Sobel et al, 2005, BASHH 2007, Achkar et al 2010, Mendeling et al 2012)."
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3.CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 2,
+      "pagina_fim": 3,
+      "texto": "O clotrimazol é um derivado imidazólico com atividade antimicótica de amplo espectro.\nMecanismo de ação As células fúngicas são envoltas por uma parede celular rígida externa e uma membrana citoplasmática interna. O ergosterol é o principal esterol usado para manter a estrutura e função da membrana plasmática. O clotrimazol age inibindo a enzima lanosterol-demetilase inibindo a síntese do ergosterol. Isto causa um dano estrutural e funcional da membrana citoplasmática o que leva a uma mudança na permeabilidade celular e perda de componentes celulares de baixo peso molecular.\nPropriedades Farmacodinâmicas O clotrimazol possui amplo espectro de ação antimicótica in vitro e in vivo, que inclui dermatófitos, leveduras, bolores, etc.\nSob condições apropriadas de teste, os valores da CIM (Concentração Inibitória Mínima) para esses tipos de fungos estão na faixa entre menos de 0,062 - 8,0 µg/mL de substrato.\nO modo de ação do clotrimazol é primariamente fungistático ou fungicida, dependendo da concentração de clotrimazol no local da infecção. A atividade in vitro é limitada aos elementos fúngicos em proliferação. Os esporos de fungos são apenas levemente sensíveis.\nAlém de sua ação antimicótica, o clotrimazol também age sobre microrganismos gram-positivos (Streptococos/ Staphylococos), e microrganismos gram-negativos (Bacteroides/ Gardnerella vaginalis).\nNas concentrações de 0,5 – 10 µg/mL de substrato, o clotrimazol inibe in vitro a multiplicação de Corynebacteria e de cocos gram-positivos (com exceção dos enterococos).\fSão muito raras as variantes de espécies de fungos sensíveis com resistência primária. Até o momento, o desenvolvimento de resistência secundária por fungos sensíveis sob condições terapêuticas, foi observado somente em casos muito isolados.\nPropriedades Farmacocinéticas Pesquisas farmacocinéticas após aplicação vaginal demonstraram que somente uma pequena quantidade de clotrimazol (3% a 10%) é absorvida. Graças à rápida metabolização hepática do clotrimazol absorvido em metabólitos farmacologicamente inativos, o pico das concentrações plasmáticas do clotrimazol, após aplicação vaginal de uma dose de 500 mg, foi inferior a 10 ng/ml, indicando que o clotrimazol aplicado por via intravaginal provavelmente não leve a efeitos sistêmicos mensuráveis ou a efeitos colaterais.\nDados de segurança e pré-clínicos Dados pré-clínicos não revelaram riscos especiais para os seres humanos com base em estudos convencionais de farmacologia de segurança, toxicidade de dose repetida, genotoxicidade, potencial carcinogênico e toxicidade para a reprodução e desenvolvimento."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4.CONTRAINDICAÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Hipersensibilidade ao clotrimazol, ao álcool cetoestearílico e/ou a qualquer outro componente da formulação do medicamento.\nEste medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5.ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Recomenda-se atenção se a paciente apresentar febre (38°C ou acima), dor no baixo abdômen, dor nas costas, corrimento vaginal mal cheiroso, náusea, hemorragia vaginal e/ou dor no ombro, o paciente deve consultar um médico.\nNão se deve realizar o tratamento durante o período menstrual. O tratamento deve ser planejado e concluído antes do início da menstruação.\nNão se deve usar absorventes internos, duchas intravaginais, espermicidas ou outros produtos vaginais durante o tratamento com clotrimazol creme vaginal.\nÉ recomendado evitar relação sexual vaginal quando clotrimazol creme vaginal é utilizado, porque a infecção pode ser transmitida para o parceiro.\nO parceiro sexual também deve ser submetido a tratamento local se apresentar os sintomas, por ex. prurido, inflamação, etc.\nO medicamento deve ser mantido fora do alcance das crianças.\nDeve ser evitado o contato com os olhos. Não deve ser ingerido.\nO álcool cetoestearílico pode causar reação local na pele, como por exemplo, dermatite de contato.\nO clotrimazol creme vaginal pode reduzir a eficácia e a segurança de métodos contraceptivos de barreira à base de látex, tais como os preservativos e diafragmas, quando aplicado na área genital (mulheres: intravaginalmente, lábios e área adjacente da vulva;\nhomens: prepúcio e glande do pênis).\nEste medicamento contém componentes que podem reduzir a eficácia de métodos contraceptivos de barreira à base de látex (por exemplo, preservativos ou camisinhas e diafragmas). Informe ao paciente sobre o risco de infecção por doenças sexualmente transmissíveis e sobre a necessidade de uso de outros métodos contraceptivos durante o tratamento.\nNenhum efeito tem sido observado na capacidade de dirigir veículos e operar máquinas.\nFertilidade, gravidez e lactação Gravidez Categoria de risco na gravidez: B O clotrimazol creme vaginal não deve ser usado nos 3 primeiros meses de gravidez, exceto após criteriosa avaliação.\nEmbora exista uma quantidade limitada de dados clínicos sobre o uso de clotrimazol em mulheres grávidas, os estudos com animais não indicam efeitos prejudiciais diretos ou indiretos no que diz respeito à toxicidade reprodutiva. O clotrimazol pode ser usado durante a gravidez, mas somente sob a orientação de um profissional de saúde.\nDurante a gravidez, o tratamento deve ser realizado somente com clotrimazol comprimido vaginal ou com clotrimazol cápsula vaginal dose única, uma vez que esse pode ser inserido sem o uso do aplicador.\nEste medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista.\nLactação Não existem dados sobre a excreção do clotrimazol no leite humano. No entanto, a absorção sistêmica é mínima após a administração e é improvável que cause efeitos sistêmicos. O clotrimazol pode ser usado durante a lactação.\nFertilidade Não foram realizados estudos em humanos sobre os efeitos do clotrimazol na fertilidade, no entanto, os estudos em animais não demonstraram quaisquer efeitos do medicamento na fertilidade."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 4,
+      "texto": "O tratamento concomitante de clotrimazol creme vaginal e de tacrolimo via oral (FK-506; agente imunossupressor) pode levar ao aumento dos níveis plasmáticos de tacrolimo assim como do sirolimo.\nAs pacientes devem, assim, serem monitoradas quanto aos sintomas de superdose de tacrolimo ou sirolimo, se necessário pela determinação do seu respectivo nível plasmático.\nA seguir estão listadas as interações medicamentosas por potencial de significância clínica com clotrimazol administrado por via oral:\n• di-hidroergotamina, mesilatos ergoloides, ergonovina, ergotamina, metilergonovina e oxicodona: a interação com esses medicamentos ainda não está bem estabelecida. Porém, devido à via de metabolismo ser a mesma pode haver uma probabilidade teórica de interação com essas medicações.\f• fentanila: a interação com esse medicamento ainda não está bem estabelecida. Porém, devido à via de metabolismo ser a mesma pode haver uma probabilidade de interação com esse medicamento."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Armazenar em temperatura ambiente (de 15°C a 30°C). Proteger da luz e umidade.\nO prazo de validade do medicamento é de 24 meses a partir da data de sua fabricação.\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com prazo de validade vencido. Guarde-o em sua embalagem original.\nAspecto do medicamento Clotrimazol creme vaginal apresenta-se na forma de creme homogêneo, na cor branca, isento de grumos e impurezas.\nAntes de usar, observe o aspecto do medicamento.\nTodo medicamento deve ser mantido fora do alcance das crianças."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Vaginite: introduzir o conteúdo de um aplicador, com cerca de 5 g de creme vaginal, uma vez por dia. A duração do tratamento é de 6 dias consecutivos.\nVulvite e balanite por Candida: aplicar o creme em camada fina, friccionado as áreas afetadas (na mulher, órgãos genitais externos até o ânus; no homem, glande e prepúcio), 2 a 3 vezes ao dia. O período normal de tratamento é de 1 a 2 semanas.\nRecomendações Gerais:\nO creme vaginal deve ser inserido na vagina o mais profundamente possível, à noite. Obtém-se inserção mais facilmente com a paciente deitada de costas, com as pernas levemente fletidas.\nSe os sintomas persistirem por mais de 7 dias, a paciente talvez tenha uma condição que necessite de outro tratamento.\nSe necessário, o tratamento pode ser repetido, entretanto, infecções recorrentes podem indicar uma outra doença subjacente, incluindo diabetes ou infecção por HIV. As pacientes devem ser orientadas a procurar acompanhamento médico se os sintomas retornarem dentro de dois meses.\nEm geral, tanto a vagina como a vulva são afetadas, portanto, deve ser realizado tratamento combinado (tratamento das duas áreas).\nSe a área vulvar e áreas adjacentes estiverem infectadas simultaneamente, deve-se também ministrar tratamento local com um creme de aplicação externa. O parceiro sexual deve ser igualmente submetido a tratamento local se houver presença de sintomas, como, por exemplo prurido, inflamação, etc.\nNão se deve realizar o tratamento durante o período menstrual. O tratamento deve ser planejado e concluído antes do início da menstruação.\nNão se deve usar absorventes internos, duchas intravaginais, espermicidas ou outros produtos vaginais durante o tratamento com clotrimazol creme vaginal.\nÉ recomendado evitar relação sexual vaginal quando clotrimazol creme vaginal é utilizado, porque a infecção pode ser transmitida para o parceiro, bem como pode ser reduzida a efetividade e a segurança de métodos contraceptivos de barreira à base de látex, tais como preservativos e diafragma.\nDurante a gravidez, deve-se inserir o comprimido vaginal sem o uso do aplicador."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9.REAÇÕES ADVERSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "As reações adversas listadas foram baseadas em relatos espontâneos e estudos clínicos.\nClasse de sistema Comum Pouco comum Rara orgânico (>1/100; <1/10) (>1/1000; <1/100) (>1/10000; <1/1000) Distúrbios dor abdominal gastrintestinais Distúrbios do reação alérgica* sistema imune Distúrbios do ardência prurido (coceira) edema (inchaço) sistema eritema/irritação erupção cutânea reprodutivo e hemorragia mamas vaginal * Pode ser grave levando à reação anafilática (síncope, hipotensão, dispnéia, urticária).\nFrequência desconhecida. As reações adversas listadas a seguir foram identificadas durante o uso pós aprovação de clotrimazol.\nConsiderando que as reações são reportadas voluntariamente a partir de uma população de tamanho incerto, nem sempre é possível estimar com acuracidade a frequência.\nDoenças do sistema imunológico: reação anafilática, angioedema, hipersensibilidade Desordem vascular: síncope, hipotensão Doenças respiratórias, torácicas e do mediastino: dispneia Doenças gastrointestinais: dor abdominal, náuseas Distúrbios do tecido cutâneo e subcutâneo: erupção cutânea, urticária Doenças do sistema reprodutivo e da mama: descamação vaginal, corrimento vaginal, hemorragia vaginal, desconforto vulvovaginal, eritema vulvovaginal, sensação de queimação vulvovaginal, prurido vulvovaginal, dor pélvica vulvovaginal.\nDistúrbios gerais e alterações no local de administração: irritação no local de aplicação, edema, dor.\nEm casos de eventos adversos, notifique pelo Sistema VigiMed, disponível no Portal da Anvisa."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 4,
+      "pagina_fim": 5,
+      "texto": "Nenhum risco de intoxicação aguda foi observado uma vez que é improvável que ocorra sobredose após aplicação tópica única vaginal ou dermatológica (aplicação sobre uma área extensa em condições favoráveis à absorção) ou ingestão oral inadvertida.\nNão há antídoto específico.\nAs seguintes reações adversas foram relatadas associadas com a ingestão de sobredose aguda de clotrimazol: desconforto abdominal, dor no abdômen superior, diarreia, mal-estar, náusea e vômito.\fEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações.\nIII- DIZERES LEGAIS Registro: 1.0235.0712 Produzido por: EMS S/A Rod. Jornalista Francisco Aguirre Proença, Km 08 Bairro Chácara Assay – Hortolândia - SP - CEP 13186-901 CNPJ: 57.507.378/0003-65 Indústria Brasileira SAC 0800 019-19 14 Siga corretamente o modo de usar. Não desaparecendo os sintomas, procure orientação de um profissional de saúde.\nEsta bula foi atualizada conforme bula padrão aprovada pela ANVISA em 23/10/2024.\nBula-prof-152575-EMS-v0"
+    }
+  ],
+  "numero_registro": "1.0235.0712",
+  "forma_farmaceutica": "creme vaginal",
+  "versao": "Bula Padrão de 23/10/2024"
+}

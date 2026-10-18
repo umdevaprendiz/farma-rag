@@ -12,6 +12,11 @@ cabeça", remédio sem bula no acervo); e alergia a um remédio ("sou alérgico 
 outro?"): a contraindicação dele e remédios para o mesmo uso. Toda pergunta segue para a resposta:
 a recusa só vem quando nenhum trecho tem relação com ela.
 
+Para que serve (docs/DECISOES.md, seção 29): "paracetamol serve para ansiedade?" é respondida pela
+seção de indicações, sem LLM: as frases dela e a conclusão montada no código (citado, geral ou
+ausente: o que não está nas indicações não é indicado pela bula). Remédio sem bula: a classe da
+ANVISA, sem busca e sem concluir.
+
 Conversa (docs/DECISOES.md, seção 23): a API recebe a pergunta anterior (`PreviousQuestion`). Sem remédio
 na pergunta nova ("e para criança?"), continua sobre o da anterior; "alergia a um remédio" sem dizer
 qual pergunta de volta, e a resposta da pessoa chega junto com a pergunta que pediu o esclarecimento.
@@ -40,7 +45,8 @@ from app.config import Settings, get_settings
 from app.db.vector_search import SearchHit
 from app.llm import ollama
 from app.schemas.api import MAX_MEDICAMENTOS_POR_PERGUNTA, ErrorCode
-from app.services import grounding
+from app.schemas.dataset import Chunk
+from app.services import grounding, indication
 from app.services.citations import InvalidOutputError, validar_saida
 from app.services.corpus import Corpus
 from app.services.extract import INTERACAO, PERGUNTA_DE_DOSE, frase_da_alternativa, frases_de_dose, frases_sobre
@@ -99,6 +105,9 @@ DICA_NEGACAO = (
     "\"não\"; se nenhum trecho responde à pergunta, devolva \"nao_encontrada\"."
 )
 
+# Pergunta de para que serve: quantas frases das indicações, no total (no máximo 2 por bula).
+MAX_FRASES_INDICACAO = 4
+
 # Alternativas por semelhança (sem remédio da mesma classe no acervo): só as que ficam a até esta
 # distância da melhor. Calibrar com o benchmark.
 MARGEM_PARECIDOS = 0.05
@@ -146,6 +155,8 @@ class State(TypedDict, total=False):
     nao_indexados: list[str]
     secoes: list[str]  # seções que a pergunta indica (intent.inferir_secoes)
     alergia_a: str | None  # remédio da alergia: a busca traz alternativas a ele
+    uso: str | None  # pergunta de para que serve: o uso perguntado ("" = geral); None = outra pergunta
+    conclusao: str | None  # o veredito da pergunta de uso (services/indication.py)
     # Rodadas
     rodada: int
     vetor: list[float]  # embedding da pergunta, calculado uma vez só
@@ -237,7 +248,7 @@ def montar_grafo(acervo: Corpus, s: Settings):
         texto = f"{anterior.pergunta} {pergunta}" if responde and pergunta != anterior.pergunta else pergunta
         inicial: State = {
             "texto": texto, "assunto": termos_do_assunto(texto), "secoes": inferir_secoes(texto),
-            "continuacao": responde, "alergia_a": None, "vetor_uso": None, "rodada": 0,
+            "continuacao": responde, "alergia_a": None, "vetor_uso": None, "rodada": 0, "uso": None, "conclusao": None,
             "usados": list(e["outra"].enviados) if e.get("outra") else [],
             "tentativas": [], "tempos_s": {}, "prompt_tokens": 0, "principios_ativos": [], "nao_indexados": [],
         }
@@ -254,6 +265,8 @@ def montar_grafo(acervo: Corpus, s: Settings):
             return inicial | {
                 "principios_ativos": sorted({a for a, _ in achados.values() if a}),
                 "nao_indexados": sorted({n for _, n in achados.values() if n}),
+                # "Tomei rocutan para dor no ouvido" -> "É o Roacutan?" -> o botão reenvia a pergunta.
+                "uso": indication.uso_perguntado(pergunta),
             }
 
         # Sem medicamento indexado (nenhum nome, ou só remédio sem bula), principios_ativos fica
@@ -291,7 +304,8 @@ def montar_grafo(acervo: Corpus, s: Settings):
             }
 
         if (depois := texto_apos_alergia(inicial["texto"])) is None:
-            return estado
+            # Pergunta de para que serve; "e para dor de cabeça?" depois de uma, também.
+            return estado | {"uso": indication.uso_perguntado(pergunta, anterior.pergunta if continua else None)}
         # Na resposta ao esclarecimento, o remédio está na mensagem nova ("Exemplol", "é a dipirona").
         alvo = detectar(pergunta if responde else depois, acervo.catalogo)
         nomes = alvo.indexados + alvo.nao_indexados
@@ -318,6 +332,16 @@ def montar_grafo(acervo: Corpus, s: Settings):
         sem os trechos citados nela."""
         rodada = e["rodada"] + 1
         t = time.perf_counter()
+        # Os caminhos da primeira tentativa: frases copiadas da bula e o top-k direto.
+        primeira = rodada == 1 and not e.get("outra")
+        uso = e.get("uso")
+        if primeira and uso is not None and not e["principios_ativos"] and e["nao_indexados"]:
+            # Para que serve um remédio sem bula: as outras bulas só o citam de passagem (numa
+            # interação), e isso não diz para que ele serve. A classe da ANVISA, sem busca nem LLM.
+            return {
+                "rodada": rodada, "fontes": [], "extrato": [], "tempos_s": _somar_tempo(e, "busca", t),
+                "conclusao": indication.conclusao(_vereditos_sem_bula(e)),
+            }
         vetor_uso = e.get("vetor_uso")
         try:
             vetor = e.get("vetor") or ollama.embed([e["texto"]], s)[0]
@@ -325,13 +349,14 @@ def montar_grafo(acervo: Corpus, s: Settings):
                 vetor_uso = ollama.embed([uso], s)[0]
         except ollama.OllamaError as erro:
             return {"rodada": rodada} | _erro(erro.codigo, erro.detalhe)
-        # Os caminhos da primeira tentativa: frases copiadas da bula e o top-k direto.
-        primeira = rodada == 1 and not e.get("outra")
         extrato: list[tuple[str, str]] = []  # (chunk_id, frase): só na primeira; depois, o LLM tenta
+        conclusao: str | None = None
         if e.get("alergia_a"):
             achados = _busca_alternativas(vetor, vetor_uso, e)
             if primeira:
                 extrato = [(a.chunk_id, frase_da_alternativa(acervo.chunks[a.chunk_id])) for a in achados]
+        elif primeira and uso is not None and (indicacao := _frases_da_indicacao(vetor, e)):
+            achados, extrato, conclusao = indicacao
         elif primeira and (interacao := _frases_da_interacao(vetor, e)):
             achados, extrato = interacao
         elif primeira and (dose := _frases_da_dose(vetor, e)):
@@ -354,7 +379,57 @@ def montar_grafo(acervo: Corpus, s: Settings):
             "rodada": rodada, "vetor": vetor, "vetor_uso": vetor_uso, "fontes": fontes,
             "usados": e["usados"] + novos, "tempos_s": _somar_tempo(e, "busca", t),
             "extrato": [(posicao[c], frase) for c, frase in extrato if c in posicao],
+            # Só vale com o extrato desta rodada; numa rodada seguinte, o LLM responde sem veredito.
+            "conclusao": conclusao,
         }
+
+    def _vereditos_sem_bula(e: State) -> list[indication.Verdict]:
+        return [
+            indication.Verdict(indication.nome_curto(n), e["uso"], "sem_bula", acervo.catalogo.classe_de(n))
+            for n in e["nao_indexados"]
+        ]
+
+    def _frases_da_indicacao(
+        vetor: list[float], e: State
+    ) -> tuple[list[SearchHit], list[tuple[str, str]], str | None] | None:
+        """"Paracetamol serve para ansiedade?": as frases da seção de indicações de cada remédio
+        (services/indication.py), no máximo 2 por bula e MAX_FRASES_INDICACAO no total, e a conclusão
+        (citado, geral, ausente). Frase repetida entre bulas do mesmo remédio entra uma vez. None =
+        nenhum remédio da pergunta tem a seção de indicações (segue o caminho normal)."""
+        uso = e["uso"]
+        vereditos: list[indication.Verdict] = []
+        escolhidas: list[tuple[Chunk, str]] = []
+        for ativo in e["principios_ativos"]:
+            alvo = normalizar(ativo)
+            da_secao = sorted(
+                (c for c in acervo.chunks.values() if c.secao == "indicacoes" and normalizar(c.principio_ativo) == alvo),
+                key=lambda c: c.chunk_id,
+            )
+            if not da_secao:
+                continue
+            sit = indication.situacao(uso, [c.texto for c in da_secao]) if uso else "lista"
+            # O nome como a bula escreve (o filtro chega normalizado: "isotretinoina").
+            vereditos.append(indication.Verdict(indication.nome_curto(da_secao[0].principio_ativo), uso, sit))
+            vistas: set[str] = set()
+            por_bula: dict[str, list[Chunk]] = defaultdict(list)
+            for c in da_secao:
+                por_bula[c.bula_id].append(c)
+            for chunks_da_bula in por_bula.values():
+                da_bula = [(c, f) for c in chunks_da_bula for f in indication.frases(uso, c, sit)]
+                novas = [(c, f) for c, f in da_bula if normalizar(f) not in vistas][:2]
+                vistas |= {normalizar(f) for _, f in novas}
+                escolhidas += novas
+        if not escolhidas:
+            return None
+        escolhidas = escolhidas[:MAX_FRASES_INDICACAO]
+        # Mais de uma bula na resposta: cada frase diz de qual é ("Tylalgin 750 mg: ...").
+        varias = len({c.bula_id for c, _ in escolhidas}) > 1
+        extrato = [(c.chunk_id, f"{c.medicamento}: {f}" if varias else f) for c, f in escolhidas]
+        ativos = e["principios_ativos"]
+        semelhanca = {a.chunk_id: a.score for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos)}
+        trechos = list(dict.fromkeys(c.chunk_id for c, _ in escolhidas))
+        conclusao = indication.conclusao(vereditos + _vereditos_sem_bula(e))
+        return [SearchHit(c, semelhanca.get(c, 0.0)) for c in trechos], extrato, conclusao
 
     def _frases_da_dose(vetor: list[float], e: State) -> tuple[list[SearchHit], list[tuple[str, str]]] | None:
         """"Qual a dose máxima de dipirona?": as frases da posologia com número e unidade, uma por
@@ -640,6 +715,10 @@ def montar_grafo(acervo: Corpus, s: Settings):
             extrativa=bool(e.get("resposta")) and e.get("extrativa", False),
             outra_explicacao=bool(e.get("outra")),
         )
+        # O veredito da pergunta de uso vale com a resposta copiada das indicações, ou sozinho (remédio
+        # sem bula, sem trechos). Resposta do LLM numa rodada seguinte não leva veredito.
+        if (r.extrativa or not r.fontes) and not e.get("desfecho") and not e.get("falha"):
+            r.conclusao = e.get("conclusao")
         if e.get("desfecho") == "erro":
             r.status, r.codigo_erro, r.detalhe_erro = "erro", e["codigo_erro"], e["detalhe_erro"]
         elif e.get("desfecho") == "esclarecer":

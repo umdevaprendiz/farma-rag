@@ -103,6 +103,64 @@ do paciente. O site de bulas da Prati-Donaduzzi é um aplicativo sem link direto
 |---|---|---|---|---|---|
 | `dipirona_dorageo-geolab_profissional.pdf` | Dorageo 1 g comprimido (dipirona monoidratada) | 1.5423.0350 | [Geolab](https://www.geolab.com.br/wp-content/uploads/2024/08/bula_1787252112501.pdf) | V.03_03/2026 | `9962db94406f0835a09a4c0d539c64cbfe83ae446852f02e323229cd20940793` |
 
+### Lote 3 (baixado em 2026-10-18)
+
+Pedido do usuário: as que faltavam do MVP + zolpidem, sertralina e isotretinoína (perguntas reais
+que voltaram "não encontrei"). Ele pediu a análise de procedência **antes** de baixar e aprovou só
+os sites que passaram em tudo.
+
+Verificação feita **antes** de baixar (RDAP do registro.br, certificado TLS validado, Google Safe
+Browsing status 1 em todos, link tirado da página oficial do produto, registro `Ativo` no CSV):
+- geolab.com.br: Geolab 03.485.572/0001-04, desde 2001 (mesmo CNPJ do detentor);
+- **sara.com.br**, o portal de bulas do grupo EMS: registrado em nome de **EMS S/A 57.507.378/0003-65**
+  (o CNPJ do detentor dos registros 1.0235.xxxx no CSV), desde 2018. A página do produto traz o
+  caminho da bula do profissional (`professionalLeaflet`), servida por `cdn.sara.com.br` (Amazon
+  CloudFront, certificado válido para o nome). O sara.com.br também hospeda bulas de outras
+  empresas: só valem as de produto da própria EMS S/A. O site da Germed (domínio no CNPJ da
+  Germed) aponta para ele; ems.com.br fica atrás de antirrobô (Incapsula) e não foi usado;
+- libbs.com.br: Libbs 61.230.314/0001-75, desde 1997 (mesmo CNPJ). O PDF está no domínio da Libbs,
+  mas a página do produto só mostra o link da bula do paciente (o do profissional fica atrás de
+  "Sou Profissional de Saúde").
+
+Verificação feita **depois** de baixar, numa pasta de quarentena vazia fora do projeto, sem abrir
+os PDFs: limite de 20 MB; resposta `application/pdf` ou `binary/octet-stream` começando com `%PDF-`
+(a 2ª versão da nitazoxanida veio em base64 e foi recusada); Windows Defender (assinaturas
+1.461.84.0, de 2026-10-17) sem ameaças; `validate_leaflet_pdf.py` sem conteúdo ativo nos 15 PDFs;
+texto de bula do profissional, registro impresso `Ativo` no CSV e do detentor certo. Para cada
+produto do sara.com.br com duas versões, ficou a mais recente (as duas do clotrimazol eram o mesmo
+arquivo).
+
+Dois PDFs da EMS trazem duas bulas (sem o cabeçalho "MODELO DE BULA..."): AAS 500 mg + 100 mg
+(indicações diferentes: a de 100 mg também como antiagregante) e isotretinoína 10 mg + 20 mg. O
+separador passou a abrir a bula seguinte em "I - IDENTIFICAÇÃO DO MEDICAMENTO" depois do histórico;
+as 25 bulas anteriores reprocessadas ficaram idênticas.
+
+Ficaram de fora nesta análise (registrado para não repetir a busca):
+- **com ressalva, aguardando o usuário**: Abbott (Duphalac; `abbottbrasil.com.br` está em nome de
+  pessoa física desde 2000, mas o servidor usa certificado OV de "Abbott Laboratories", que cobre
+  `dam.abbott.com`; o link "DUPHALAC (bula do profissional)" está na página de bulas); Germed via
+  sara.com.br (naproxeno sódico 1.0583.0978, minoxidil 1.0583.0949: CNPJ diferente do dono do
+  domínio, mesmo grupo); Sandoz (Diasec 1.0047.0318: a Sandoz lista como descontinuado;
+  `sandoz.com.br` ainda em nome da Novartis Biociências);
+- **reprovado**: natulab.com.br (Expectoflui, Masferol), registrado em nome de "A C PEIXOTO ME",
+  CNPJ 03.047.773/0001-11 **baixado**, não da Natulab (02.456.955/0001-83); certificado só DV;
+- **manual**: Eurofarma (Angino-Rub, benzidamina) responde 403 a cliente automático; Aché, Cimed e
+  União Química (dimenidrinato) só publicam a bula do paciente; sem fonte oficial aberta:
+  cetirizina, bisacodil, escopolamina, dimenidrinato, ácido ascórbico (Bulário, à mão).
+
+| Arquivo | Produto (princípio ativo) | Registro | Origem | Versão | SHA-256 |
+|---|---|---|---|---|---|
+| `sertralina_generico-geolab_profissional.pdf` | cloridrato de sertralina 50 e 100 mg (genérico) | 1.5423.0225 | [Geolab](https://www.geolab.com.br/wp-content/uploads/2021/05/bula_1787254130249.pdf) | V.15_03/2026 | `587c9aecbf2aa9903a16a4e08a7b5bc068e1bb11e32e2c0b4ebb16a75481656d` |
+| `zolpidem_generico-geolab_profissional.pdf` | hemitartarato de zolpidem 10 mg (genérico) | 1.5423.0303 | [Geolab](https://www.geolab.com.br/wp-content/uploads/2021/06/bula_1769171475573-1.pdf) | V.02_12/2024 | `e95ce1fd4f44863c429210a25789e64f66d1e6a83c4be3a39b065a4b3c5b8b56` |
+| `isotretinoina_generico-ems_profissional.pdf` | isotretinoína 10 e 20 mg (genérico, 2 bulas) | 1.0235.1120 | [EMS / sara.com.br](https://cdn.sara.com.br/leafletDocuments/prof-102351120.pdf) | Bula Padrão de 01/08/2025 e 24/10/2022 | `0f77756c16cde34662ac3544fdd23ebbc91f3e6920f6b874f61cbb2bfb248797` |
+| `acido-acetilsalicilico_generico-ems_profissional.pdf` | ácido acetilsalicílico 500 e 100 mg (genérico, 2 bulas) | 1.0235.0508 | [EMS / sara.com.br](https://cdn.sara.com.br/leafletDocuments/prof-102350508.pdf) | Bula Padrão de 12/12/2024; aprovada em 13/06/2025 | `772f5440dc8de432c3c30d74dc5b6109a9f7780e1378dde321ddcf7476f7e646` |
+| `amoxicilina_generico-ems_profissional.pdf` | amoxicilina tri-hidratada 500 mg (genérico) | 1.0235.0455 | [EMS / sara.com.br](https://cdn.sara.com.br/leafletDocuments/21965855-29b8-4384-8d74-4c4dcf236b5b.pdf) | histórico: 28/07/2025 | `2f2e510f74f6f4abc2f740098583d8a407fa35995cdcb06b68b9c1bbedd5b8d2` |
+| `clotrimazol_generico-ems_profissional.pdf` | clotrimazol 10 mg/g creme vaginal (genérico) | 1.0235.0712 | [EMS / sara.com.br](https://cdn.sara.com.br/leafletDocuments/0b4c0be2-43ff-4f70-8e20-b5e663e5a820.pdf) | Bula Padrão de 23/10/2024 | `df91c210c86f89964ebc90e070b21382f91a66a3901393e6f6e3fa6e910b3d9d` |
+| `nitazoxanida_generico-ems_profissional.pdf` | nitazoxanida 500 mg e 20 mg/mL (genérico) | 1.0235.1352 | [EMS / sara.com.br](https://cdn.sara.com.br/leafletDocuments/prof_102351352.pdf) | Bula Padrão de 22/05/2024 | `17b93f647d2355905388b6a5a2de3264de7b30f16654f5ac607dcfa6445de4bd` |
+| `oximetazolina_generico-ems_profissional.pdf` | cloridrato de oximetazolina 0,25 e 0,5 mg/mL (genérico) | 1.0235.0782 | [EMS / sara.com.br](https://cdn.sara.com.br/leafletDocuments/e1209022-3b93-43d9-bdd3-4713faf06ba6.pdf) | Bula Padrão de 23/04/2021 | `dc1c4e6d49119eb31636486371e699b2ae922b5ab613f3c928933c05e49ca94f` |
+| `nafazolina_generico-ems_profissional.pdf` | cloridrato de nafazolina 0,5 mg/mL (genérico) | 1.0235.0718 | [EMS / sara.com.br](https://cdn.sara.com.br/leafletDocuments/0998348236_professional.pdf) | Bula Padrão de 12/07/2023 | `5aa31beb386ce63c74d72397289c42438e149cdca422a540a2fd659e173aaf26` |
+| `levonorgestrel_pozato-uni-libbs_profissional.pdf` | Pozato Uni (levonorgestrel 1,5 mg) | 1.0033.0125 | [Libbs](https://www.libbs.com.br/wp-content/uploads/2015/12/Pozato-Uni_bula-do-profissional_v.09-24.pdf) | aprovada em 05/12/2024 | `75426f9c8addb3b38eda82c210cafd55f29acea50817027be2666a253ea1caaa` |
+
 ## Catálogo derivado (versionado no Git)
 
 `data/processed/catalogo_anvisa.jsonl` + `catalogo_anvisa.meta.json`, gerados por

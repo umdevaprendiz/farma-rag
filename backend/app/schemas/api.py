@@ -119,6 +119,9 @@ class AnswerOut(BaseModel):
     rodadas: int = 0
     # Só preenchido quando status = nao_encontrada.
     motivo: Literal["sem_contexto", "medicamento_nao_indexado"] | None = None
+    # Pergunta de para que serve ("paracetamol serve para ansiedade?"): o veredito montado no código
+    # pela seção de indicações, antes das frases da bula. Não é afirmação do modelo.
+    conclusao: str | None = None
     resposta: str | None
     fontes: list[SourceOut]
     # Medicamentos citados na pergunta que não têm bula indexada (o frontend avisa).
@@ -167,6 +170,7 @@ class InquiryDetail(InquirySummary):
     """Uma consulta como foi respondida, com as fontes guardadas no momento (snapshot)."""
 
     principios_ativos_filtro: list[str]
+    conclusao: str | None = None
     resposta: str | None
     motivo: str | None
     codigo_erro: ErrorCode | None

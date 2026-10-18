@@ -1,0 +1,107 @@
+{
+  "id": "cloridrato-de-oximetazolina-0-25-mg-ml-e-0-5-mg-ml-ems",
+  "medicamento": "Cloridrato de oximetazolina 0,25 mg/mL e 0,5 mg/mL",
+  "principio_ativo": "cloridrato de oximetazolina",
+  "nomes_comerciais": [],
+  "fabricante": "EMS",
+  "tipo_bula": "profissional",
+  "data_versao": "2021-04-23",
+  "fonte_pdf": "data/raw/bulas/oximetazolina_generico-ems_profissional.pdf",
+  "processado_em": "2026-10-18T10:47:40-03:00",
+  "secoes": [
+    {
+      "secao": "outras",
+      "titulo_original": "(antes da primeira seção)",
+      "pagina_inicio": 1,
+      "pagina_fim": 2,
+      "texto": "cloridrato de oximetazolina EMS S/A.\nSolução nasal 0,25 mg/mL e 0,5 mg/mL\fI - IDENTIFICAÇÃO DO MEDICAMENTO cloridrato de oximetazolina “Medicamento Genérico, Lei n° 9.787, de 1999”"
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "APRESENTAÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Cloridrato de oximetazolina adulto solução nasal spray:\n0,5 mg/mL em embalagem contendo 30 mL.\nCloridrato de oximetazolina pediátrico solução nasal gotas:\n0,25 mg/mL em embalagem contendo 20 mL.\nUSO NASAL Cloridrato de oximetazolina Adulto USO ADULTO E PEDIÁTRICO ACIMA DE 6 ANOS Cloridrato de oximetazolina Pediátrico USO PEDIÁTRICO ACIMA DE 2 ANOS"
+    },
+    {
+      "secao": "composicao",
+      "titulo_original": "COMPOSIÇÃO",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "Cada mL de solução nasal spray contém:\ncloridrato de oximetazolina...............................................................................................................0,5mg Veículo*...............................................................................................................................................1mL *cloreto de benzalcônio, fosfato de sódio monobásico, edetato dissódico di-hidratado, propilenoglicol e água purificada.\nCada mL contém 0,5 mg de cloridrato de oximetazolina.\nCada mL de solução nasal gotas contém:\ncloridrato de oximetazolina............................................................................................................0,25mg Veículo*...............................................................................................................................................1mL *cloreto de benzalcônio, fosfato de sódio monobásico anidro, edetato dissódico di-hidratado, propilenoglicol e água purificada.\nCada mililitro equivale a 25 gotas (Cada gota equivale a 0,0100 mg de cloridrato de oximetazolina).\nII - INFORMAÇÕES TÉCNICAS AOS PROFISSIONAIS DA SAÚDE"
+    },
+    {
+      "secao": "indicacoes",
+      "titulo_original": "1. INDICAÇÕES",
+      "pagina_inicio": 2,
+      "pagina_fim": 2,
+      "texto": "O cloridrato de oximetazolina adulto e pediátrico estão indicados para o alívio sintomático da congestão nasal e nasofaríngea decorrentes do resfriado comum, sinusite, febre ou outras alergias das vias aéreas superiores."
+    },
+    {
+      "secao": "caracteristicas_farmacologicas",
+      "titulo_original": "3. CARACTERÍSTICAS FARMACOLÓGICAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "A atividade simpaticomimética do cloridrato de oximetazolina promove constrição da rede arteriolar da mucosa nasal, produzindo efeito descongestionante prolongado.\nAo reduzir a congestão ao redor das Trompas de Eustáquio, o cloridrato de oximetazolina adulto e pediátrico podem também ser úteis no tratamento coadjuvante da infecção do ouvido médio.\nTambém se recomenda para uso no consultório sob a forma de tampão nasal para facilitar o exame intranasal ou antes de cirurgia nasal."
+    },
+    {
+      "secao": "contraindicacoes",
+      "titulo_original": "4. CONTRAINDICAÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Este medicamento é contraindicado para uso por pacientes:\n- com hipersensibilidade a qualquer um dos componentes de cloridrato de oximetazolina adulto e pediátrico.\n- com doença cardíaca, hipertensão, doenças da tireoide, diabete ou dificuldade em urinar devido a aumento do tamanho da glândula da próstata, a menos que indicado pelo médico.\n- em tratamento com inibidores de monoaminaoxidase (IMAO) ou em pacientes que tomaram IMAO nas duas semanas anteriores - com glaucoma de ângulo estreito.\n- após hipofisectomia transfenoidal.\n- com inflamação da pele e mucosa do vestíbulo nasal e incrustação (rinite seca)."
+    },
+    {
+      "secao": "advertencias",
+      "titulo_original": "5. ADVERTÊNCIAS E PRECAUÇÕES",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Advertências Não exceder a posologia recomendada e não usar por mais de três dias, pois pode causar congestão recorrente. O uso frequente ou prolongado pode causar congestão recorrente ou piora.\nO cloreto de benzalcônio pode causar irritação ou inchaço dentro do nariz, especialmente se usado por um longo período de tempo. O propilenoglicol pode causar irritação na pele.\nUso durante a gravidez e lactação Categoria C. Este medicamento não deve ser utilizado por mulheres grávidas sem orientação médica ou do cirurgião-dentista.\nA oximetazolina não foi associada ao desfecho adverso da gravidez. Estudos em animais não indicam efeitos nocivos diretos ou indiretos em relação à gravidez, desenvolvimento embrionário / fetal, parto ou desenvolvimento pós-natal. Deve-se ter cuidado em pacientes com hipertensão ou sinais de perfusão placentária reduzida. O uso frequente ou prolongado de altas doses pode reduzir a perfusão placentária.\nPortanto, o medicamento só deverá ser utilizado se os benefícios potenciais para a mãe justificarem o risco potencial para o feto.\nFertilidade Não há dados disponíveis sobre a interferência na fertilidade masculina e feminina.\nEfeitos sobre a capacidade de conduzir ou operar máquinas A oximetazolina não possui influência na capacidade de conduzir e utilizar máquinas."
+    },
+    {
+      "secao": "interacoes",
+      "titulo_original": "6. INTERAÇÕES MEDICAMENTOSAS",
+      "pagina_inicio": 3,
+      "pagina_fim": 3,
+      "texto": "Recomenda-se precaução no uso de cloridrato de oximetazolina adulto e pediátrico em pacientes em tratamento com inibidores da monoaminoxidase. Ocorrendo absorção sistêmica significativa de oximetazolina concomitantemente ao uso de antidepressivos tricíclicos, maprotilina ou inibidores da monoaminoxidase (IMAO), pode haver potencialização dos efeitos da oximetazolina."
+    },
+    {
+      "secao": "armazenamento",
+      "titulo_original": "7. CUIDADOS DE ARMAZENAMENTO DO MEDICAMENTO",
+      "pagina_inicio": 3,
+      "pagina_fim": 4,
+      "texto": "Armazenar em temperatura ambiente (de 15°C a 30°C). Proteger da luz e umidade.\nO prazo de validade do cloridrato de oximetazolina adulto e pediátrico é de 24 meses a partir da data de fabricação.\nNúmero de lote e datas de fabricação e validade: vide embalagem.\nNão use medicamento com o prazo de validade vencido. Guarde-o em sua embalagem original.\fCaracterísticas físicas e organolépticas O cloridrato de oximetazolina adulto é um líquido incolor, límpido, inodoro, isento de partículas e material estranho.\nO cloridrato de oximetazolina pediátrico é um líquido incolor, límpido, inodoro, isento de partículas e material estranho.\nAntes de usar, observe o aspecto do medicamento.\nTodo medicamento deve ser mantido fora do alcance das crianças."
+    },
+    {
+      "secao": "posologia",
+      "titulo_original": "8. POSOLOGIA E MODO DE USAR",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "Modo de usar O cloridrato de oximetazolina adulto deve ser administrado com a cabeça elevada. Durante a administração, inclina-se a cabeça suavemente para trás e se inspira durante a compressão do frasco.\nO cloridrato de oximetazolina pediátrico deve ser administrado com a cabeça da criança para trás; pingue duas ou três gotas de cloridrato de oximetazolina em cada narina, duas vezes ao dia, pela manhã e à noite.\nO uso do frasco por mais de uma pessoa pode propagar uma infecção.\nPosologia Para adultos e crianças com idade acima de 6 anos:\nCloridrato de oximetazolina adulto solução a 0,5 mg/mL - 2 ou 3 atomizações em cada narina, de 12 em 12 horas. Com a cabeça elevada, coloque a ponta do frasco em cada narina sem fechá-la completamente.\nDurante cada administração, o paciente deve inclinar a cabeça suavemente para trás e inspirar ativamente enquanto comprime o frasco.\nPara crianças com idade entre 2 e 5 anos:\nCom a cabeça da criança voltada para trás, pingue duas ou três gotas de cloridrato de oximetazolina pediátrico, solução a 0,25 mg/mL em cada narina, duas vezes ao dia, pela manhã e à noite.\nPara crianças com menos de 2 anos de idade:\nUsar somente quando indicado pelo médico."
+    },
+    {
+      "secao": "reacoes_adversas",
+      "titulo_original": "9. REAÇÕES ADVERSAS",
+      "pagina_inicio": 4,
+      "pagina_fim": 4,
+      "texto": "As reações adversas listadas baseiam-se em relatos espontâneos feitos na pós-comercialização ou na literatura médica, portanto a sua organização de acordo com as categorias de frequência CIOMS III não é relevante.\nClassificação por sistema Reações adversas corpóreo (MedDRA) Distúrbios do sistema imune Reação de hipersensibilidade Distúrbios psiquiátricos Nervosismo, agitação, ansiedade Distúrbios do sistema nervoso Tontura ou sensação de cabeça vazia, dificuldade de dormir, sonolência, tremores, cefaleia, alucinações (particularmente em crianças) Distúrbios oculares Visão embaçada Distúrbios cardíacos Taquicardia, palpitações Distúrbios vasculares Aumento da pressão arterial, hiperemia reativa Distúrbios respiratórios, Sensação de queimação nasal e ardor nasal, espirros, aumento da torácicos e do mediastino secreção nasal, aumento da obstrução nasal, ressecamento nasal, boca seca, irritação nasal, irritação da garganta, congestão nasal recorrente Distúrbios gastrointestinais Náusea Distúrbios da pele e dos Erupção cutânea tecidos subcutâneos Distúrbios Convulsões (particularmente em crianças) musculosqueléticos e dos tecidos conjuntivos Distúrbios gerais Fraqueza Em casos de eventos adversos, notifique pelo Sistema VigiMed, disponível no Portal da Anvisa."
+    },
+    {
+      "secao": "superdose",
+      "titulo_original": "10. SUPERDOSE",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "Sintomas Os sintomas de sobredosagem moderada ou grave podem ser midríase, náuseas, cianose, febre, espasmos, taquicardia, arritmia cardíaca, parada cardíaca, hipertensão, edema pulmonar, dispneia e distúrbios psíquicos. A inibição de funções do sistema nervoso central, como sonolência, diminuição da temperatura corporal, bradicardia, choque com hipotensão, apneia e perda de consciência também é possível.\nPopulação pediátrica: a manifestação clínica inclui sinais do SNC e sintomas: convulsão e coma, alucinações, bradicardia, apneia, hipertensão mudando para hipotensão.\nTratamento Um anafilático não seletivo, como a fentolamina, pode ser administrado para deprimir o aumento da pressão arterial. A intubação e a respiração artificial podem ser necessárias em casos graves. No caso de consumo oral inadvertido moderado ou grave, são indicados métodos padrões para remover drogas não absorvidas. O tratamento adicional é favorável e sintomático. Em caso de ingestão acidental, procure assistência médica.\nEm caso de intoxicação ligue para 0800 722 6001, se você precisar de mais orientações.\nIII - DIZERES LEGAIS Registro: 1.0235.0782 Registrado e produzido por: EMS S/A.\nRod. Jornalista Francisco Aguirre Proença, KM 08 Bairro Chácara Assay Hortolândia – SP - CEP: 13.186-901 CNPJ: 57.507.378/0003-65 Indústria Brasileira SAC 0800-019 19 14"
+    },
+    {
+      "secao": "outras",
+      "titulo_original": "(dizeres legais sem título)",
+      "pagina_inicio": 5,
+      "pagina_fim": 5,
+      "texto": "VENDA SOB PRESCRIÇÃO Esta bula foi atualizada conforme Bula Padrão aprovada pela Anvisa em 23/04/2021.\nBula-prof-260833-EMS-v0"
+    }
+  ],
+  "numero_registro": "1.0235.0782",
+  "forma_farmaceutica": "solução nasal",
+  "versao": "Bula Padrão de 23/04/2021"
+}
