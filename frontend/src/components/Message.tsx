@@ -37,24 +37,56 @@ export function MessageView({ mensagem: m, aoEscolherOpcao }: Props) {
   );
 }
 
+// Frases da espera, trocadas a cada SEGUNDOS_POR_FRASE em ordem sorteada. Nenhuma pode dar a
+// entender que uma pessoa está respondendo.
+const FRASES_ESPERA = [
+  "Pensando...",
+  "Memorizando...",
+  "Caçando um urso...",
+  "Folheando as bulas...",
+  "Lendo a letra miúda...",
+  "Procurando a página certa...",
+  "Conferindo as citações...",
+  "Tirando a poeira do bulário...",
+];
+const SEGUNDOS_POR_FRASE = 3;
+
+function embaralhar<T>(lista: readonly T[]): T[] {
+  const copia = [...lista];
+  for (let i = copia.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copia[i], copia[j]] = [copia[j], copia[i]];
+  }
+  return copia;
+}
+
 function Pensando({ inicio }: { inicio: number }) {
   const [agora, setAgora] = useState(Date.now());
+  // Sorteada uma vez por pergunta: sortear a cada render trocaria a frase a cada segundo.
+  const [frases] = useState(() => embaralhar(FRASES_ESPERA));
   useEffect(() => {
     const id = setInterval(() => setAgora(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  const s = Math.floor((agora - inicio) / 1000);
+  const s = Math.max(0, Math.floor((agora - inicio) / 1000));
+  const frase = frases[Math.floor(s / SEGUNDOS_POR_FRASE) % frases.length];
+  // O leitor de tela ouve só o texto fixo do status; a frase e o contador mudam e ficam de fora.
   return (
-    <div className="pensando" role="status">
+    <div className="pensando">
       <span className="pontos" aria-hidden="true">
         <i />
         <i />
         <i />
       </span>
-      <span>Consultando as bulas... {s} s</span>
-      {s >= 15 && (
-        <p>Nesta máquina (só CPU) a resposta leva de 10 a 45 s. Se ela não passar na verificação, tento de novo, até 3 rodadas.</p>
-      )}
+      <span role="status" className="sr-only">
+        Consultando as bulas
+      </span>
+      <span key={frase} className="frase-espera" aria-hidden="true">
+        {frase}
+      </span>
+      <span className="segundos" aria-hidden="true">
+        {s} s
+      </span>
     </div>
   );
 }
