@@ -39,6 +39,10 @@ _HIDRATACAO = re.compile(
 _PALAVRAS_GENERICAS = {"acido", "vitamina", "sodio", "potassio", "calcio"}
 _MIN_ALIAS_PALAVRA = 5
 _MIN_ALIAS_FUZZY = 6
+# Siglas de balcão, revisadas à mão: curtas demais para o filtro de alias do catálogo (_serve), mas
+# é assim que o remédio é pedido. Só reconhecimento exato. Benchmark de 2026-10-18: "AAS" não era
+# reconhecido em 3 de 80 perguntas (docs/DECISOES.md, seção 30).
+_SIGLAS = {"aas": "ácido acetilsalicílico"}
 _CUTOFF_FUZZY = 0.88
 # Sugestão de nome (marca do registro da ANVISA parecida com uma palavra da pergunta): mais
 # tolerante que a detecção, porque só pergunta de volta. Uma letra trocada numa marca de 8 letras
@@ -202,6 +206,11 @@ class Catalog:
                 so_exato.add(alias)
 
         nao_indexados: dict[str, str] = {}
+        for sigla, principio in _SIGLAS.items():
+            if ativo := por_chave.get(chave_principio(principio)):
+                indexados.setdefault(sigla, ativo)
+            else:
+                nao_indexados[sigla] = normalizar(principio)
         for nome in conhecidos:
             for alias in _aliases(nome):
                 if alias not in indexados:

@@ -46,16 +46,18 @@ from app.db.vector_search import SearchHit
 from app.llm import ollama
 from app.schemas.api import MAX_MEDICAMENTOS_POR_PERGUNTA, ErrorCode
 from app.schemas.dataset import Chunk
-from app.services import grounding, indication
+from app.services import grounding, indication, rerank
 from app.services.citations import InvalidOutputError, validar_saida
 from app.services.corpus import Corpus
 from app.services.extract import INTERACAO, PERGUNTA_DE_DOSE, frase_da_alternativa, frases_de_dose, frases_sobre
 from app.services.intent import (
     eliptica,
+    grupos_do_assunto,
     inferir_secoes,
     menciona,
     pede_remedio,
     responde_ao_assunto,
+    secoes_para_rerank,
     termos_do_assunto,
     texto_apos_alergia,
 )
@@ -266,7 +268,7 @@ def montar_grafo(acervo: Corpus, s: Settings):
                 "principios_ativos": sorted({a for a, _ in achados.values() if a}),
                 "nao_indexados": sorted({n for _, n in achados.values() if n}),
                 # "Tomei rocutan para dor no ouvido" -> "É o Roacutan?" -> o botão reenvia a pergunta.
-                "uso": indication.uso_perguntado(pergunta),
+                "uso": indication.uso_perguntado(pergunta) if len(achados) == 1 else None,
             }
 
         # Sem medicamento indexado (nenhum nome, ou só remédio sem bula), principios_ativos fica
@@ -304,15 +306,20 @@ def montar_grafo(acervo: Corpus, s: Settings):
             }
 
         if (depois := texto_apos_alergia(inicial["texto"])) is None:
-            # Pergunta de para que serve; "e para dor de cabeça?" depois de uma, também.
+            # Pergunta de para que serve; "e para dor de cabeça?" depois de uma, também. Só com um
+            # remédio: "toma losartana, pode tomar ibuprofeno para dor?" é de uso junto (seção 30).
+            if len(ativos) + len(nao_indexados) != 1:
+                return estado
             return estado | {"uso": indication.uso_perguntado(pergunta, anterior.pergunta if continua else None)}
         # Na resposta ao esclarecimento, o remédio está na mensagem nova ("Exemplol", "é a dipirona").
         alvo = detectar(pergunta if responde else depois, acervo.catalogo)
         nomes = alvo.indexados + alvo.nao_indexados
         if not nomes:
             # "Tenho alergia a um remédio, tem outro?": pergunta qual, uma vez só (se a pessoa já
-            # respondeu e não deu nome, segue com a busca geral).
-            if responde:
+            # respondeu e não deu nome, segue com a busca geral). Com remédio na pergunta, ela é
+            # sobre ele: "alérgico a penicilina, pode amoxicilina?", "rinite alérgica com coriza,
+            # fexofenadina serve?" (benchmark, seção 30).
+            if responde or ativos or nao_indexados:
                 return estado
             return estado | {
                 "desfecho": "esclarecer",
@@ -364,7 +371,7 @@ def montar_grafo(acervo: Corpus, s: Settings):
         elif not e["principios_ativos"]:
             achados = _busca_geral(vetor, e)
         elif primeira:
-            achados = acervo.indice.buscar(vetor, s.top_k, e["principios_ativos"])
+            achados = _primeira_busca(vetor, e)
         else:
             achados = _nova_busca(vetor, e)
         if s.limiar_similaridade is not None:
@@ -462,6 +469,37 @@ def montar_grafo(acervo: Corpus, s: Settings):
         semelhanca = {a.chunk_id: a.score for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos)}
         trechos = list(dict.fromkeys(chunk.chunk_id for chunk, _ in frases))
         return [SearchHit(c, semelhanca.get(c, 0.0)) for c in trechos], [(chunk.chunk_id, f) for chunk, f in frases]
+
+    def _primeira_busca(vetor: list[float], e: State) -> list[SearchHit]:
+        """Rodada 1 com remédio indexado: os `rerank_candidatos` mais parecidos de cada remédio,
+        mais os melhores das seções que a pergunta pede, e o reranking escolhe os top_k
+        (services/rerank.py). `rerank_candidatos=0`: só a semelhança (a linha de base)."""
+        ativos = e["principios_ativos"]
+        if not s.rerank_candidatos:
+            return acervo.indice.buscar(vetor, s.top_k, ativos)
+        secoes = secoes_para_rerank(e["texto"], len(ativos) + len(e["nao_indexados"]))
+        candidatos = acervo.indice.buscar(vetor, s.rerank_candidatos * len(ativos), ativos)
+        if secoes:
+            vistos: dict[tuple[str, str], int] = defaultdict(int)
+            for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos):  # já em ordem de score
+                c = acervo.chunks[a.chunk_id]
+                chave = (normalizar(c.principio_ativo), c.secao)
+                if c.secao in secoes and vistos[chave] < rerank.EXTRA_POR_SECAO:
+                    vistos[chave] += 1
+                    candidatos.append(a)
+        return rerank.reordenar(candidatos, acervo.chunks, secoes, _grupos_da_pergunta(e), s.top_k, ativos)
+
+    def _grupos_da_pergunta(e: State) -> list[tuple[str, ...]]:
+        """Os assuntos da pergunta nova sem os que são só nome: do princípio ativo, da marca ou do
+        fabricante ("Nisoflan", "Geolab" não dizem do que a pergunta trata)."""
+        alvos = {normalizar(a) for a in e["principios_ativos"]}
+        das_bulas = [
+            nome for b in acervo.bulas.values() if normalizar(b.principio_ativo) in alvos
+            for nome in (b.medicamento, b.fabricante, *b.nomes_comerciais)
+        ]
+        nomes = [*e["principios_ativos"], *e["nao_indexados"], *das_bulas]
+        palavras = set(re.findall(r"[a-z]{3,}", normalizar(" ".join(nomes))))
+        return [g for g in grupos_do_assunto(e["pergunta"]) if not all(any(p.startswith(t) for p in palavras) for t in g)]
 
     def _nova_busca(vetor: list[float], e: State) -> list[SearchHit]:
         """Com seção indicada: só trechos dessa seção, os ainda não usados primeiro (o trecho

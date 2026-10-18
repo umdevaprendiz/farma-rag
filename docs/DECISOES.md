@@ -720,3 +720,78 @@ duas bulas: o separador abre a seguinte em "I - IDENTIFICAÇÃO DO MEDICAMENTO" 
 de procedência, decisão do usuário), Natulab (domínio em nome de outra empresa, CNPJ baixado) e
 Eurofarma (bloqueia cliente automático); cetirizina, bisacodil, escopolamina, dimenidrinato, ácido
 ascórbico, guaifenesina e sulfato ferroso pelo Bulário, à mão.
+
+## 30. Benchmark de 80 perguntas e reranking da rodada 1 (2026-10-18)
+
+Pedido do usuário: reranking ("o banco vetorial traz 10, escolhe cirurgicamente os 3 para o agente") e
+um benchmark para medir. A divisão por seção com metadados (a outra parte da ideia) **já existia**:
+cada trecho nasce dentro de uma seção e carrega seção, medicamento, princípio ativo, página, versão,
+fabricante e registro; o limite de ~300 tokens só corta seção grande (201 das 442 cabem num trecho só;
+as advertências do Omenax dariam ~9 mil tokens num trecho, inviável no qwen 1.5B na CPU). O passo
+seguinte nessa linha são as subseções (gravidez, idosos, rins, crianças) como metadado: etapa 2.
+
+**Gabarito** (`data/benchmark/perguntas.jsonl`, formato da seção 2): 80 perguntas, 70 com resposta nas
+bulas (posologia 12, contraindicação 11, advertência 10, interação 10, reação adversa 9, indicação 9
+com as 4 reais de 18/10, conservação 5, superdose 2, composição 2) e 10 sem resposta (remédio sem
+bula, preço, vacina, unha encravada). Cada uma com âncora (princípio ativo, seção, frase copiada da
+bula; as 81 conferidas contra os trechos) e resposta esperada detalhada. Categorias `advertencia`,
+`superdose` e `composicao` entraram no contrato.
+
+**Executor** (`python -m benchmark.run`): modo `busca` troca o LLM por um que recusa e mede o que a
+rodada 1 entrega ao agente (acerto = todas as âncoras nos trechos enviados ou copiados), por categoria
+e por caminho (semelhança, copiada, indicação, busca geral), e a posição da âncora entre os 10
+candidatos da busca vetorial. `--sem-rerank` é a linha de base. Modo `completo` (LLM de verdade:
+quinta) mede também respondida, recusa certa, rodadas e latência. Resultados em
+`data/benchmark/resultados/`.
+
+**Reranking** (`services/rerank.py`, chamado em `graph._primeira_busca`; `RERANK_CANDIDATOS=10`, 0
+desliga), sem modelo e sem download:
+- candidatos: os 10 mais parecidos de cada remédio + os 2 mais parecidos de cada seção que a pergunta
+  pede, mesmo fora dos 10 ("zolpidem tem lactose?" não trazia a composição);
+- nota = semelhança + 0,08 se é da seção pedida + 0,08 × fração dos assuntos da pergunta que o trecho
+  cita (`intent.grupos_do_assunto`: uma palavra e seus sinônimos contam uma vez; nome de princípio
+  ativo, marca e fabricante não contam);
+- escolha gulosa dos top_k pela nota, com a divisão por remédio que a busca já fazia e sem trecho quase
+  igual a um já escolhido (Jaccard ≥ 0,8: as bulas do Tylalgin repetem frases);
+- a semelhança original continua sendo a nota mostrada na tela.
+- Seções do reranking (`intent.secoes_para_rerank`): as de `inferir_secoes` e mais: "pode
+  tomar/usar/ser dado/começar" com um remédio pede contraindicações e advertências (pergunta de
+  segurança sem a palavra "contraindicado"), se não for de posologia; dois ou mais remédios pedem
+  interações; "luz/umidade" armazenamento, "resseca" reações, "cerveja/beber" interações, "quantos
+  dias/quanto tempo" advertências, "momento/horário" posologia. Fica fora de `inferir_secoes` porque a
+  busca geral usa: lá "o que posso tomar para dor?" é pedido de remédio.
+- Pesos: grade em 51 perguntas (as que passam pela semelhança) deu um platô de 39-40/51 para seção
+  0,08-0,10 e assunto 0,04-0,10 (com 2 extras por seção); escolhido o meio do platô, sem caçar o
+  máximo, para não ajustar às 80 perguntas.
+
+**Falhas de reconhecimento que o benchmark achou** (não eram de ranking), corrigidas:
+- "AAS" não era reconhecido (3 letras: o filtro de alias descarta). Lista curta de siglas de balcão
+  revisadas à mão (`medicines._SIGLAS`).
+- "Alérgico a penicilina, pode amoxicilina?" e "rinite alérgica com coriza, fexofenadina serve?"
+  caíam no fluxo de alergia e perguntavam "a alergia é a qual remédio?". Agora, se o alvo da alergia
+  não é remédio conhecido e há remédio na pergunta, ela segue sobre ele.
+- "Toma losartana, pode tomar ibuprofeno para dor?" caía na regra de indicação (seção 29). A regra
+  agora só vale com um remédio na pergunta.
+
+**Resultado** (modo busca, mesmo gabarito, rodada 1):
+
+| | linha de base | reranking + correções |
+|---|---|---|
+| Acerto geral | 44/70 | **57/70** |
+| Pelo caminho da semelhança | 27/45 | 40/51 (top-3 só por semelhança, nas mesmas: 29/51) |
+| Contraindicação | 3/11 | 6/11 |
+| Reação adversa | 4/9 | 7/9 |
+| Advertência | 7/10 | 9/10 |
+| Composição / conservação | 0/2, 4/5 | 2/2, 5/5 |
+| Tempo por pergunta (mediana) | 2,25 s | 2,26 s |
+
+O reranking em si custa milissegundos; o tempo é o embedding da pergunta. O ganho que mais importa
+para o balcão vem na quinta: trecho certo na rodada 1 = menos rodadas de 30-45 s do LLM.
+
+Ainda erram (13): contraindicações em que advertências parecidas ficam na frente (angioedema, IMAO,
+úlcera com AAS, mulher que pode engravidar e isotretinoína); interações (losartana + ibuprofeno,
+metformina + cerveja, varfarina + AAS); reações (lábios ressecados, tosse do enalapril); álcool com
+paracetamol; superdose de paracetamol (10º candidato, entre 6 trechos da mesma seção); e dois casos do
+caminho copiado, que não passa pelo reranking (posologia da loção para piolho escolheu a bula da
+sarna; alisquireno ficou atrás de frases de interação). **Limite do método**: pesos e gatilhos foram ajustados olhando essas 80 perguntas;
+perguntas novas, escritas sem olhar o resultado, são o teste honesto (próximo lote do gabarito).

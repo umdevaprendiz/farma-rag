@@ -57,6 +57,37 @@ def inferir_secoes(pergunta: str) -> list[Section]:
     ]
 
 
+# Só para o reranking da rodada 1 (services/rerank.py), com remédio na pergunta: "pode tomar X?" é
+# pergunta de segurança, mesmo sem a palavra "contraindicado" ("paciente com dengue pode tomar
+# ibuprofeno?"). Fica fora de inferir_secoes, que a busca geral usa: lá "o que posso tomar para
+# dor?" é pedido de remédio, não de contraindicação. Benchmark de 2026-10-18 (seção 30).
+_PEDE_SEGURANCA = re.compile(
+    r"\b(?:pode|posso|podem|poderia|devo|deve) (?:tomar|usar|ser dad[oa]|ser usad[oa]|dar|comecar|continuar|beber)\b"
+)
+_MAIS_GATILHOS: dict[Section, tuple[str, ...]] = {
+    "armazenamento": ("luz", "umidade"),
+    "reacoes_adversas": ("resseca", "efeito"),
+    "interacoes": ("cerveja", "vinho", "beber", "bebe "),
+    "posologia": ("momento", "horario", "que horas", "repetir"),
+    # Limite de tempo de uso costuma estar nas advertências ("não usar por mais de três dias").
+    "advertencias": ("quantos dias", "quanto tempo", "por mais de"),
+}
+
+
+def secoes_para_rerank(pergunta: str, n_remedios: int) -> list[Section]:
+    """As seções que ganham a nota de seção no reranking: as de inferir_secoes e as de _MAIS_GATILHOS;
+    com dois ou mais remédios, interações (a pergunta é de uso junto); com um só, contraindicações
+    e advertências em "pode tomar?", se a pergunta não for de posologia."""
+    texto = f" {normalizar(pergunta)} "
+    secoes = list(inferir_secoes(pergunta))
+    secoes += [s for s, gatilhos in _MAIS_GATILHOS.items() if any(re.search(r"\b" + re.escape(g), texto) for g in gatilhos)]
+    if n_remedios >= 2:
+        secoes.append("interacoes")
+    elif _PEDE_SEGURANCA.search(texto) and "posologia" not in secoes:
+        secoes += ["contraindicacoes", "advertencias"]
+    return list(dict.fromkeys(secoes))
+
+
 # --- Assunto da pergunta, para a busca geral -------------------------------------------------
 # A busca por semelhança sempre devolve os trechos "menos distantes", mesmo quando nenhuma bula
 # fala do assunto: "estou tonto" trazia as indicações do paracetamol (2026-10-16). Na busca
@@ -73,6 +104,10 @@ _GENERICAS = {
     "poderia", "deveria", "tenha", "tomei", "tomou", "tomando", "estar", "ficar", "fiquei", "coisa",
     "algo", "nada", "alguem", "pessoa", "gente", "hoje", "agora", "ainda", "certo", "seria",
     "alta", "baixa",  # "pressão alta": o assunto é a pressão
+    # Quem pergunta e quando: não é o assunto ("paciente com dengue" -> dengue). Benchmark, seção 30.
+    "paciente", "pacientes", "cliente", "clientes", "mulher", "homem", "toma", "tomava", "semana",
+    "semanas", "todos", "todas", "dias", "precisa", "cuidado", "alerta", "risco", "muitas", "muitos",
+    "engano", "nenhum", "nenhuma", "comecar", "parou", "depois",
 }
 # Sintoma dito de um jeito na pergunta e de outro na bula. Valores: começos de palavra.
 _SINONIMOS = {
@@ -106,9 +141,10 @@ _SINONIMOS = {
 _PREFIXO = 5  # o mesmo da fundamentação: aceita flexão ("criança" x "crianças")
 
 
-def termos_do_assunto(pergunta: str) -> list[str]:
-    """Começos de palavra que um trecho precisa ter (ao menos um) para falar do assunto da
-    pergunta. Vazio = a pergunta não tem assunto além do pedido ("qual o melhor remédio?")."""
+def grupos_do_assunto(pergunta: str) -> list[tuple[str, ...]]:
+    """O assunto da pergunta, um grupo de começos de palavra por palavra (a palavra e os sinônimos
+    dela): "rinite alérgica" -> [("rinit",), ("alergi", "alergic", ...)]. O reranking conta quantos
+    grupos o trecho cobre; a busca geral só pede um termo qualquer (termos_do_assunto)."""
     grupos: list[tuple[str, ...]] = []
     for palavra in re.findall(r"[a-z]{3,}", normalizar(pergunta)):
         if palavra in _SINONIMOS:
@@ -119,7 +155,13 @@ def termos_do_assunto(pergunta: str) -> list[str]:
     # qualquer bula com "dores" entraria.
     if len(grupos) > 1:
         grupos = [g for g in grupos if g != _SINONIMOS["dor"]]
-    return list(dict.fromkeys(t for g in grupos for t in g))
+    return list(dict.fromkeys(grupos))
+
+
+def termos_do_assunto(pergunta: str) -> list[str]:
+    """Começos de palavra que um trecho precisa ter (ao menos um) para falar do assunto da
+    pergunta. Vazio = a pergunta não tem assunto além do pedido ("qual o melhor remédio?")."""
+    return list(dict.fromkeys(t for g in grupos_do_assunto(pergunta) for t in g))
 
 
 def menciona(texto_normalizado: str, termos: list[str]) -> bool:

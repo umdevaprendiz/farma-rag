@@ -291,3 +291,11 @@ def test_nome_com_sal_do_catalogo_e_reconhecido_sem_o_sal():
                "nome_produto": "PLAVIX", "principios_ativos": ["bissulfato de clopidogrel"]}]
     cat = Catalog.montar([], [], anvisa)
     assert detectar("Omeprazol pode com clopidogrel?", cat).nao_indexados == ["bissulfato de clopidogrel"]
+
+
+def test_sigla_de_balcao_aas():
+    # "AAS" tem 3 letras: o filtro de alias do catálogo descarta, mas é como o remédio é pedido
+    # (benchmark de 2026-10-18, seção 30). Com bula, indexado; sem bula, conhecido sem bula.
+    assert detectar("Posso tomar AAS para dor de cabeça?", CAT).indexados == ["acido acetilsalicilico"]
+    sem_bula = Catalog.montar([SimpleNamespace(principio_ativo="ibuprofeno", nomes_comerciais=[])], [])
+    assert detectar("AAS pode com ibuprofeno?", sem_bula).nao_indexados == ["acido acetilsalicilico"]

@@ -39,10 +39,13 @@ ROTULO_SECAO: dict[str, str] = {
 Category = Literal[
     "interacao",
     "contraindicacao",
+    "advertencia",  # gravidez, amamentação, idosos, álcool, dirigir, uso prolongado
     "posologia",
     "conservacao",
     "reacao_adversa",
     "indicacao",
+    "superdose",
+    "composicao",
     "fora_do_escopo",
 ]
 

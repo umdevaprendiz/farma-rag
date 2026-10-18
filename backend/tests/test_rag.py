@@ -201,12 +201,25 @@ def test_recusa_sem_secao_indicada_vale_na_primeira_rodada(acervo, modelo):
 
 
 def test_recusa_com_trechos_da_secao_errada_busca_a_secao_da_pergunta(acervo, modelo):
+    # Sem reranking (a linha de base), a rodada 1 é só semelhança: veio a posologia, e a rodada 2
+    # foi buscar a seção da pergunta.
     recusa = {"status": "nao_encontrada", "afirmacoes": []}
     chamadas = modelo("posologia", recusa)
-    r = rag.responder("Exemplol causa queda de cabelo?", acervo, s=S)  # "causa" -> reações adversas
+    sem_rerank = S.model_copy(update={"rerank_candidatos": 0})
+    r = rag.responder("Exemplol causa queda de cabelo?", acervo, s=sem_rerank)  # "causa" -> reações adversas
     assert (r.status, r.motivo, r.rodadas) == ("nao_encontrada", "sem_contexto", 2)
     assert [f.chunk.secao for f in r.fontes] == ["reacoes_adversas"]
     assert [t.resultado for t in r.tentativas] == ["recusa", "recusa"] and len(chamadas) == 2
+
+
+def test_reranking_traz_a_secao_da_pergunta_ja_na_rodada_1(acervo, modelo):
+    # Com o reranking (seção 30), a seção pedida entra entre os candidatos e ganha a nota da seção:
+    # a recusa vem na rodada 1, com o trecho certo consultado, sem a segunda chamada ao LLM.
+    chamadas = modelo("posologia", {"status": "nao_encontrada", "afirmacoes": []})
+    r = rag.responder("Exemplol causa queda de cabelo?", acervo, s=S)
+    assert (r.status, r.rodadas, len(chamadas)) == ("nao_encontrada", 1, 1)
+    # A posologia continua primeiro: no teste ela tem semelhança 1,0 contra 0,01 das outras.
+    assert "reacoes_adversas" in [f.chunk.secao for f in r.fontes]
 
 
 def test_numero_sem_fonte_reprova_e_a_rodada_2_corrige(acervo, modelo):

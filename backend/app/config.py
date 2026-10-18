@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     db_timeout_s: int = 5
 
     top_k: int = 3
+    # Reranking (services/rerank.py): a rodada 1 olha os N mais parecidos por remédio e escolhe os
+    # top_k pela seção da pergunta, pelas palavras dela e sem repetir trecho. 0 = só semelhança.
+    rerank_candidatos: int = 10
     # Pergunta sem medicamento indexado: busca em todas as bulas, um trecho por princípio ativo.
     # Cada trecho é uma opção na resposta ("melhor remédio pra dor de cabeça").
     top_k_geral: int = 4

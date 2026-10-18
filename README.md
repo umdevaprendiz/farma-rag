@@ -64,13 +64,14 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 | Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citations.py` |
 | Agente em grafo (LangGraph, 6 nós, rodadas 1 a 3) | ✅ pronto, testado com LLM falso e com o LLM real nas 24 bulas | `app/services/graph.py` |
 | Teste manual pelo terminal | ✅ pronto | `python -m benchmark.ask` |
-| Testes automáticos | ✅ 303 testes; os de banco rodam num schema temporário e são pulados sem o PostgreSQL | `backend/tests/` |
+| Testes automáticos | ✅ 317 testes; os de banco rodam num schema temporário e são pulados sem o PostgreSQL | `backend/tests/` |
 | Bulas reais: 31 PDFs → 37 bulas, 1.384 trechos com embedding, no banco; tabela de interações lida como tabela | ✅ 28 de 40 medicamentos do MVP, mais zolpidem, sertralina e isotretinoína | `data/bulas_manifesto.json`, `data/processed/bulas/`, `ingestion/extract_pdf.py` |
 | Checagem de fundamentação (números, doses, termos, "só o nome" não vale, remédio certo) e de assunto (a resposta responde à pergunta) | ✅ pronto | `app/services/grounding.py`, `app/services/intent.py` |
 | Pergunta sem remédio ou com remédio sem bula: busca híbrida em todas as bulas, um trecho por medicamento | ✅ pronto, testado com o LLM real | `app/services/graph.py`, `app/services/intent.py` |
 | Conversa: pergunta seguinte ("e para criança?"), alergia com pergunta de volta e alternativas da mesma classe | ✅ pronto, testado com o LLM real | `app/services/graph.py`, `app/services/intent.py` |
 | Respostas copiadas da bula, sem LLM (dose, interação entre remédios citados, alternativas na alergia) | ✅ pronto | `app/services/extract.py` |
 | Para que serve, pelas indicações da bula, com conclusão (citado / geral / não indicado) | ✅ pronto, testado com LLM falso | `app/services/indication.py` |
+| Reranking da rodada 1 (seção pedida, assunto, sem repetir trecho) e benchmark de 80 perguntas por âncora | ✅ pronto; 44/70 → 57/70 no modo busca | `app/services/rerank.py`, `benchmark/run.py`, `data/benchmark/perguntas.jsonl` |
 | Para que serve o remédio sem bula: classe terapêutica do registro na ANVISA | ✅ pronto | `app/services/medicines.py` |
 | "Não ajudou": outra explicação sem os trechos citados, e destaque das frases da bula que sustentam cada afirmação | 🟡 pronto no grafo, testado com LLM falso; faltam a API e a tela | `app/services/graph.py`, `app/services/grounding.py` |
 | Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metrics.py` |
@@ -149,7 +150,7 @@ A busca fica atrás do `Protocol` `VectorSearch`. `InMemoryIndex` (numpy) e `Pgv
 flowchart TD
   S((início)) --> EN["entender<br/>detectar + seção da pergunta<br/>(sem LLM)"]
   EN -- "filtro desconhecido" --> FI
-  EN -- "com ou sem medicamento" --> BU["buscar<br/>com medicamento: top_k na bula dele,<br/>rodada 2+: seção da pergunta<br/>sem: todas as bulas, seção da pergunta,<br/>1 trecho por medicamento"]
+  EN -- "com ou sem medicamento" --> BU["buscar<br/>com medicamento: 10 candidatos + seção pedida,<br/>reranking escolhe 3; rodada 2+: seção da pergunta<br/>sem: todas as bulas, seção da pergunta,<br/>1 trecho por medicamento"]
   BU -- "nenhum trecho" --> FI
   BU --> GE["gerar<br/>JSON {status, afirmacoes}<br/>(LLM)"]
   GE --> VA{"validar<br/>citações + fundamentação<br/>(sem LLM)"}
@@ -164,7 +165,7 @@ flowchart TD
 | Nó | LLM | O que faz |
 |---|---|---|
 | `entender` | não | Detecta o medicamento (ou aplica o filtro) e infere as seções da pergunta (`services/intent.py`: "gravidez" → contraindicações e advertências, "dose" → posologia…) |
-| `buscar` | não (embedding, 1 vez só) | Pergunta de para que serve: as frases da seção de indicações e a conclusão (`services/indication.py`), sem LLM; de remédio sem bula, nem busca. Com medicamento indexado: rodada 1 top_k por semelhança na bula dele; rodadas seguintes, trechos das seções indicadas, os ainda não usados primeiro. Sem medicamento indexado (nenhum nome, ou só remédio sem bula): **busca geral**, todas as bulas, só nas seções indicadas e um trecho por princípio ativo (`TOP_K_GERAL=4`), para a resposta trazer as opções. No "não ajudou", começa como numa rodada seguinte: sem os trechos citados na resposta anterior e com os já enviados no fim da fila |
+| `buscar` | não (embedding, 1 vez só) | Pergunta de para que serve: as frases da seção de indicações e a conclusão (`services/indication.py`), sem LLM; de remédio sem bula, nem busca. Com medicamento indexado: rodada 1, os 10 mais parecidos de cada remédio mais os melhores da seção pedida, e o **reranking** (`services/rerank.py`) escolhe os top_k; rodadas seguintes, trechos das seções indicadas, os ainda não usados primeiro. Sem medicamento indexado (nenhum nome, ou só remédio sem bula): **busca geral**, todas as bulas, só nas seções indicadas e um trecho por princípio ativo (`TOP_K_GERAL=4`), para a resposta trazer as opções. No "não ajudou", começa como numa rodada seguinte: sem os trechos citados na resposta anterior e com os já enviados no fim da fila |
 | `gerar` | **sim** | Geração com JSON Schema. Da rodada 2 em diante, uma observação genérica diz o que falhou (sem repetir a afirmação errada, que o modelo copiaria). Se a pergunta cita remédio sem bula, a observação avisa que não há trechos dele, para o modelo não atribuir a ele o que a bula de outro diz |
 | `validar` | não | `validar_saida` + checagem de fundamentação (`services/grounding.py`): todo número tem de estar no trecho citado, todo número com unidade de dose com a mesma unidade, a maioria dos termos da frase também, algum termo além do nome do remédio tem de estar no texto do trecho, e remédio citado na frase tem de ser o do trecho ou aparecer nele |
 | `verificar_llm` | **sim** | Só na rodada 3: "o trecho diz isso? sim/não" por afirmação. Pode usar um modelo maior (`LLM_MODELO_VERIFICACAO`) sem deixar a pergunta comum mais lenta |
@@ -371,14 +372,14 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 
 ```mermaid
 flowchart LR
-  Q["50 perguntas<br/>(10 sem resposta nas bulas)"] --> RUN["rag.responder<br/>por configuração"]
-  CFG["modelo × CHUNK_TOKENS (300 vs ~200)<br/>× TOP_K × limiar"] --> RUN
-  RUN --> M["metrics.py"]
-  GAB["gabarito por âncora<br/>{principio_ativo, secao, frase}"] --> M
-  M --> OUT["recall@k · fidelidade (revisão manual)<br/>citação correta · recusa correta · latência p50/p95"]
+  Q["80 perguntas<br/>(70 com resposta, 10 sem)"] --> RUN["python -m benchmark.run<br/>modo busca: LLM falso<br/>modo completo: LLM real"]
+  GAB["gabarito por âncora<br/>{principio_ativo, secao, frase}<br/>+ resposta esperada"] --> RUN
+  RUN --> OUT["acerto na rodada 1 · por categoria e caminho<br/>âncora entre os 10 candidatos<br/>recusa certa · rodadas · latência"]
 ```
 
-As 10 perguntas sem resposta calibram o `LIMIAR_SIMILARIDADE`, que hoje está vazio de propósito. Perguntas de interação têm duas âncoras e só contam se as duas forem recuperadas.
+`data/benchmark/perguntas.jsonl` (DECISOES §2 e §30): cada pergunta aponta onde a resposta está na bula (princípio ativo, seção e uma frase copiada dela), então o gabarito não muda quando o corte dos trechos muda. `--sem-rerank` roda a linha de base. Resultado de 2026-10-18, modo busca: **44/70 → 57/70** com o trecho certo na rodada 1, depois do reranking e das correções de reconhecimento que o próprio benchmark achou (sigla "AAS", alergia a algo que não é remédio, pergunta de uso com dois remédios).
+
+**Reranking da rodada 1** (`app/services/rerank.py`, sem modelo): os 10 mais parecidos de cada remédio, mais os 2 melhores de cada seção que a pergunta pede, recebem nota = semelhança + 0,08 se é da seção pedida + 0,08 × fração dos assuntos da pergunta que o trecho cita; os 3 de maior nota vão ao agente, sem repetir trecho quase igual e divididos entre os remédios. "Pode tomar X?" pede contraindicações e advertências; dois remédios pedem interações. `RERANK_CANDIDATOS=0` desliga.
 
 ### 4. Entrega
 

@@ -267,3 +267,24 @@ def test_resposta_a_um_esclarecimento_nao_pergunta_de_novo(acervo, modelo):
     anterior = PreviousQuestion("Tomei rocutan para dor no ouvido, fiz certo?", [], True)
     r = rag.responder("é outro, rocutan mesmo", acervo, s=S, anterior=anterior)
     assert r.status != "precisa_esclarecimento"
+
+
+@pytest.mark.parametrize("pergunta", [
+    # "Alergia a" + algo que não é remédio do catálogo, com um remédio na pergunta: a pergunta é
+    # sobre ele (benchmark de 2026-10-18, seção 30). Antes perguntava "a alergia é a qual remédio?".
+    "Sou alérgico a penicilina, posso tomar Exemplol?",
+    "Exemplol serve para rinite alérgica com espirro e coriza?",
+])
+def test_alergia_a_algo_que_nao_e_remedio_segue_sobre_o_remedio_da_pergunta(acervo, modelo, pergunta):
+    modelo({(EXEMPLINA, "contraindicacoes"): 1.0}, ("O Exemplol é contraindicado durante a gravidez", 1))
+    r = rag.responder(pergunta, acervo, s=S)
+    assert r.status != "precisa_esclarecimento"
+    assert (r.principios_ativos, r.alergia_a) == ([EXEMPLINA], None)
+
+
+def test_pergunta_de_uso_com_dois_remedios_e_de_uso_junto(acervo, modelo):
+    # "Toma Exemplol, pode tomar Outrol para pressão alta?" não é "para que serve": a regra das
+    # indicações (seção 29) só vale com um remédio na pergunta.
+    chamadas = modelo({(EXEMPLINA, "interacoes"): 1.0, (OUTRINICO, "interacoes"): 0.9}, ("Pode reduzir o efeito anti-hipertensivo", 1))
+    r = rag.responder("Quem toma Exemplol pode tomar Outrol para pressão alta?", acervo, s=S)
+    assert r.conclusao is None and chamadas["chat"]
