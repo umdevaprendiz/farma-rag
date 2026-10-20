@@ -574,8 +574,26 @@ não conta (está no trecho todo).
   copia o que vê no prompt (seções 15 e 16). A diferença vem dos trechos.
 
 Feito em 2026-10-17: destaque e grafo (`Result.outra_explicacao`, `Source.destaques`), 16 testes.
-Falta: a API (pedido de outra explicação a partir da consulta, destaques/fabricante/registro na
-fonte, gravar em `consulta_fontes`) e a tela (botão, trecho com a parte destacada).
+
+**API e tela (2026-10-20):**
+- Rota própria, `POST /api/v1/perguntas/{consulta_id}/outra-explicacao`, sem corpo. A tela não
+  reenvia a pergunta: a API a tira do histórico, e assim pergunta, filtro e conversa são os da
+  original, sem a tela poder mandar outra coisa.
+- Coluna nova `consultas.outra_explicacao` (boolean, padrão false). A consulta nova guarda em
+  `consulta_origem_id` a resposta que não ajudou; seguindo os `outra_explicacao = true` para trás,
+  chega-se à pergunta original (`history.explicacoes`, no máximo 20 elos).
+- `AnotherExplanation` do histórico (`history.para_outra_explicacao`): `evitar` = fontes citadas em
+  toda a cadeia; `enviados` = os chunk_ids de todas as rodadas (`tentativas`) e das fontes gravadas
+  (que são só as da última rodada).
+- A rodada roda com a pergunta anterior da conversa da original (o `consulta_origem_id` dela):
+  "e como conservar?" só é sobre o remédio por causa dela.
+- Só resposta `respondida` pede outra explicação; senão, 422 `ENTRADA_INVALIDA` (não há resposta
+  para explicar de outro jeito).
+- `SourceOut.destaques` e `consulta_fontes.destaques` com `[início, fim]` em caracteres do Python
+  (code points); a tela fatia com `Array.from`. Fonte não citada: lista vazia; consulta gravada antes:
+  nula no banco, lista vazia na API.
+- Tela: o botão fica só na última resposta da conversa (a outra explicação aparece logo embaixo),
+  também quando ela foi aberta do histórico. Fabricante e registro já estavam no cartão da fonte.
 
 ## 27. Classes, tipos e arquivos em inglês (2026-10-17)
 Pedido do usuário: nomes em inglês. Escopo escolhido por ele: **classes do Python (e os aliases de

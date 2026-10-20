@@ -56,20 +56,25 @@ def cliente(api, engine):
 @pytest.fixture
 def modelo(monkeypatch, dados):
     """Troca o Ollama: a busca devolve primeiro o trecho de `secao` e a geração devolve `saida` em
-    toda rodada. Devolve a lista de prompts de geração."""
+    toda rodada. Devolve a lista de prompts de geração.
+
+    Com listas: a busca devolve os trechos dessas seções nessa ordem, e cada chamada de geração
+    recebe a saída seguinte (a última se repete)."""
     _, chunks, _ = dados
     chamadas = []
 
-    def preparar(secao: str, saida: dict):
+    def preparar(secao: str | list[str], saida: dict | list[dict]):
         vetor = np.zeros(EMBED_DIM)
         vetor[: len(chunks)] = 0.01
-        vetor[next(i for i, c in enumerate(chunks) if c.secao == secao)] = 1.0
+        for n, nome in enumerate([secao] if isinstance(secao, str) else secao):
+            vetor[next(i for i, c in enumerate(chunks) if c.secao == nome)] = 1.0 - 0.1 * n
+        saidas = [saida] if isinstance(saida, dict) else saida
         monkeypatch.setattr(ollama, "embed", lambda textos, s=None: [vetor.tolist()])
 
         def chat(sistema, usuario, formato, s=None, modelo=None):
             assert sistema != graph.SISTEMA_VERIFICACAO, "nenhum teste daqui chega à rodada 3 aprovado"
             chamadas.append(usuario)
-            return ollama.LLMResponse(json.dumps(saida), 400, 40, 8.0, 4.0)
+            return ollama.LLMResponse(json.dumps(saidas[min(len(chamadas), len(saidas)) - 1]), 400, 40, 8.0, 4.0)
 
         monkeypatch.setattr(ollama, "chat", chat)
         return chamadas
@@ -327,3 +332,89 @@ def test_erro_traz_o_id_da_consulta_para_a_conversa_continuar(cliente, monkeypat
     corpo = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol pode com álcool?"}).json()
     assert corpo["erro"]["codigo"] == "OLLAMA_INDISPONIVEL"
     assert cliente.get(f"/api/v1/historico/{corpo['consulta_id']}").json()["status"] == "erro"
+
+
+# ---- "Não ajudou" (docs/DECISOES.md, seção 26) ----------------------------------------------
+
+INDICACAO = "Exemplol é indicado para o tratamento da hipertensão arterial em adultos"
+CONTRAINDICACAO = "Exemplol é contraindicado para pacientes com hipersensibilidade à exemplina"
+CONSERVAR = "Conservar em temperatura ambiente, entre 15 °C e 30 °C"
+
+
+def _destacado(fonte: dict) -> list[str]:
+    return [fonte["trecho"][i:f] for i, f in fonte["destaques"]]
+
+
+def _outra(cliente, consulta_id: str):
+    return cliente.post(f"/api/v1/perguntas/{consulta_id}/outra-explicacao")
+
+
+def _secoes(corpo: dict) -> list[str]:
+    return [f["secao"] for f in corpo["fontes"]]
+
+
+def test_nao_ajudou_refaz_sem_os_trechos_citados_e_fica_ligado(cliente, modelo):
+    # "O que é o Exemplol?" não indica seção: vale a semelhança, nesta ordem.
+    ordem = ["indicacoes", "caracteristicas_farmacologicas", "contraindicacoes", "advertencias", "armazenamento", "posologia"]
+    chamadas = modelo(ordem, [_resposta((INDICACAO, 1)), _resposta((CONTRAINDICACAO, 1)), _resposta((CONSERVAR, 1))])
+    primeira = cliente.post("/api/v1/perguntas", json={"pergunta": "O que é o Exemplol?"}).json()
+    assert (primeira["status"], primeira["outra_explicacao"]) == ("respondida", False)
+    assert _secoes(primeira) == ["indicacoes", "caracteristicas_farmacologicas"]
+    # A fonte citada vem com a frase que sustenta a resposta; a não citada, sem destaque.
+    assert _destacado(primeira["fontes"][0]) == [f"{INDICACAO}."] and primeira["fontes"][1]["destaques"] == []
+
+    # Sem o trecho citado, e o só enviado (características) depois dos nunca enviados.
+    segunda = _outra(cliente, primeira["consulta_id"])
+    assert segunda.status_code == 200
+    segunda = segunda.json()
+    assert (segunda["status"], segunda["outra_explicacao"], segunda["resposta"]) == ("respondida", True, f"{CONTRAINDICACAO} [1].")
+    assert _secoes(segunda) == ["contraindicacoes", "advertencias"]
+    assert segunda["consulta_id"] != primeira["consulta_id"] and len(chamadas) == 2
+
+    # O histórico liga a outra explicação à que não ajudou, com a mesma pergunta e os destaques.
+    detalhe = cliente.get(f"/api/v1/historico/{segunda['consulta_id']}").json()
+    assert (detalhe["pergunta"], detalhe["consulta_origem_id"], detalhe["outra_explicacao"]) == (
+        "O que é o Exemplol?", primeira["consulta_id"], True,
+    )
+    assert detalhe["fontes"] == segunda["fontes"] and _destacado(detalhe["fontes"][0])
+    itens = cliente.get("/api/v1/historico").json()["itens"]
+    assert [i["outra_explicacao"] for i in itens] == [True, False]
+
+    # De novo: sem os citados nas duas respostas anteriores.
+    terceira = _outra(cliente, segunda["consulta_id"]).json()
+    assert (terceira["status"], _secoes(terceira)) == ("respondida", ["armazenamento", "posologia"])
+
+
+def test_nao_ajudou_sem_outro_trecho_da_secao_nao_chama_o_modelo(cliente, modelo):
+    # A bula de teste tem um trecho de interações só, e ele já foi citado.
+    chamadas = modelo("interacoes", _resposta(("Pode reduzir o efeito anti-hipertensivo", 1)))
+    primeira = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol tem interação medicamentosa?"}).json()
+    outra = _outra(cliente, primeira["consulta_id"]).json()
+    assert (outra["status"], outra["motivo"], outra["fontes"], outra["outra_explicacao"]) == (
+        "nao_encontrada", "sem_outra_explicacao", [], True,
+    )
+    assert len(chamadas) == 1  # só a primeira resposta
+    assert cliente.get(f"/api/v1/historico/{outra['consulta_id']}").json()["motivo"] == "sem_outra_explicacao"
+
+    # O que não é resposta não pede outra explicação.
+    assert _erro(_outra(cliente, outra["consulta_id"])) == (422, "ENTRADA_INVALIDA")
+
+
+def test_nao_ajudou_de_consulta_que_nao_existe_da_404(cliente):
+    assert _erro(_outra(cliente, "00000000-0000-0000-0000-000000000000")) == (404, "CONSULTA_NAO_ENCONTRADA")
+
+
+def test_nao_ajudou_mantem_a_pergunta_anterior_da_conversa(cliente, modelo):
+    # "E como conservar?" só é sobre o Exemplol por causa da pergunta anterior: a outra explicação
+    # também precisa dela.
+    modelo(["armazenamento", "posologia", "advertencias"], _resposta((CONSERVAR, 1)))
+    antes = cliente.post("/api/v1/perguntas", json={"pergunta": "O que é o Exemplol?"}).json()
+    seguinte = cliente.post("/api/v1/perguntas", json={
+        "pergunta": "E como conservar?", "consulta_origem_id": antes["consulta_id"],
+    }).json()
+    assert (seguinte["status"], seguinte["continuacao"]) == ("respondida", True)
+    outra = _outra(cliente, seguinte["consulta_id"]).json()
+    # Com o Exemplol herdado, a seção de armazenamento dele acabou: não há outra explicação.
+    assert (outra["status"], outra["motivo"], outra["principios_ativos"], outra["continuacao"]) == (
+        "nao_encontrada", "sem_outra_explicacao", ["maleato de exemplina"], True,
+    )

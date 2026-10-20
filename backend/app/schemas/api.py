@@ -88,6 +88,14 @@ class SourceOut(BaseModel):
     # Trecho enviado ao modelo e usado na resposta. Os não citados também aparecem: são o que
     # o sistema consultou.
     citado: bool
+    # As frases do trecho que sustentam a resposta, como [início, fim] em `trecho` (contando
+    # caracteres, como o Python). Vazio na fonte não citada e nas consultas gravadas antes do destaque.
+    destaques: list[tuple[int, int]] = Field(default_factory=list)
+
+    @field_validator("destaques", mode="before")
+    @classmethod
+    def _nulo_vira_vazio(cls, v: list | None) -> list:
+        return v or []
 
     @computed_field
     @property
@@ -117,8 +125,9 @@ class AnswerOut(BaseModel):
     # Só preenchido quando status = precisa_esclarecimento.
     esclarecimento: ClarificationOut | None = None
     rodadas: int = 0
-    # Só preenchido quando status = nao_encontrada.
-    motivo: Literal["sem_contexto", "medicamento_nao_indexado"] | None = None
+    # Só preenchido quando status = nao_encontrada. sem_outra_explicacao: o "não ajudou" não achou
+    # outro trecho que fale disso além dos já citados.
+    motivo: Literal["sem_contexto", "medicamento_nao_indexado", "sem_outra_explicacao"] | None = None
     # Pergunta de para que serve ("paracetamol serve para ansiedade?"): o veredito montado no código
     # pela seção de indicações, antes das frases da bula. Não é afirmação do modelo.
     conclusao: str | None = None
@@ -133,6 +142,8 @@ class AnswerOut(BaseModel):
     continuacao: bool = False  # usou a pergunta anterior da conversa
     alergia_a: str | None = None  # a resposta traz alternativas a este remédio
     extrativa: bool = False  # a resposta são frases copiadas da bula, sem o modelo de linguagem
+    # Resposta ao "não ajudou" (POST /perguntas/{id}/outra-explicacao), sem os trechos já citados.
+    outra_explicacao: bool = False
     modelo: str
     latencia_ms: int
 
@@ -156,6 +167,8 @@ class InquirySummary(BaseModel):
     id: UUID
     pergunta: str
     status: Literal["respondida", "nao_encontrada", "precisa_esclarecimento", "erro"]
+    # Outra explicação de uma resposta que não ajudou: a pergunta é a mesma da consulta_origem_id.
+    outra_explicacao: bool = False
     criado_em: datetime
 
 

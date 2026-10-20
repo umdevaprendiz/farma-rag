@@ -6,14 +6,16 @@ import { ROTULO_MOTIVO, duracao, emLista } from "../format";
 import { Fontes, TextoComCitacoes } from "./Citations";
 import type { ActiveSource } from "./Citations";
 import { ErrorNotice } from "./ErrorNotice";
-import { Logo } from "./Icons";
+import { IconeRefazer, Logo } from "./Icons";
 
 interface Props {
   mensagem: Message;
   aoEscolherOpcao: (pergunta: QuestionIn, vista: View, opcao: Option) => void;
+  aoNaoAjudou?: (pergunta: QuestionIn, vista: View) => void; // sem ele, a resposta não mostra o botão
+  ocupado: boolean;
 }
 
-export function MessageView({ mensagem: m, aoEscolherOpcao }: Props) {
+export function MessageView({ mensagem: m, aoEscolherOpcao, aoNaoAjudou, ocupado }: Props) {
   if (m.autor === "usuario") {
     return (
       <div className="msg msg-usuario">
@@ -30,7 +32,12 @@ export function MessageView({ mensagem: m, aoEscolherOpcao }: Props) {
         {m.carregando ? (
           <Pensando inicio={m.inicio} />
         ) : (
-          <Resposta vista={m.vista} aoEscolherOpcao={(opcao) => aoEscolherOpcao(m.pergunta, m.vista, opcao)} />
+          <Resposta
+            vista={m.vista}
+            aoEscolherOpcao={(opcao) => aoEscolherOpcao(m.pergunta, m.vista, opcao)}
+            aoNaoAjudou={aoNaoAjudou && (() => aoNaoAjudou(m.pergunta, m.vista))}
+            ocupado={ocupado}
+          />
         )}
       </div>
     </div>
@@ -96,9 +103,11 @@ function Pensando({ inicio }: { inicio: number }) {
 interface AnswerProps {
   vista: View;
   aoEscolherOpcao: (opcao: Option) => void;
+  aoNaoAjudou?: () => void;
+  ocupado: boolean;
 }
 
-function Resposta({ vista: v, aoEscolherOpcao }: AnswerProps) {
+function Resposta({ vista: v, aoEscolherOpcao, aoNaoAjudou, ocupado }: AnswerProps) {
   const [ativa, setAtiva] = useState<ActiveSource | null>(null);
   const abrir = (posicao: number | null) =>
     setAtiva((a) => (posicao === null ? null : { posicao, vez: (a?.vez ?? 0) + 1 }));
@@ -106,6 +115,10 @@ function Resposta({ vista: v, aoEscolherOpcao }: AnswerProps) {
   const classes = v.semBula.filter((n) => v.classes[n]).map((n) => `${n}: ${v.classes[n]}`);
   return (
     <>
+      {v.outraExplicacao && v.status === "respondida" && (
+        <p className="meta">Outra explicação, com trechos diferentes dos que já foram citados.</p>
+      )}
+
       {v.continuacao && (
         <p className="meta">
           Continuando a pergunta anterior{v.principios.length > 0 ? ` (sobre ${emLista(v.principios)})` : ""}.
@@ -128,15 +141,26 @@ function Resposta({ vista: v, aoEscolherOpcao }: AnswerProps) {
         </p>
       )}
 
+      {/* Pergunta de para que serve: o veredito vem antes das frases da bula que o sustentam. */}
+      {v.conclusao && <p className="resposta-texto conclusao">{v.conclusao}</p>}
+
       {v.status === "respondida" && v.texto && <TextoComCitacoes texto={v.texto} ativa={ativa} aoCitar={abrir} />}
 
-      {v.status === "nao_encontrada" && (
+      {v.status === "nao_encontrada" && v.motivo === "sem_outra_explicacao" && (
+        <p className="resposta-texto">
+          Não há outra explicação nas bulas do acervo: os trechos que falam disso já foram usados nas respostas
+          anteriores.
+        </p>
+      )}
+
+      {v.status === "nao_encontrada" && !v.conclusao && v.motivo !== "sem_outra_explicacao" && (
         <p className="resposta-texto">
           Não encontrei isso nas bulas do acervo. {ROTULO_MOTIVO[v.motivo ?? ""] ?? ""}
         </p>
       )}
 
-      {classes.length > 0 && (
+      {/* A conclusão de remédio sem bula já diz a classe. */}
+      {classes.length > 0 && !v.conclusao && (
         <p className="meta" title="Classe terapêutica no registro de medicamentos da ANVISA (dados abertos)">
           Para que serve, pelo registro na ANVISA: {classes.join("; ")}.
         </p>
@@ -174,6 +198,13 @@ function Resposta({ vista: v, aoEscolherOpcao }: AnswerProps) {
             ? `Frases copiadas da bula, sem resumo do modelo · ${duracao(v.latenciaMs)}`
             : `${v.rodadas} rodada${v.rodadas === 1 ? "" : "s"} · ${duracao(v.latenciaMs)}`}
         </p>
+      )}
+
+      {aoNaoAjudou && v.status === "respondida" && v.consultaId && (
+        <button type="button" className="nao-ajudou" onClick={aoNaoAjudou} disabled={ocupado}>
+          <IconeRefazer />
+          Não ajudou, explique de outro jeito
+        </button>
       )}
     </>
   );

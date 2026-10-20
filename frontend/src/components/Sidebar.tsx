@@ -53,10 +53,14 @@ export function Sidebar({ historico, erroHistorico, aberta, saude, apiFora, aoNo
                     type="button"
                     className={c.id === aberta ? "ativa" : ""}
                     onClick={() => aoAbrir(c.id)}
-                    title={`${c.pergunta} (${ROTULO_STATUS[c.status]})`}
+                    title={`${c.outra_explicacao ? "Outra explicação: " : ""}${c.pergunta} (${ROTULO_STATUS[c.status]})`}
                   >
                     <span className={`ponto ponto-${c.status}`} aria-label={ROTULO_STATUS[c.status]} />
-                    <span className="recente-texto">{c.pergunta}</span>
+                    {/* A outra explicação tem a mesma pergunta da original: sem o rótulo, as duas pareceriam repetidas. */}
+                    <span className="recente-texto">
+                      {c.outra_explicacao && <span className="recente-outra">Outra explicação: </span>}
+                      {c.pergunta}
+                    </span>
                   </button>
                 </li>
               ))}

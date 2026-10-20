@@ -33,7 +33,7 @@ from app.schemas.api import (
 from app.services import history
 from app.services.corpus import Corpus, IncompleteCorpusError
 from app.services.medicines import normalizar
-from app.services.rag import PreviousQuestion, responder
+from app.services.rag import AnotherExplanation, PreviousQuestion, responder
 
 router = APIRouter(prefix="/api/v1")
 
@@ -123,11 +123,47 @@ def medicamentos(sv: Services = Depends(servicos)) -> list[MedicineOut]:
 def perguntar(entrada: QuestionIn, sv: Services = Depends(servicos)) -> AnswerOut:
     """Roda o agente (services/graph.py) e grava a consulta, inclusive quando termina em erro."""
     acervo = sv.acervo()
-    anterior = None
-    if entrada.consulta_origem_id and (c := history.buscar(sv.engine, entrada.consulta_origem_id)):
-        anterior = PreviousQuestion(c.pergunta, c.principios_ativos or [], c.status == "precisa_esclarecimento")
+    return _responder(sv, acervo, entrada, _anterior(sv.engine, entrada.consulta_origem_id))
+
+
+@router.post("/perguntas/{consulta_id}/outra-explicacao", response_model=AnswerOut)
+def outra_explicacao(consulta_id: UUID, sv: Services = Depends(servicos)) -> AnswerOut:
+    """"Não ajudou, explique de outro jeito" (docs/DECISOES.md, seção 26): a pergunta da consulta
+    roda de novo sem os trechos citados nela e nas explicações antes dela, com o mesmo filtro e a
+    mesma pergunta anterior da original. A resposta vira uma consulta nova, ligada à que não
+    ajudou (consulta_origem_id, com outra_explicacao)."""
+    acervo = sv.acervo()
+    cadeia = history.explicacoes(sv.engine, consulta_id)
+    if not cadeia:
+        raise ApiError(ErrorCode.CONSULTA_NAO_ENCONTRADA, f"A consulta {consulta_id} não está no histórico.")
+    if cadeia[0].status != "respondida":
+        raise ApiError(
+            ErrorCode.ENTRADA_INVALIDA,
+            f"Só uma resposta (status respondida) pode pedir outra explicação; esta consulta terminou como {cadeia[0].status}.",
+        )
+    original = cadeia[-1]
+    entrada = QuestionIn(
+        pergunta=original.pergunta, principios_ativos=original.principios_ativos_filtro, consulta_origem_id=consulta_id
+    )
+    # Se um elo da cadeia foi apagado, a última da lista já é uma explicação: a origem dela não é
+    # a pergunta anterior da conversa.
+    anterior = None if original.outra_explicacao else _anterior(sv.engine, original.consulta_origem_id)
+    return _responder(sv, acervo, entrada, anterior, history.para_outra_explicacao(cadeia))
+
+
+def _anterior(engine: Engine, consulta_id: UUID | None) -> PreviousQuestion | None:
+    """A pergunta anterior da conversa, do histórico (a API não guarda conversa)."""
+    if consulta_id and (c := history.buscar(engine, consulta_id)):
+        return PreviousQuestion(c.pergunta, c.principios_ativos or [], c.status == "precisa_esclarecimento")
+    return None
+
+
+def _responder(
+    sv: Services, acervo: Corpus, entrada: QuestionIn, anterior: PreviousQuestion | None,
+    outra: AnotherExplanation | None = None,
+) -> AnswerOut:
     inicio = time.perf_counter()
-    r = responder(entrada.pergunta, acervo, entrada.principios_ativos, sv.s, anterior)
+    r = responder(entrada.pergunta, acervo, entrada.principios_ativos, sv.s, anterior, outra)
     latencia_ms = round((time.perf_counter() - inicio) * 1000)
     modelo = "frases da bula (sem LLM)" if r.extrativa else sv.s.llm_modelo
     consulta = history.gravar(sv.engine, entrada, r, acervo, modelo, latencia_ms)
@@ -153,6 +189,7 @@ def perguntar(entrada: QuestionIn, sv: Services = Depends(servicos)) -> AnswerOu
         continuacao=r.continuacao,
         alergia_a=r.alergia_a,
         extrativa=r.extrativa,
+        outra_explicacao=r.outra_explicacao,
         modelo=consulta.modelo,
         latencia_ms=latencia_ms,
     )

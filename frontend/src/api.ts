@@ -24,6 +24,9 @@ export interface Source {
   trecho: string;
   score: number;
   citado: boolean;
+  // Frases do trecho que sustentam a resposta, como [início, fim] em `trecho`. As posições contam
+  // caracteres como o Python (code points): fatiar com Array.from, não com slice direto.
+  destaques: [number, number][];
 }
 
 export interface Option {
@@ -43,7 +46,8 @@ export interface Answer {
   status: "respondida" | "nao_encontrada" | "precisa_esclarecimento";
   esclarecimento: Clarification | null;
   rodadas: number;
-  motivo: "sem_contexto" | "medicamento_nao_indexado" | null;
+  // sem_outra_explicacao: o "não ajudou" não achou outro trecho além dos já citados.
+  motivo: "sem_contexto" | "medicamento_nao_indexado" | "sem_outra_explicacao" | null;
   // Pergunta de para que serve: o veredito montado pelo sistema a partir das indicações da bula.
   conclusao: string | null;
   resposta: string | null;
@@ -54,6 +58,7 @@ export interface Answer {
   continuacao: boolean; // usou a pergunta anterior da conversa
   alergia_a: string | null; // a resposta traz alternativas a este remédio
   extrativa: boolean; // frases copiadas da bula, sem o modelo de linguagem
+  outra_explicacao: boolean; // resposta ao "não ajudou", sem os trechos já citados
   modelo: string;
   latencia_ms: number;
 }
@@ -77,6 +82,7 @@ export interface InquirySummary {
   id: string;
   pergunta: string;
   status: InquiryStatus;
+  outra_explicacao: boolean; // a mesma pergunta da consulta_origem_id, explicada de outro jeito
   criado_em: string;
 }
 
@@ -160,6 +166,8 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(entrada),
     }),
+  // "Não ajudou": a mesma pergunta da consulta, sem os trechos que ela (e as explicações antes dela) citou.
+  outraExplicacao: (consultaId: string) => pedir<Answer>(`/perguntas/${consultaId}/outra-explicacao`, { method: "POST" }),
   historico: (pagina: number, limite: number) =>
     pedir<History>(`/historico?pagina=${pagina}&limite=${limite}`),
   consulta: (id: string) => pedir<InquiryDetail>(`/historico/${id}`),

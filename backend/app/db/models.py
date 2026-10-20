@@ -92,6 +92,9 @@ class Inquiry(Base):
     # A pergunta anterior da mesma conversa (pergunta seguinte, ou resposta a um esclarecimento).
     # Sem FK, como o chunk_id das fontes: o histórico não pode quebrar se uma consulta antiga for apagada.
     consulta_origem_id: Mapped[UUID | None] = mapped_column(Uuid, nullable=True)
+    # "Não ajudou" (DECISOES §26): esta consulta é outra explicação da consulta_origem_id, com a mesma
+    # pergunta. Seguindo a cadeia até a primeira com False, chega-se à pergunta original.
+    outra_explicacao: Mapped[bool] = mapped_column(Boolean, default=False)
     criado_em: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_agora_utc, index=True)
 
     fontes: Mapped[list["InquirySource"]] = relationship(
@@ -123,8 +126,8 @@ class InquirySource(Base):
     trecho: Mapped[str] = mapped_column(Text)
     score: Mapped[float] = mapped_column(Float)
     citado: Mapped[bool] = mapped_column(Boolean, default=False)
-    # Partes do trecho que sustentam a resposta, como posições início/fim. Coluna criada já
-    # (decisão de 2026-10-15), preenchida quando entrar o destaque na fonte; até lá, nula.
+    # Frases do trecho que sustentam a resposta, como [início, fim] no texto do trecho (grounding.destaques).
+    # Lista vazia na fonte não citada; nula nas consultas gravadas antes de 2026-10-20.
     destaques: Mapped[list | None] = mapped_column(JSONB, nullable=True)
 
     consulta: Mapped[Inquiry] = relationship(back_populates="fontes")

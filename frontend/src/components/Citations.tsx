@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import type { ReactNode } from "react";
 
 import type { Source } from "../api";
 import { dataBula, semelhanca } from "../format";
@@ -86,6 +87,22 @@ export function Fontes({ titulo, fontes, ativa, aoEscolher }: SourcesProps) {
   );
 }
 
+/** O trecho com as frases usadas na resposta marcadas. As posições vêm do Python, que conta
+ * caracteres (code points); o JavaScript conta unidades UTF-16, e Array.from conta como o Python. */
+function TrechoDestacado({ texto, destaques }: { texto: string; destaques: [number, number][] }) {
+  const letras = Array.from(texto);
+  const partes: ReactNode[] = [];
+  let pos = 0;
+  for (const [inicio, fim] of [...destaques].sort((a, b) => a[0] - b[0])) {
+    if (inicio < pos || fim <= inicio || fim > letras.length) continue; // sobreposta ou fora do trecho
+    if (inicio > pos) partes.push(letras.slice(pos, inicio).join(""));
+    partes.push(<mark key={inicio}>{letras.slice(inicio, fim).join("")}</mark>);
+    pos = fim;
+  }
+  partes.push(letras.slice(pos).join(""));
+  return <>{partes}</>;
+}
+
 function CartaoFonte({ fonte: f }: { fonte: Source }) {
   const bula = [
     f.fabricante,
@@ -103,9 +120,17 @@ function CartaoFonte({ fonte: f }: { fonte: Source }) {
         </span>
       </header>
       <p className="cartao-bula">{bula.join(" · ")}</p>
-      <blockquote>{f.trecho}</blockquote>
+      <blockquote>
+        <TrechoDestacado texto={f.trecho} destaques={f.destaques} />
+      </blockquote>
       <footer>
-        <span>{f.citado ? "Usado na resposta" : "Consultado, não usado na resposta"}</span>
+        <span>
+          {!f.citado
+            ? "Consultado, não usado na resposta"
+            : f.destaques.length > 0
+              ? "Usado na resposta: em destaque, as frases que a sustentam"
+              : "Usado na resposta"}
+        </span>
         <span title="Similaridade de cosseno entre a pergunta e o trecho">semelhança {semelhanca(f.score)}</span>
       </footer>
     </article>

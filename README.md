@@ -73,9 +73,9 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 | Para que serve, pelas indicações da bula, com conclusão (citado / geral / não indicado) | ✅ pronto, testado com LLM falso | `app/services/indication.py` |
 | Reranking da rodada 1 (seção pedida, assunto, sem repetir trecho) e benchmark de 80 perguntas por âncora | ✅ pronto; 44/70 → 57/70 no modo busca | `app/services/rerank.py`, `benchmark/run.py`, `data/benchmark/perguntas.jsonl` |
 | Para que serve o remédio sem bula: classe terapêutica do registro na ANVISA | ✅ pronto | `app/services/medicines.py` |
-| "Não ajudou": outra explicação sem os trechos citados, e destaque das frases da bula que sustentam cada afirmação | 🟡 pronto no grafo, testado com LLM falso; faltam a API e a tela | `app/services/graph.py`, `app/services/grounding.py` |
+| "Não ajudou": outra explicação sem os trechos citados, e destaque das frases da bula que sustentam cada afirmação | ✅ pronto no grafo, na API e na tela, testado com LLM falso (LLM real na quinta) | `app/services/graph.py`, `app/services/grounding.py`, `app/api/routes.py`, `frontend/src/components/` |
 | Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metrics.py` |
-| API FastAPI: 5 endpoints, histórico de toda consulta | ✅ pronta, testada com LLM falso e no servidor (perguntas sem LLM) | `app/main.py`, `app/api/`, `app/services/history.py` |
+| API FastAPI: 6 endpoints, histórico de toda consulta | ✅ pronta, testada com LLM falso e no servidor (perguntas sem LLM) | `app/main.py`, `app/api/`, `app/services/history.py` |
 | Frontend React (Vite + TypeScript) em formato de chat: conversa, citações clicáveis, fontes em chips, histórico na lateral | ✅ pronto, conferido no navegador com o LLM real e com o simulado | `frontend/` |
 
 ## Arquitetura
@@ -189,8 +189,8 @@ Cada falha tem código próprio e status HTTP definido (`app/schemas/api.py`):
 | Código | HTTP | Quando |
 |---|---|---|
 | `MEDICAMENTO_NAO_ENCONTRADO` | 404 | Filtro com um nome que o catálogo não conhece (conhecido sem bula segue como remédio sem bula) |
-| `CONSULTA_NAO_ENCONTRADA` | 404 | `GET /historico/{id}` de uma consulta que não existe |
-| `ENTRADA_INVALIDA` | 422 | Pergunta fora de 5–500 caracteres, filtro vazio, mais de 3 medicamentos, paginação inválida |
+| `CONSULTA_NAO_ENCONTRADA` | 404 | `GET /historico/{id}` ou "não ajudou" de uma consulta que não existe |
+| `ENTRADA_INVALIDA` | 422 | Pergunta fora de 5–500 caracteres, filtro vazio, mais de 3 medicamentos, paginação inválida, "não ajudou" de consulta que não é resposta |
 | `SAIDA_INVALIDA` | 502 | O modelo devolveu JSON quebrado até a última rodada |
 | `CITACAO_INVALIDA` | 502 | Citação para trecho não enviado ou incoerente até a última rodada |
 | `RESPOSTA_NAO_VERIFICADA` | 502 | Nenhuma rodada passou na fundamentação ou na verificação; a mensagem explica cada rodada |
@@ -220,12 +220,13 @@ FastAPI em `app/main.py`, rotas em `app/api/routes.py`, documentação interativ
 | `GET /api/v1/saude` | Banco, Ollama e modelos baixados. Sempre 200: `status` é `ok` ou `degradado`, com a lista do que falta |
 | `GET /api/v1/medicamentos` | Princípios ativos com bula indexada e as bulas de cada um (fabricante, forma, data), para o seletor |
 | `POST /api/v1/perguntas` | `{pergunta, principios_ativos?, consulta_origem_id?}` → resposta, fontes, status, rodadas. Erro sai em `ErrorOut`, com o HTTP do catálogo |
+| `POST /api/v1/perguntas/{consulta_id}/outra-explicacao` | "Não ajudou": a pergunta da consulta de novo, sem os trechos citados nela e nas explicações antes dela. Sem corpo; mesma resposta do `POST /perguntas`, com `outra_explicacao: true` |
 | `GET /api/v1/historico?limite=20&pagina=1` | Consultas da mais recente para a mais antiga, com o total |
 | `GET /api/v1/historico/{consulta_id}` | A consulta como foi respondida, com as fontes do snapshot |
 
 - **O acervo vem do banco** (`Corpus.do_banco`): bulas e trechos são lidos uma vez, ao subir, e a busca é a `PgvectorSearch`. Depois de rodar `python -m ingestion.load_database`, reinicie a API.
 - **Toda pergunta fica no histórico**, inclusive esclarecimento e erro: status, rodadas, cada tentativa (`tentativas`, em JSON, com a saída crua do modelo), a mensagem do erro e o `consulta_origem_id` do reenvio depois de um esclarecimento.
-- **A resposta sai do snapshot gravado**: as fontes do `POST` são as mesmas que o histórico mostra depois, com fabricante, nº de registro, seção (chave e rótulo), página, data da bula e `citado`. Os trechos consultados e não citados também vêm.
+- **A resposta sai do snapshot gravado**: as fontes do `POST` são as mesmas que o histórico mostra depois, com fabricante, nº de registro, seção (chave e rótulo), página, data da bula, `citado` e `destaques` (as frases do trecho que sustentam a resposta). Os trechos consultados e não citados também vêm.
 - **Sobe sem o banco**: com o PostgreSQL fora do ar, a API sobe, responde 503 `BANCO_INDISPONIVEL` e tenta de novo a cada requisição. `DB_TIMEOUT_S` (5 s) corta a espera de ~130 s que o Windows faz por conexão.
 - **Endpoints síncronos** (`def`): o FastAPI roda cada um numa thread à parte, e a pergunta espera o Ollama por dezenas de segundos.
 
@@ -248,7 +249,7 @@ React 19 + TypeScript, servido pelo Vite (`frontend/`), em `http://127.0.0.1:517
 
 ### 8. "Não ajudou" e destaque na fonte
 
-Pronto no grafo (`rag.AnotherExplanation`, `Result.outra_explicacao`, `Source.destaques`); a API e a tela vêm a seguir. O balconista aperta "não ajudou, explique de outro jeito" e o agente refaz a resposta com outros trechos, com a mesma validação e sempre com fonte. O agente não pede isso sozinho: resposta fraca continua sendo resolvida pelas rodadas.
+O balconista aperta "não ajudou, explique de outro jeito" embaixo da última resposta e o agente refaz a resposta com outros trechos, com a mesma validação e sempre com fonte. O agente não pede isso sozinho: resposta fraca continua sendo resolvida pelas rodadas.
 
 - **Sem os trechos citados**: a pergunta roda de novo sem os trechos que a resposta anterior citou (e as outras explicações antes dela). Os enviados e não citados continuam valendo, mas depois dos que nunca foram enviados.
 - **Seção antes da semelhança**: com seção indicada pela pergunta, a busca começa por ela, como nas rodadas 2 e 3. Se todos os trechos da seção já foram citados, não há outra explicação: `nao_encontrada` com motivo `sem_outra_explicacao`, sem chamar o LLM. Recusa do modelo também vira esse motivo.
@@ -256,7 +257,8 @@ Pronto no grafo (`rag.AnotherExplanation`, `Result.outra_explicacao`, `Source.de
 - **O prompt não muda**: nem a resposta anterior nem "explique de outro jeito" entram no prompt, porque o modelo pequeno copia o que vê. A diferença vem dos trechos.
 - **Destaque** (`grounding.destaques`, sem LLM): de cada fonte citada, as frases inteiras do trecho que sustentam as afirmações, como posições (início, fim) no texto. Frase copiada da bula: as frases onde ela está. Paráfrase do modelo: as frases que mais cobrem os termos e números da afirmação, uma por vez, até no máximo 3; a primeira precisa cobrir pelo menos dois itens, e o nome do remédio não conta.
 
-Falta: a API pedir a outra explicação a partir de uma consulta do histórico (montar `AnotherExplanation` com os trechos citados e enviados), devolver e gravar os destaques (`SourceOut`, `consulta_fontes.destaques`) e aceitar o motivo `sem_outra_explicacao`; a tela ganhar o botão (só em resposta respondida) e o trecho com a parte destacada. Fabricante e nº de registro já aparecem na fonte.
+- **Na API** (`POST /perguntas/{id}/outra-explicacao`): a tela manda só o id da resposta que não ajudou. A API segue a cadeia no histórico (`history.explicacoes`) até a pergunta original e monta o `AnotherExplanation` (`history.para_outra_explicacao`): evita os trechos citados em toda a cadeia; os enviados em qualquer rodada (`tentativas`) vão para o fim da fila. Roda com a pergunta, o filtro e a pergunta anterior da conversa da original, e grava uma consulta nova com `consulta_origem_id` = a que não ajudou e `outra_explicacao = true`. Só resposta `respondida` pede outra explicação (senão, 422).
+- **Na tela**: o botão fica só na última resposta respondida; o pedido aparece na conversa como "Não ajudou, explique de outro jeito." e a resposta nova vem com "Outra explicação, com trechos diferentes dos que já foram citados". Sem trecho novo: "Não há outra explicação nas bulas do acervo". No cartão da fonte, as frases dos `destaques` aparecem marcadas; na barra lateral, a consulta aparece como "Outra explicação: <pergunta>".
 
 ## Modelo de dados
 
@@ -303,6 +305,7 @@ erDiagram
     int rodadas
     jsonb tentativas "cada rodada"
     uuid consulta_origem_id "sem FK"
+    bool outra_explicacao "não ajudou"
     timestamptz criado_em
   }
   consulta_fontes {
@@ -318,7 +321,7 @@ erDiagram
     date data_versao
     float score
     bool citado
-    jsonb destaques "nulo até o destaque na fonte"
+    jsonb destaques "frases usadas, início e fim"
   }
 ```
 
@@ -364,7 +367,7 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 
 ### 2. O que falta do agente
 
-- **"Não ajudou" na API e na tela**: o grafo já refaz a resposta sem os trechos citados (item 8 de [Como funciona hoje](#como-funciona-hoje)); falta a rota montar o pedido a partir do histórico e gravar os destaques, e a tela ganhar o botão e o trecho com a parte destacada.
+- **"Não ajudou" com o LLM real**: pronto no grafo, na API e na tela (item 8 de [Como funciona hoje](#como-funciona-hoje)), testado só com o modelo falso; falta ver, na quinta, se a outra explicação do qwen2.5:1.5b com os trechos novos passa na fundamentação.
 - **Forma farmacêutica ambígua** (Tylalgin gotas × comprimido × sachê): a bula já tem `forma_farmaceutica`, e o contrato `precisa_esclarecimento` continua na API e na tela; falta o nó que pergunta (o antigo `esclarecer`, que perguntava o medicamento, saiu em 2026-10-16).
 - O esclarecimento só pergunta sobre medicamento, forma farmacêutica ou seção. **Nunca** pergunta dado do paciente (idade, gestação, doenças), por causa da LGPD e da regra "não personaliza conduta". No máximo 1 por pergunta: o reenvio já vem com o filtro.
 

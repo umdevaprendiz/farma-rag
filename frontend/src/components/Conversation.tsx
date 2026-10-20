@@ -19,9 +19,10 @@ interface Props {
   bulas: number | null;
   aoPerguntar: (texto: string) => void;
   aoEscolherOpcao: (pergunta: QuestionIn, vista: View, opcao: Option) => void;
+  aoNaoAjudou: (pergunta: QuestionIn, vista: View) => void;
 }
 
-export function Conversation({ mensagens, ocupado, bulas, aoPerguntar, aoEscolherOpcao }: Props) {
+export function Conversation({ mensagens, ocupado, bulas, aoPerguntar, aoEscolherOpcao, aoNaoAjudou }: Props) {
   const fim = useRef<HTMLDivElement>(null);
   const ultima = mensagens[mensagens.length - 1];
   // O sistema perguntou algo de volta sem opções ("a alergia é a qual remédio?"): a caixa pede a resposta.
@@ -57,7 +58,14 @@ export function Conversation({ mensagens, ocupado, bulas, aoPerguntar, aoEscolhe
         ) : (
           <div className="mensagens" aria-live="polite">
             {mensagens.map((m) => (
-              <MessageView key={m.id} mensagem={m} aoEscolherOpcao={aoEscolherOpcao} />
+              <MessageView
+                key={m.id}
+                mensagem={m}
+                aoEscolherOpcao={aoEscolherOpcao}
+                // "Não ajudou" só na última resposta: a outra explicação aparece logo embaixo dela.
+                aoNaoAjudou={m === ultima ? aoNaoAjudou : undefined}
+                ocupado={ocupado}
+              />
             ))}
             <div ref={fim} />
           </div>

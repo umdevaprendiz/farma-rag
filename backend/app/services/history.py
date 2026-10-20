@@ -13,7 +13,11 @@ from sqlalchemy.orm import Session, selectinload
 from app.db.models import Inquiry, InquirySource
 from app.schemas.api import QuestionIn
 from app.services.corpus import Corpus
-from app.services.rag import Result, Source
+from app.services.rag import AnotherExplanation, Result, Source
+
+# Cada elo da cadeia de "não ajudou" é um clique do balconista: o limite só evita laço num
+# histórico estragado à mão.
+MAX_EXPLICACOES = 20
 
 
 def _snapshot(f: Source, acervo: Corpus) -> InquirySource:
@@ -30,6 +34,7 @@ def _snapshot(f: Source, acervo: Corpus) -> InquirySource:
         trecho=f.chunk.texto,
         score=f.score,
         citado=f.citado,
+        destaques=[list(d) for d in f.destaques],
     )
 
 
@@ -52,6 +57,7 @@ def gravar(
         rodadas=r.rodadas,
         tentativas=[asdict(t) for t in r.tentativas],
         consulta_origem_id=entrada.consulta_origem_id,
+        outra_explicacao=r.outra_explicacao,
         fontes=[_snapshot(f, acervo) for f in r.fontes],
     )
     with Session(engine, expire_on_commit=False) as sessao, sessao.begin():
@@ -77,3 +83,27 @@ def buscar(engine: Engine, consulta_id: UUID) -> Inquiry | None:
         return sessao.scalar(
             select(Inquiry).options(selectinload(Inquiry.fontes)).where(Inquiry.id == consulta_id)
         )
+
+
+def explicacoes(engine: Engine, consulta_id: UUID) -> list[Inquiry]:
+    """A consulta e as explicações antes dela, da mais recente até a pergunta original, que é a
+    última da lista. Vazia se a consulta não existe."""
+    cadeia: list[Inquiry] = []
+    proxima: UUID | None = consulta_id
+    while proxima is not None and len(cadeia) < MAX_EXPLICACOES and (c := buscar(engine, proxima)):
+        cadeia.append(c)
+        proxima = c.consulta_origem_id if c.outra_explicacao else None
+    return cadeia
+
+
+def para_outra_explicacao(cadeia: list[Inquiry]) -> AnotherExplanation:
+    """O que o "não ajudou" evita: os trechos citados em toda a cadeia. E o que fica para depois dos
+    nunca enviados: os enviados em qualquer rodada (as fontes gravadas são só as da última; as
+    outras rodadas estão em `tentativas`)."""
+    citados = [f.chunk_id for c in cadeia for f in c.fontes if f.citado]
+    enviados = [
+        chunk_id
+        for c in cadeia
+        for chunk_id in [*(i for t in c.tentativas or [] for i in t.get("chunk_ids", [])), *(f.chunk_id for f in c.fontes)]
+    ]
+    return AnotherExplanation(evitar=list(dict.fromkeys(citados)), enviados=list(dict.fromkeys(enviados)))

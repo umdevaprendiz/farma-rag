@@ -27,6 +27,7 @@ _COLUNAS_NOVAS = (
     ("consulta_fontes", "numero_registro", "text"),
     ("consulta_fontes", "destaques", "jsonb"),
     ("consultas", "conclusao", "text"),
+    ("consultas", "outra_explicacao", "boolean NOT NULL DEFAULT false"),
 )
 
 

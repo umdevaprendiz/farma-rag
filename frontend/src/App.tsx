@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { ApiError, api } from "./api";
-import type { Health, InquirySummary, Option, QuestionIn } from "./api";
+import type { Answer, Health, InquirySummary, Option, QuestionIn } from "./api";
 import { Conversation } from "./components/Conversation";
 import { IconeMenu, IconeNovo } from "./components/Icons";
 import { Sidebar } from "./components/Sidebar";
@@ -54,7 +54,7 @@ export function App() {
     atualizarHistorico();
   }, [atualizarHistorico]);
 
-  async function perguntar(entrada: QuestionIn, textoDoUsuario: string) {
+  function perguntar(entrada: QuestionIn, textoDoUsuario: string) {
     if (ocupado) return;
     // A última resposta da conversa vai junto: a pergunta nova pode continuar dela ("e para
     // criança?") ou responder a um "a alergia é a qual remédio?". "Nova pergunta" zera a conversa.
@@ -62,6 +62,18 @@ export function App() {
     if (!entrada.consulta_origem_id && ultima?.autor === "assistente" && !ultima.carregando && ultima.vista.consultaId) {
       entrada = { ...entrada, consulta_origem_id: ultima.vista.consultaId };
     }
+    enviar(entrada, textoDoUsuario, () => api.perguntar(entrada));
+  }
+
+  function naoAjudou(pergunta: QuestionIn, vista: View) {
+    // A API refaz a pergunta da consulta sem os trechos citados; a tela só diz qual consulta.
+    if (ocupado || !vista.consultaId) return;
+    const consultaId = vista.consultaId;
+    enviar(pergunta, "Não ajudou, explique de outro jeito.", () => api.outraExplicacao(consultaId));
+  }
+
+  /** Mostra a mensagem do usuário e a espera, faz o pedido e troca a espera pela resposta. */
+  async function enviar(entrada: QuestionIn, textoDoUsuario: string, pedido: () => Promise<Answer>) {
     const id = crypto.randomUUID();
     setAberta(null);
     setOcupado(true);
@@ -72,7 +84,7 @@ export function App() {
     ]);
     let vista: View;
     try {
-      vista = daResposta(await api.perguntar(entrada));
+      vista = daResposta(await pedido());
     } catch (e) {
       vista = doErro(comoErroApi(e));
     }
@@ -155,6 +167,7 @@ export function App() {
           bulas={saude?.bulas ?? null}
           aoPerguntar={(texto) => perguntar({ pergunta: texto, principios_ativos: [] }, texto)}
           aoEscolherOpcao={escolherOpcao}
+          aoNaoAjudou={naoAjudou}
         />
       </main>
     </div>

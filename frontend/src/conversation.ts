@@ -17,6 +17,7 @@ export interface View {
   continuacao: boolean;
   alergiaA: string | null;
   extrativa: boolean;
+  outraExplicacao: boolean; // resposta ao "não ajudou"
   esclarecimento: Clarification | null;
   erro: { codigo: ErrorCode | "API_FORA_DO_AR"; mensagem: string } | null;
   rodadas: number;
@@ -42,6 +43,7 @@ export function daResposta(r: Answer): View {
     continuacao: r.continuacao,
     alergiaA: r.alergia_a,
     extrativa: r.extrativa,
+    outraExplicacao: r.outra_explicacao,
     esclarecimento: r.esclarecimento,
     erro: null,
     rodadas: r.rodadas,
@@ -60,9 +62,11 @@ export function doHistorico(c: InquiryDetail): View {
     semBula: [],
     classes: {},
     principios: [],
-    continuacao: c.consulta_origem_id !== null,
+    // Na outra explicação, a origem é a resposta que não ajudou, não a pergunta anterior.
+    continuacao: c.consulta_origem_id !== null && !c.outra_explicacao,
     alergiaA: null,
     extrativa: c.modelo.startsWith("frases da bula"),
+    outraExplicacao: c.outra_explicacao,
     esclarecimento: null,
     erro: c.codigo_erro ? { codigo: c.codigo_erro, mensagem: c.mensagem_erro ?? "" } : null,
     rodadas: c.rodadas,
@@ -84,6 +88,7 @@ export function doErro(e: ApiError): View {
     continuacao: false,
     alergiaA: null,
     extrativa: false,
+    outraExplicacao: false,
     esclarecimento: null,
     erro: { codigo: e.codigo, mensagem: e.message },
     rodadas: 0,
