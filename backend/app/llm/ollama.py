@@ -78,6 +78,8 @@ def chat(
         "keep_alive": KEEP_ALIVE,
         "options": {"temperature": s.temperatura, "num_ctx": s.num_ctx, "num_predict": s.num_predict},
     }
+    if s.llm_semente is not None:
+        corpo["options"]["seed"] = s.llm_semente
     r = _pedir("/api/chat", corpo, s.timeout_llm_s, s)
     return LLMResponse(
         texto=r["message"]["content"],

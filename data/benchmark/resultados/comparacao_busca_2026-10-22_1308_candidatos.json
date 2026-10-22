@@ -1,0 +1,141 @@
+{
+ "base": 10,
+ "valores": [
+  10,
+  25,
+  50,
+  100
+ ],
+ "resumos": {
+  "10": {
+   "acerto_rodada1": "57/70",
+   "por_categoria": {
+    "advertencia": "9/10",
+    "composicao": "2/2",
+    "conservacao": "5/5",
+    "contraindicacao": "6/11",
+    "indicacao": "9/9",
+    "interacao": "7/10",
+    "posologia": "11/12",
+    "reacao_adversa": "7/9",
+    "superdose": "1/2"
+   },
+   "por_caminho": {
+    "busca_geral": "1/1",
+    "copiada": "10/12",
+    "indicacao": "6/6",
+    "semelhanca": "40/51"
+   },
+   "semelhanca_ancora_nos_10_candidatos": "44/51",
+   "semelhanca_ancora_nos_3_primeiros_candidatos": "29/51",
+   "segundos_mediana": 2.26
+  },
+  "25": {
+   "acerto_rodada1": "58/70",
+   "por_categoria": {
+    "advertencia": "9/10",
+    "composicao": "2/2",
+    "conservacao": "5/5",
+    "contraindicacao": "6/11",
+    "indicacao": "9/9",
+    "interacao": "7/10",
+    "posologia": "11/12",
+    "reacao_adversa": "8/9",
+    "superdose": "1/2"
+   },
+   "por_caminho": {
+    "busca_geral": "1/1",
+    "copiada": "10/12",
+    "indicacao": "6/6",
+    "semelhanca": "41/51"
+   },
+   "semelhanca_ancora_nos_25_candidatos": "48/51",
+   "semelhanca_ancora_nos_3_primeiros_candidatos": "29/51",
+   "segundos_mediana": 0.08
+  },
+  "50": {
+   "acerto_rodada1": "58/70",
+   "por_categoria": {
+    "advertencia": "9/10",
+    "composicao": "2/2",
+    "conservacao": "5/5",
+    "contraindicacao": "6/11",
+    "indicacao": "9/9",
+    "interacao": "7/10",
+    "posologia": "11/12",
+    "reacao_adversa": "8/9",
+    "superdose": "1/2"
+   },
+   "por_caminho": {
+    "busca_geral": "1/1",
+    "copiada": "10/12",
+    "indicacao": "6/6",
+    "semelhanca": "41/51"
+   },
+   "semelhanca_ancora_nos_50_candidatos": "51/51",
+   "semelhanca_ancora_nos_3_primeiros_candidatos": "29/51",
+   "segundos_mediana": 0.08
+  },
+  "100": {
+   "acerto_rodada1": "58/70",
+   "por_categoria": {
+    "advertencia": "9/10",
+    "composicao": "2/2",
+    "conservacao": "5/5",
+    "contraindicacao": "6/11",
+    "indicacao": "9/9",
+    "interacao": "7/10",
+    "posologia": "11/12",
+    "reacao_adversa": "8/9",
+    "superdose": "1/2"
+   },
+   "por_caminho": {
+    "busca_geral": "1/1",
+    "copiada": "10/12",
+    "indicacao": "6/6",
+    "semelhanca": "41/51"
+   },
+   "semelhanca_ancora_nos_100_candidatos": "51/51",
+   "semelhanca_ancora_nos_3_primeiros_candidatos": "29/51",
+   "segundos_mediana": 0.08
+  }
+ },
+ "comparacoes": {
+  "25": {
+   "mesmos_trechos_rodada1": "77/80",
+   "trechos_mudaram": [
+    "pos06",
+    "int02",
+    "rea01"
+   ],
+   "passou_a_acertar": [
+    "rea01"
+   ],
+   "deixou_de_acertar": []
+  },
+  "50": {
+   "mesmos_trechos_rodada1": "77/80",
+   "trechos_mudaram": [
+    "pos06",
+    "int02",
+    "rea01"
+   ],
+   "passou_a_acertar": [
+    "rea01"
+   ],
+   "deixou_de_acertar": []
+  },
+  "100": {
+   "mesmos_trechos_rodada1": "77/80",
+   "trechos_mudaram": [
+    "pos06",
+    "int02",
+    "rea01"
+   ],
+   "passou_a_acertar": [
+    "rea01"
+   ],
+   "deixou_de_acertar": []
+  }
+ }
+}

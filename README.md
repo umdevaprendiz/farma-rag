@@ -377,10 +377,12 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 flowchart LR
   Q["80 perguntas<br/>(70 com resposta, 10 sem)"] --> RUN["python -m benchmark.run<br/>modo busca: LLM falso<br/>modo completo: LLM real"]
   GAB["gabarito por âncora<br/>{principio_ativo, secao, frase}<br/>+ resposta esperada"] --> RUN
-  RUN --> OUT["acerto na rodada 1 · por categoria e caminho<br/>âncora entre os 10 candidatos<br/>recusa certa · rodadas · latência"]
+  RUN --> OUT["acerto na rodada 1 · por categoria e caminho<br/>âncora entre os N candidatos<br/>recusa certa · rodadas · latência<br/>comparação entre valores de candidatos"]
 ```
 
 `data/benchmark/perguntas.jsonl` (DECISOES §2 e §30): cada pergunta aponta onde a resposta está na bula (princípio ativo, seção e uma frase copiada dela), então o gabarito não muda quando o corte dos trechos muda. `--sem-rerank` roda a linha de base. Resultado de 2026-10-18, modo busca: **44/70 → 57/70** com o trecho certo na rodada 1, depois do reranking e das correções de reconhecimento que o próprio benchmark achou (sigla "AAS", alergia a algo que não é remédio, pergunta de uso com dois remédios).
+
+`--candidatos 10 25 50 100` roda cada número de candidatos do reranking e compara com o primeiro: mesmos trechos na rodada 1 (= mesmo prompt, mesma resposta), perguntas que passaram a acertar ou deixaram de acertar e, no modo completo, a mesma resposta. No modo completo o LLM só roda de novo onde os trechos mudaram, com semente fixa (`LLM_SEMENTE`, 42 no benchmark), para o mesmo prompt dar a mesma resposta. Resultado de 2026-10-22 (DECISOES §32): **77 de 80 perguntas recebem os mesmos trechos** com 25, 50 ou 100; o acerto vai de 57/70 para 58/70 com 25 ou mais, e com 50 o trecho certo já está entre os candidatos nas 51 perguntas pela semelhança. O que ainda erra é a escolha do reranking, não a falta de candidatos.
 
 **Reranking da rodada 1** (`app/services/rerank.py`, sem modelo): os 10 mais parecidos de cada remédio, mais os 2 melhores de cada seção que a pergunta pede, recebem nota = semelhança + 0,08 se é da seção pedida + 0,08 × fração dos assuntos da pergunta que o trecho cita; os 3 de maior nota vão ao agente, sem repetir trecho quase igual e divididos entre os remédios. "Pode tomar X?" pede contraindicações e advertências; dois remédios pedem interações. `RERANK_CANDIDATOS=0` desliga.
 

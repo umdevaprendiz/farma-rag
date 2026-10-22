@@ -852,3 +852,44 @@ Medido nas 81 respostas aprovadas do histórico (61 com remédio na pergunta): n
 
 **A medir com o LLM real** (F3e): quantas perguntas passam a terminar na rodada 1 e o tempo, com as
 perguntas da quinta e o `benchmark.run --modo completo`.
+
+## 32. Benchmark com vários números de candidatos e semente fixa no modo completo (2026-10-22)
+Pedido do usuário: rodar o benchmark com 25, 50 e 100 candidatos "para ver se vai ser a mesma
+resposta". O número de candidatos (`RERANK_CANDIDATOS`, seção 30) só muda a rodada 1 das perguntas com
+remédio indexado: copiar a frase da bula, a busca geral e "para que serve" não passam pelo reranking, e
+as rodadas 2 e 3 buscam pela seção, sem ele.
+
+`python -m benchmark.run --candidatos 10 25 50 100` roda cada valor e compara com o primeiro (a base):
+- **mesmos trechos na rodada 1, na mesma ordem** = mesmo prompt para o modelo (a ordem decide o `[n]`);
+- quais perguntas **passaram a acertar** e quais **deixaram de acertar** (âncora nos trechos enviados);
+- a âncora entre os N candidatos de cada valor (`semelhanca_ancora_nos_N_candidatos`);
+- no modo completo, **mesma resposta** (status e texto) e a lista das que mudaram.
+O embedding de cada pergunta é calculado uma vez só para todos os valores (~2 s na CPU por pergunta).
+`--sem-rerank` continua valendo e é o mesmo que `--candidatos 0`.
+
+**Modo completo sem horas de CPU:** a pergunta que recebe os mesmos trechos na mesma ordem recebe o mesmo
+prompt. O LLM só roda de novo nas perguntas cujos trechos mudaram; as outras reaproveitam a resposta da
+base (marcadas `reaproveitada`). Para isso valer, o modo completo usa **semente fixa**: `LLM_SEMENTE`
+(nova, opcional, vazia no uso normal) vai como `seed` nas opções do Ollama, e o benchmark usa 42 quando o
+`.env` não define. Com a temperatura 0,1 e sem semente, o mesmo prompt podia dar respostas diferentes, e
+a comparação mediria o sorteio junto com a configuração.
+
+**Resultado** (modo busca, 2026-10-22, base = 10, o valor atual):
+
+| Candidatos por remédio | Acerto na rodada 1 | Âncora entre os N candidatos (51 pela semelhança) | Mesmos trechos que com 10 |
+|---|---|---|---|
+| 10 | 57/70 | 44/51 | base |
+| 25 | 58/70 | 48/51 | 77/80 |
+| 50 | 58/70 | 51/51 | 77/80 |
+| 100 | 58/70 | 51/51 | 77/80 |
+
+- 77 das 80 perguntas recebem exatamente os mesmos trechos, na mesma ordem, com qualquer valor: mesmo
+  prompt, mesma resposta. 50 e 100 são idênticos em todas; 25 difere de 50 só no terceiro trecho da rea01.
+- As 3 que mudam: rea01 ("Isotretinoína resseca os lábios e a pele?") passa a acertar, porque o trecho
+  certo era o 16º candidato; pos06 (zolpidem) continua certa, com um trecho de posologia no lugar de um de
+  advertências; int02 (losartana + ibuprofeno) continua errada.
+- Com 50, o trecho certo está entre os candidatos nas 51 perguntas pela semelhança, mas o reranking
+  escolhe certo em 41: os erros que sobram são de escolha (pesos e seções da pergunta), não de candidatos.
+- Custo: nenhum que se meça (0,08 s de mediana por pergunta sem o embedding, igual nos quatro valores).
+- Mesmo limite da seção 30: os pesos foram ajustados olhando estas 80 perguntas.
+- `RERANK_CANDIDATOS` continua 10 até o usuário decidir.

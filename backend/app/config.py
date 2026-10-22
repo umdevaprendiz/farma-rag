@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     chunk_sobreposicao: int = 50
 
     temperatura: float = 0.1
+    # Semente da geração (None = sorteada a cada chamada). O benchmark completo fixa uma: o mesmo
+    # prompt dá a mesma resposta, e a comparação entre configurações mede só a configuração.
+    llm_semente: int | None = None
     num_ctx: int = 4096
     num_predict: int = 250
     timeout_llm_s: int = 120
