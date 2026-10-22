@@ -238,6 +238,44 @@ def test_numero_sem_fonte_reprova_e_a_rodada_2_corrige(acervo, modelo):
     assert r.tempos_s["geracao"] > 0 and r.prompt_tokens == 800
 
 
+def test_citacao_trocada_e_corrigida_sem_outra_rodada(acervo, modelo):
+    # Caso real (consulta 12f61084, 17/10): a frase certa citando o trecho errado, duas vezes. Antes
+    # custava a rodada 2 (~45 s); agora o código troca o [n] e tira a repetida (DECISOES, seção 31).
+    frase = "A dose máxima é de 100 mg uma vez ao dia"
+    chamadas = modelo("posologia", _resposta((frase, 2), (frase, 1)))
+    r = rag.responder("Como tomar o Exemplol?", acervo, s=S)
+    assert (r.status, r.rodadas, len(chamadas)) == ("respondida", 1, 1)
+    assert r.resposta == f"{frase} [1]."
+    assert r.tentativas[0].correcoes == ["afirmação 1: trecho [2] -> [1]", "afirmação 2 repetida, saiu"]
+    assert r.fontes[0].chunk.secao == "posologia" and [f.citado for f in r.fontes] == [True, False]
+    i, f = r.fontes[0].destaques[0]
+    assert r.fontes[0].chunk.texto[i:f] == f"{frase}."  # a fonte mostra a frase no trecho certo
+
+
+IBUPROFENO_NA_BULA = (
+    "O uso com anti-inflamatórios não esteroidais, como o ibuprofeno, pode reduzir o efeito anti-hipertensivo da exemplina"
+)
+
+
+@pytest.mark.parametrize("frase, aprovada", [
+    ("Diuréticos poupadores de potássio podem aumentar o potássio no sangue", False),  # fala de outra coisa
+    (IBUPROFENO_NA_BULA, True),
+])
+def test_resposta_tem_de_falar_do_remedio_da_pergunta_que_o_trecho_cita(acervo, modelo, frase, aprovada):
+    # Caso real (consulta 72e05926): "E com varfarina?" respondida com frases do clopidogrel passava,
+    # porque a regra do assunto tira os nomes de remédio da pergunta (DECISOES, seção 31).
+    acervo.catalogo = Catalog.montar(list(acervo.bulas.values()), ["captopril", "ibuprofeno"])
+    modelo("interacoes", _resposta((frase, 1)))
+    anterior = rag.PreviousQuestion("Como conservar o Exemplol?", ["maleato de exemplina"], False)
+    r = rag.responder("E o ibuprofeno?", acervo, s=S, anterior=anterior)
+    primeira = r.tentativas[0]
+    assert "__interacoes__" in primeira.chunk_ids[0]  # o trecho [1] fala do ibuprofeno
+    if aprovada:
+        assert (r.status, r.rodadas, primeira.resultado) == ("respondida", 1, "aprovada")
+    else:
+        assert primeira.resultado == "reprovada" and "a resposta não fala de ibuprofeno" in primeira.falha
+
+
 def test_rodada_3_passa_pela_verificacao_do_llm(acervo, modelo):
     errada = _resposta(("A dose máxima é de 300 mg", 1))
     certa = _resposta(("A dose máxima é de 100 mg uma vez ao dia", 1))

@@ -5,6 +5,7 @@ from app.services.grounding import (
     NEGA,
     Reference,
     checar,
+    corrigir_citacoes,
     destaques,
     destaques_da_afirmacao,
     frases_com_posicao,
@@ -12,6 +13,7 @@ from app.services.grounding import (
     problemas_da_afirmacao,
 )
 from app.services.intent import inferir_secoes, termos_do_assunto
+from app.services.medicines import Catalog
 
 
 def _chunk(texto: str) -> Chunk:
@@ -68,8 +70,6 @@ def test_afirmacao_so_com_o_nome_do_medicamento(afirmacao):
 
 
 def test_remedio_de_outra_bula():
-    from app.services.medicines import Catalog
-
     catalogo = Catalog.montar([], ["dipirona", "ibuprofeno"])
     trecho = {1: _chunk("Não usar em crianças com menos de 20 kg. Não usar com ibuprofeno.")}
     # Fala de dipirona citando a bula do Exemplol, que não menciona dipirona: reprova.
@@ -218,3 +218,60 @@ def test_destaques_de_varias_afirmacoes_sem_repetir_frase():
 
 def test_trecho_vazio_nao_destaca_nada():
     assert destaques_da_afirmacao("A dose máxima é de 100 mg por dia", _chunk("")) == []
+
+
+# ---- Citação corrigida no código (docs/DECISOES.md, seção 31) ----------------------------------
+
+EFICACIA = _chunk(
+    "Em um estudo com 400 pacientes, a exemplina reduziu a pressão arterial sistólica em 12 mmHg após oito semanas."
+)
+DOSE_MAXIMA = "A dose máxima é de 100 mg uma vez ao dia"
+
+
+def _dipirona(texto: str) -> Chunk:
+    return Chunk(
+        chunk_id="d__indicacoes__000", bula_id="d", medicamento="Dorageo 500 mg", principio_ativo="dipirona monoidratada",
+        secao="indicacoes", pagina=1, ordem=0, texto=texto, n_tokens=20,
+    )
+
+
+def test_citacao_trocada_vai_para_o_trecho_que_sustenta_a_frase():
+    # Caso real (consulta 12f61084, 17/10): a frase certa do [3] citando o [1] custou uma rodada (~45 s).
+    chunks = {1: EFICACIA, 2: ARMAZENAMENTO, 3: POSOLOGIA}
+    corrigidas, mudancas = corrigir_citacoes([(DOSE_MAXIMA, 1)], chunks, 0.6)
+    assert (corrigidas, mudancas) == ([(DOSE_MAXIMA, 3)], ["afirmação 1: trecho [1] -> [3]"])
+    assert checar(corrigidas, chunks, 0.6) == []
+
+
+def test_citacao_que_ja_sustenta_a_frase_nao_muda():
+    # A frase também está no [1], mas o [2] que ela citou já a sustenta.
+    chunks = {1: POSOLOGIA, 2: _chunk(POSOLOGIA.texto)}
+    assert corrigir_citacoes([(DOSE_MAXIMA, 2)], chunks, 0.6) == ([(DOSE_MAXIMA, 2)], [])
+
+
+def test_frase_repetida_sai():
+    afirmacoes = [(DOSE_MAXIMA, 1), (f"{DOSE_MAXIMA.lower()}.", 3)]  # caixa e ponto final não contam
+    assert corrigir_citacoes(afirmacoes, {1: EFICACIA, 3: POSOLOGIA}, 0.6) == (
+        [(DOSE_MAXIMA, 3)], ["afirmação 1: trecho [1] -> [3]", "afirmação 2 repetida, saiu"]
+    )
+
+
+def test_frase_que_nenhum_trecho_sustenta_fica_como_veio():
+    # A checagem reprova depois, e a rodada seguinte corrige: o código não inventa a citação.
+    afirmacoes = [("A dose máxima é de 300 mg", 1)]
+    assert corrigir_citacoes(afirmacoes, {1: EFICACIA, 2: POSOLOGIA}, 0.6) == (afirmacoes, [])
+
+
+def test_nao_troca_para_a_bula_de_outro_remedio_que_a_frase_nao_nomeia():
+    # Sem nome na frase, ela é sobre o remédio do trecho citado: não pode virar a bula da dipirona.
+    catalogo = Catalog.montar([], ["dipirona"])
+    afirmacoes = [("É indicado como analgésico e antitérmico", 1)]
+    chunks = {1: EFICACIA, 2: _dipirona("Indicado como analgésico e antitérmico.")}
+    assert corrigir_citacoes(afirmacoes, chunks, 0.6, catalogo) == (afirmacoes, [])
+
+
+def test_troca_para_a_bula_do_remedio_que_a_frase_nomeia():
+    catalogo = Catalog.montar([], ["dipirona"])
+    frase = "A dipirona é indicada como analgésico e antitérmico"
+    chunks = {1: EFICACIA, 2: _dipirona("A dipirona é indicada como analgésico e antitérmico.")}
+    assert corrigir_citacoes([(frase, 1)], chunks, 0.6, catalogo) == ([(frase, 2)], ["afirmação 1: trecho [1] -> [2]"])

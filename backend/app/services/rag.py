@@ -79,6 +79,8 @@ class Attempt:
     resultado: Literal["aprovada", "recusa", "reprovada"]
     falha: str | None = None  # só em "reprovada"
     verificacao_bruta: str | None = None  # saída do verificar_llm, só na rodada 3
+    # Citações trocadas e afirmações repetidas que o código corrigiu (grounding.corrigir_citacoes).
+    correcoes: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -193,9 +195,10 @@ def _para_saida(bruto: str) -> str | dict:
         dados["afirmacoes"]
     except (json.JSONDecodeError, KeyError, TypeError):
         return bruto  # validar_saida devolve SAIDA_INVALIDA
-    frases = afirmacoes(bruto)
-    return {
-        "status": dados["status"],
-        "resposta": " ".join(f"{texto} [{trecho}]." for texto, trecho in frases),
-        "citacoes": sorted({trecho for _, trecho in frases}),
-    }
+    resposta, citacoes = montar_resposta(afirmacoes(bruto))
+    return {"status": dados["status"], "resposta": resposta, "citacoes": citacoes}
+
+
+def montar_resposta(frases: list[tuple[str, int]]) -> tuple[str, list[int]]:
+    """A resposta com o [n] de cada afirmação ("frase [n].") e os trechos citados."""
+    return " ".join(f"{texto} [{trecho}]." for texto, trecho in frases), sorted({trecho for _, trecho in frases})

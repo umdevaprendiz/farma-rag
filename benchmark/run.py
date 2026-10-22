@@ -10,8 +10,8 @@ Modo busca: o LLM é trocado por um que recusa, sem custo. Mede o que o agente r
 também os 10 candidatos da busca vetorial (os mesmos que o reranking recebe), para separar "o banco
 não trouxe" de "o reranking não escolheu".
 
-Modo completo: status, resposta, rodadas, latência e recusa certa nas perguntas sem resposta. A
-fidelidade da resposta continua sendo revisão manual (a resposta esperada está no gabarito).
+Modo completo: status, resposta, rodadas, latência, recusa certa nas perguntas sem resposta e quantas
+respostas tiveram a citação corrigida no código (docs/DECISOES.md, seção 31). A fidelidade da resposta continua sendo revisão manual (a resposta esperada está no gabarito).
 
 Saída: tabela na tela e data/benchmark/resultados/<modo>_<data>_<rotulo>.json.
 """
@@ -97,6 +97,7 @@ def main() -> None:
         linhas.append({
             "id": p.id, "categoria": p.categoria, "respondivel": p.respondivel, "pergunta": p.pergunta,
             "caminho": caminho(r), "status": r.status, "rodadas": r.rodadas, "segundos": round(segundos, 2),
+            "citacoes_corrigidas": sum(len(t.correcoes) for t in r.tentativas),
             "acerto": acertou_recall(enviados, p) if p.respondivel else None,
             "enviados": [f"{c.chunk_id}" for c in enviados],
             "posicao_nos_candidatos": posicao_nos_candidatos(candidatos, p) if candidatos else None,
@@ -147,6 +148,7 @@ def resumir(linhas: list[dict], modo: str) -> dict:
         resumo["recusa_certa"] = taxa([l["status"] == "nao_encontrada" for l in sem])
         resumo["respondidas"] = taxa([l["status"] == "respondida" for l in resp])
         resumo["rodadas_media"] = round(sum(l["rodadas"] for l in resp) / max(1, len(resp)), 2)
+        resumo["com_citacao_corrigida"] = taxa([l["citacoes_corrigidas"] > 0 for l in linhas])
     return resumo
 
 

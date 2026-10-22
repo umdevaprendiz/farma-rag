@@ -21,6 +21,9 @@ a 5, em 2026-10-18 (seção 28).
 
 É de propósito conservadora: paráfrase demais reprova, e a reprovação só custa outra rodada.
 
+`corrigir_citacoes` roda antes da checagem: a frase certa citando o trecho errado ganha o [n] do
+trecho que a sustenta, em vez de custar uma rodada do LLM (docs/DECISOES.md, seção 31).
+
 `destaques` usa a mesma comparação para o caminho inverso: as frases inteiras do trecho que
 sustentam a afirmação, para a tela destacar na fonte (docs/DECISOES.md, seção 26).
 """
@@ -170,18 +173,94 @@ def checar(
     livres = {normalizar(p) for p in permitidos or []}
     problemas = []
     for i, (texto, trecho) in enumerate(afirmacoes, start=1):
-        achados = problemas_da_afirmacao(texto, refs[trecho], min_termos)
-        chunk = chunks_por_posicao[trecho]
-        if nega_sem_o_trecho(texto, chunk):
-            achados.append(NEGA)
-        if catalogo is not None:
-            achados += [
-                f"fala de {nome}, mas o trecho é da bula de {chunk.medicamento}"
-                for nome in remedios_de_outra_bula(texto, chunk, catalogo)
-                if normalizar(nome) not in livres
-            ]
+        achados = _problemas(texto, chunks_por_posicao[trecho], refs[trecho], min_termos, catalogo, livres)
         problemas += [f"afirmação {i}, trecho [{trecho}]: {p}" for p in achados]
     return problemas
+
+
+def _problemas(
+    texto: str, chunk: Chunk, ref: Reference, min_termos: float, catalogo: Catalog | None, livres: set[str]
+) -> list[str]:
+    """As regras 1 a 5 para uma afirmação contra um trecho. Lista vazia = sustentada."""
+    achados = problemas_da_afirmacao(texto, ref, min_termos)
+    if nega_sem_o_trecho(texto, chunk):
+        achados.append(NEGA)
+    if catalogo is not None:
+        achados += [
+            f"fala de {nome}, mas o trecho é da bula de {chunk.medicamento}"
+            for nome in remedios_de_outra_bula(texto, chunk, catalogo)
+            if normalizar(nome) not in livres
+        ]
+    return achados
+
+
+# ---- Citação corrigida no código -------------------------------------------------------------
+
+
+def corrigir_citacoes(
+    afirmacoes: list[tuple[str, int]],
+    chunks_por_posicao: dict[int, Chunk],
+    min_termos: float,
+    catalogo: Catalog | None = None,
+    permitidos: list[str] | None = None,
+) -> tuple[list[tuple[str, int]], list[str]]:
+    """A citação trocada corrigida antes da checagem (docs/DECISOES.md, seção 31).
+
+    O modelo pequeno copia a frase certa de um trecho e cita outro (consulta 12f61084: a frase do [3]
+    citando [1] e [2]), e isso custava uma rodada inteira do LLM. Se a afirmação não passa no trecho
+    que citou, mas passa em todas as regras num outro trecho enviado, o [n] passa a ser o desse trecho
+    (o primeiro, na ordem enviada). A checagem depois continua sendo contra o trecho citado, então a
+    fonte mostrada é a que sustenta a frase. Afirmação repetida (o mesmo texto) sai.
+
+    O outro trecho tem de ser do mesmo remédio do citado, ou de um remédio que a afirmação nomeia:
+    "é indicado para dor de cabeça", escrita sobre o ibuprofeno, não pode virar a bula do paracetamol.
+
+    Devolve as afirmações corrigidas e o que mudou, para o histórico (Attempt.correcoes)."""
+    refs = {pos: Reference.de_chunk(c) for pos, c in chunks_por_posicao.items()}
+    livres = {normalizar(p) for p in permitidos or []}
+
+    def passa(texto: str, pos: int) -> bool:
+        return not _problemas(texto, chunks_por_posicao[pos], refs[pos], min_termos, catalogo, livres)
+
+    corrigidas: list[tuple[str, int]] = []
+    mudancas: list[str] = []
+    vistas: set[str] = set()
+    for i, (texto, trecho) in enumerate(afirmacoes, start=1):
+        if (chave := normalizar(texto)) in vistas:
+            mudancas.append(f"afirmação {i} repetida, saiu")
+            continue
+        vistas.add(chave)
+        if not passa(texto, trecho):
+            citado = chunks_por_posicao[trecho]
+            outro = next(
+                (
+                    pos for pos in sorted(chunks_por_posicao)
+                    if pos != trecho
+                    and _pode_citar(texto, citado, chunks_por_posicao[pos], catalogo)
+                    and passa(texto, pos)
+                ),
+                None,
+            )
+            if outro is not None:
+                mudancas.append(f"afirmação {i}: trecho [{trecho}] -> [{outro}]")
+                trecho = outro
+        corrigidas.append((texto, trecho))
+    return corrigidas, mudancas
+
+
+def _pode_citar(texto: str, citado: Chunk, outro: Chunk, catalogo: Catalog | None) -> bool:
+    """O outro trecho é do mesmo remédio do citado, ou de um remédio que a afirmação nomeia."""
+    if normalizar(outro.principio_ativo) == normalizar(citado.principio_ativo):
+        return True
+    if catalogo is None:
+        return False
+    deteccao = detectar(texto, catalogo, tolerar_erros=False)
+    cabecalho = normalizar(f"{outro.medicamento} {outro.principio_ativo}")
+    return any(
+        re.search(rf"\b{re.escape(forma)}\b", cabecalho)
+        for nome in deteccao.indexados + deteccao.nao_indexados
+        for forma in formas_do_nome(nome)
+    )
 
 
 # ---- Destaque das frases que sustentam a resposta ------------------------------------------

@@ -225,7 +225,8 @@ Decisões:
   estar no trecho citado, e número com unidade de dose (mg, mL, gotas, %, °C…) com a mesma unidade;
   pelo menos `FUNDAMENTACAO_MIN_TERMOS` (0,6, arredondado para baixo, mínimo 1) dos termos de 4+
   letras também, comparando pelos 5 primeiros caracteres para aceitar flexão. Números por extenso
-  no trecho ("uma vez") valem como dígito. Conservadora: paráfrase demais reprova e custa uma rodada.
+  no trecho ("uma vez") valem como dígito. Conservadora: paráfrase demais reprova e custa uma rodada
+  (a citação trocada é corrigida no código desde 2026-10-22: seção 31).
 - **A observação para a próxima rodada é genérica** ("trouxe informação que não está nos trechos"),
   sem repetir a afirmação errada: o modelo pequeno copia o que estiver no prompt.
 - **Verificação por LLM só na rodada 3**, uma chave `aN: "sim"|"nao"` por afirmação no JSON Schema
@@ -813,3 +814,41 @@ paracetamol; superdose de paracetamol (10º candidato, entre 6 trechos da mesma 
 caminho copiado, que não passa pelo reranking (posologia da loção para piolho escolheu a bula da
 sarna; alisquireno ficou atrás de frases de interação). **Limite do método**: pesos e gatilhos foram ajustados olhando essas 80 perguntas;
 perguntas novas, escritas sem olhar o resultado, são o teste honesto (próximo lote do gabarito).
+
+## 31. Citação trocada corrigida no código e remédio da pergunta ignorado (2026-10-22)
+Parte da melhoria de tempo (F3) pedida pelo usuário em 2026-10-17. Caso real (consulta `12f61084`,
+"oque acha do ibuprofeno pra dor de cabeça?"): o modelo copiou a frase certa do trecho [3] e citou
+[1] e [2], a mesma frase duas vezes. A fundamentação reprovou (certo) e a rodada 2 repetiu tudo:
+98 s em 2 rodadas, ~45 s jogados fora. Até aqui, citação errada = nova rodada (seções 14 e 16).
+
+**Correção da citação** (`grounding.corrigir_citacoes`, no `validar`, antes da checagem):
+- se a afirmação não passa no trecho que citou, mas passa em todas as regras (1 a 5) num outro
+  trecho enviado, o `[n]` passa a ser o desse trecho (o primeiro, na ordem enviada). O `[n]` já era
+  montado no código (seção 15), então nada muda no formato;
+- a checagem continua sendo contra o trecho citado: a fonte mostrada (e o destaque) é a que sustenta
+  a frase. Afirmação que nenhum trecho sustenta fica como veio e reprova como antes;
+- o outro trecho tem de ser do mesmo remédio do citado, ou de um remédio que a afirmação nomeia:
+  "é indicado para dor de cabeça", escrita sobre o ibuprofeno, não pode virar a bula do paracetamol;
+- afirmação repetida (o mesmo texto, sem contar caixa e pontuação) sai;
+- o que mudou fica em `Attempt.correcoes` (histórico, `benchmark.ask`, e `com_citacao_corrigida`
+  no `benchmark.run --modo completo`).
+
+Medido no histórico (113 consultas, 118 rodadas do LLM gravadas): das 42 reprovadas na fundamentação,
+11 passariam, todas com a frase escrita no trecho para onde a citação foi (omeprazol + clopidogrel,
+losartana na insuficiência cardíaca, o caso do ibuprofeno). Nas aprovadas, nenhuma citação muda; numa,
+a frase repetida sai.
+
+**Remédio da pergunta ignorado** (`graph._remedios_ignorados`, no `validar`, com `DICA_ASSUNTO`). Uma
+das 11 era "E com varfarina?" (consulta `72e05926`): a resposta falava de clopidogrel, metotrexato e
+vitamina B12, e só tinha reprovado por acaso, pela citação. A regra do assunto (seção 25) tira os nomes
+de remédio da pergunta ("dose máxima de dipirona" confere "dose máxima"), e aqui o nome é o assunto.
+Regra nova: remédio nomeado na pergunta tem de estar na resposta (nome, sal ou marca) ou ser o de um
+trecho citado, **se algum trecho enviado fala dele**. Ficam de fora:
+- o remédio da alergia ("sou alérgico a dipirona, posso tomar paracetamol?");
+- o remédio que nenhum trecho enviado cita ("Exemplol com captopril", sem bula de captopril): a
+  resposta nem poderia falar dele (regra 4 da fundamentação), e exigir isso só daria 3 rodadas e 502.
+Medido nas 81 respostas aprovadas do histórico (61 com remédio na pergunta): nenhuma seria reprovada
+(a única marcada pela conta é a resposta a "a alergia é a qual remédio?", que o grafo exclui).
+
+**A medir com o LLM real** (F3e): quantas perguntas passam a terminar na rodada 1 e o tempo, com as
+perguntas da quinta e o `benchmark.run --modo completo`.

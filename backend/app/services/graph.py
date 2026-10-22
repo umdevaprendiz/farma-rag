@@ -75,6 +75,7 @@ from app.services.rag import (
     afirmacoes,
     formato,
     montar_prompt,
+    montar_resposta,
 )
 
 # A verificação por LLM só entra a partir desta rodada (com RODADAS_MAX < 3, nunca entra).
@@ -650,7 +651,8 @@ def montar_grafo(acervo: Corpus, s: Settings):
         }
 
     def validar(e: State) -> State:
-        """Sem LLM: formato e citações (validar_saida), depois a fundamentação de cada afirmação."""
+        """Sem LLM: formato e citações (validar_saida), a citação trocada corrigida no código
+        (docs/DECISOES.md, seção 31) e depois a fundamentação de cada afirmação."""
         bruto, fontes = e["saida_bruta"], e["fontes"]
         tentativa = {"rodada": e["rodada"], "chunk_ids": [f.chunk.chunk_id for f in fontes], "saida_bruta": bruto}
         limpo: State = {"falha": None, "recusou": False, "resposta": None, "citacoes": [], "afirmacoes": []}
@@ -669,11 +671,13 @@ def montar_grafo(acervo: Corpus, s: Settings):
         if saida.status == "nao_encontrada":
             return limpo | {"recusou": True, "tentativas": e["tentativas"] + [Attempt(**tentativa, resultado="recusa")]}
 
-        frases = afirmacoes(bruto)
-        problemas = grounding.checar(
-            frases, {f.posicao: f.chunk for f in fontes}, s.fundamentacao_min_termos, acervo.catalogo,
-            permitidos=[e["alergia_a"]] if e.get("alergia_a") else None,
+        chunks = {f.posicao: f.chunk for f in fontes}
+        permitidos = [e["alergia_a"]] if e.get("alergia_a") else None
+        frases, tentativa["correcoes"] = grounding.corrigir_citacoes(
+            afirmacoes(bruto), chunks, s.fundamentacao_min_termos, acervo.catalogo, permitidos,
         )
+        resposta, citacoes = montar_resposta(frases)
+        problemas = grounding.checar(frases, chunks, s.fundamentacao_min_termos, acervo.catalogo, permitidos)
         if problemas:
             if all(p.endswith(grounding.SO_NOME) for p in problemas):
                 dica = DICA_SO_NOME
@@ -683,12 +687,15 @@ def montar_grafo(acervo: Corpus, s: Settings):
                 dica = DICA_FUNDAMENTACAO
             return reprovar(ErrorCode.RESPOSTA_NAO_VERIFICADA, "; ".join(problemas), dica)
         termos = _termos_da_pergunta(e)
-        citadas = {f.chunk.secao for f in fontes if f.posicao in saida.citacoes}
+        citadas = {f.chunk.secao for f in fontes if f.posicao in citacoes}
         if not e.get("extrativa") and termos and not responde_ao_assunto([f for f, _ in frases], termos, citadas, e["secoes"]):
             detalhe = f"a resposta não fala do que foi perguntado ({', '.join(termos[:5])})"
             return reprovar(ErrorCode.RESPOSTA_NAO_VERIFICADA, detalhe, DICA_ASSUNTO)
+        if ignorados := _remedios_ignorados(e, [f for f, _ in frases], citacoes):
+            detalhe = f"a resposta não fala de {', '.join(ignorados)}, que está na pergunta e num trecho enviado"
+            return reprovar(ErrorCode.RESPOSTA_NAO_VERIFICADA, detalhe, DICA_ASSUNTO)
         return limpo | {
-            "resposta": saida.resposta, "citacoes": saida.citacoes, "afirmacoes": frases,
+            "resposta": resposta, "citacoes": citacoes, "afirmacoes": frases,
             "tentativas": e["tentativas"] + [Attempt(**tentativa, resultado="aprovada")],
         }
 
@@ -698,6 +705,31 @@ def montar_grafo(acervo: Corpus, s: Settings):
         nomes = [*e["principios_ativos"], *e["nao_indexados"], *(f.chunk.medicamento for f in e.get("fontes", []))]
         palavras = set(re.findall(r"[a-z]{3,}", normalizar(" ".join(nomes))))
         return [t for t in termos_do_assunto(e["pergunta"]) if not any(p.startswith(t) for p in palavras)]
+
+    def _remedios_ignorados(e: State, frases: list[str], citacoes: list[int]) -> list[str]:
+        """Remédios da pergunta que a resposta ignorou, embora um trecho enviado fale deles
+        (docs/DECISOES.md, seção 31). "E com varfarina?" respondida com frases do clopidogrel e do
+        metotrexato passava (consulta 72e05926): a regra do assunto tira os nomes de remédio, e aqui o
+        nome é o assunto. Valem a menção na resposta (nome, sal ou marca) ou um trecho citado da bula
+        dele. Ficam de fora o remédio da alergia ("sou alérgico a dipirona, posso paracetamol?") e o que
+        nenhum trecho enviado cita: a resposta nem poderia falar dele (regra 4 da fundamentação)."""
+        deteccao = detectar(e["pergunta"], acervo.catalogo)
+        nomes = deteccao.indexados[:MAX_MEDICAMENTOS_POR_PERGUNTA] + deteccao.nao_indexados
+        if not nomes:
+            return []
+        resolvidos = {normalizar(e["alergia_a"])} if e.get("alergia_a") else set()
+        if (depois := texto_apos_alergia(e["pergunta"])) is not None:
+            alvo = detectar(depois, acervo.catalogo)
+            resolvidos |= {normalizar(n) for n in alvo.indexados + alvo.nao_indexados}
+        resolvidos |= {normalizar(f.chunk.principio_ativo) for f in e["fontes"] if f.posicao in citacoes}
+        na_resposta = detectar(" ".join(frases), acervo.catalogo, tolerar_erros=False)
+        resolvidos |= {normalizar(n) for n in na_resposta.indexados + na_resposta.nao_indexados}
+        textos = [normalizar(f.chunk.texto) for f in e["fontes"]]
+        return [
+            nome for nome in nomes
+            if normalizar(nome) not in resolvidos
+            and any(re.search(rf"\b{re.escape(forma)}\b", t) for forma in formas_do_nome(nome) for t in textos)
+        ]
 
     def verificar_llm(e: State) -> State:
         """Rodada 3: o LLM confere, afirmação por afirmação, se o trecho citado diz aquilo."""
