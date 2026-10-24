@@ -5,6 +5,7 @@ em services/graph.py. `responder` continua sendo a porta de entrada.
 """
 
 import json
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Literal
@@ -13,6 +14,10 @@ from app.config import Settings
 from app.schemas.api import ErrorCode
 from app.schemas.dataset import ROTULO_SECAO, Chunk
 from app.services.corpus import Corpus
+
+# F3d (docs/DECISOES.md, seção 36): o agente avisa cada etapa de verdade que começa, para a tela mostrar
+# onde a pergunta está. (etapa, rodada): etapa é "buscando", "escrevendo", "conferindo" ou "verificando".
+Progress = Callable[[str, int], None]
 
 SISTEMA = (
     "Você responde perguntas de profissionais de farmácia sobre medicamentos consultando bulas. "
@@ -163,13 +168,15 @@ def responder(
     s: Settings | None = None,
     anterior: PreviousQuestion | None = None,
     outra: AnotherExplanation | None = None,
+    avisar: Progress | None = None,
 ) -> Result:
     """`principios_ativos` vazio = detectar o medicamento na própria pergunta.
     `anterior`: a pergunta anterior da conversa, se a tela mandou.
-    `outra`: refazer uma resposta que não ajudou, sem os trechos que ela citou."""
+    `outra`: refazer uma resposta que não ajudou, sem os trechos que ela citou.
+    `avisar`: chamado a cada etapa que começa (F3d); nunca altera o resultado."""
     from app.services.graph import executar  # o grafo importa as peças deste módulo
 
-    return executar(pergunta, acervo, principios_ativos, s, anterior, outra)
+    return executar(pergunta, acervo, principios_ativos, s, anterior, outra, avisar)
 
 
 def afirmacoes(bruto: str) -> list[tuple[str, int]]:

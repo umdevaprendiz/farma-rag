@@ -71,6 +71,12 @@ _MAIS_GATILHOS: dict[Section, tuple[str, ...]] = {
     "posologia": ("momento", "horario", "que horas", "repetir"),
     # Limite de tempo de uso costuma estar nas advertências ("não usar por mais de três dias").
     "advertencias": ("quantos dias", "quanto tempo", "por mais de"),
+    # F3b: as seções raras (rerank.SECOES_RARAS) só passam na frente quando a pergunta as pede.
+    "resultados_eficacia": ("estudo", "ensaio", "eficaci", "evidenc", "resultado clinic"),
+    "caracteristicas_farmacologicas": (
+        "farmacocinet", "farmacodinam", "absorc", "metaboliz", "excrec", "fazer efeito", "faz efeito",
+        "inicio de acao", "duracao do efeito",
+    ),
 }
 
 

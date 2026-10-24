@@ -64,7 +64,7 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 | Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citations.py` |
 | Agente em grafo (LangGraph, 6 nós, rodadas 1 a 3) | ✅ pronto, testado com LLM falso e com o LLM real nas 24 bulas | `app/services/graph.py` |
 | Teste manual pelo terminal | ✅ pronto | `python -m benchmark.ask` |
-| Testes automáticos | ✅ 317 testes; os de banco rodam num schema temporário e são pulados sem o PostgreSQL | `backend/tests/` |
+| Testes automáticos | ✅ 390 testes (350 sem o PostgreSQL; os 40 de banco rodam num schema temporário e são pulados sem ele) | `backend/tests/` |
 | Bulas reais: 31 PDFs → 37 bulas, 1.384 trechos com embedding, no banco; tabela de interações lida como tabela | ✅ 28 de 40 medicamentos do MVP, mais zolpidem, sertralina e isotretinoína | `data/bulas_manifesto.json`, `data/processed/bulas/`, `ingestion/extract_pdf.py` |
 | Checagem de fundamentação (números, doses, termos, "só o nome" não vale, remédio certo), citação trocada corrigida no código e de assunto (a resposta responde à pergunta e fala do remédio perguntado) | ✅ pronto | `app/services/grounding.py`, `app/services/intent.py` |
 | Pergunta sem remédio ou com remédio sem bula: busca híbrida em todas as bulas, um trecho por medicamento | ✅ pronto, testado com o LLM real | `app/services/graph.py`, `app/services/intent.py` |
@@ -74,6 +74,10 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 | Reranking da rodada 1 (seção pedida, assunto, sem repetir trecho) e benchmark de 80 perguntas por âncora | ✅ pronto; 44/70 → 57/70 no modo busca | `app/services/rerank.py`, `benchmark/run.py`, `data/benchmark/perguntas.jsonl` |
 | Para que serve o remédio sem bula: classe terapêutica do registro na ANVISA | ✅ pronto | `app/services/medicines.py` |
 | "Não ajudou": outra explicação sem os trechos citados, e destaque das frases da bula que sustentam cada afirmação | ✅ pronto no grafo, na API e na tela, testado com LLM falso (LLM real na quinta) | `app/services/graph.py`, `app/services/grounding.py`, `app/api/routes.py`, `frontend/src/components/` |
+| Aviso de saúde fixo em toda resposta respondida, montado pela API (nunca pelo LLM) | ✅ pronto na API e na tela; asserções de banco ainda não rodaram | `app/schemas/api.py` (`AVISO_SAUDE`), `frontend/src/components/Message.tsx` |
+| Seção da pergunta já na rodada 1 e seções raras (eficácia, farmacologia) só quando pedidas | ✅ pronto, testado com LLM falso; efeito no benchmark a medir na quinta (`RERANK_GARANTE_SECAO`) | `app/services/rerank.py`, `app/services/intent.py` |
+| Modelos aquecidos no Ollama ao subir a API e `KEEP_ALIVE` no `.env` | ✅ pronto, testado com Ollama falso; ganho em segundos a medir na quinta | `app/llm/ollama.py`, `app/main.py` |
+| Progresso de verdade na tela: a API avisa cada etapa do agente (buscando, escrevendo, conferindo, verificando) | ✅ pronto; transporte conferido por HTTP de verdade, rotas de banco ainda não rodaram | `app/api/progress.py`, `app/services/graph.py`, `frontend/src/api.ts` |
 | Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metrics.py` |
 | API FastAPI: 6 endpoints, histórico de toda consulta | ✅ pronta, testada com LLM falso e no servidor (perguntas sem LLM) | `app/main.py`, `app/api/`, `app/services/history.py` |
 | Frontend React (Vite + TypeScript) em formato de chat: conversa, citações clicáveis, fontes em chips, histórico na lateral | ✅ pronto, conferido no navegador com o LLM real e com o simulado | `frontend/` |
@@ -220,6 +224,8 @@ FastAPI em `app/main.py`, rotas em `app/api/routes.py`, documentação interativ
 | `GET /api/v1/saude` | Banco, Ollama e modelos baixados. Sempre 200: `status` é `ok` ou `degradado`, com a lista do que falta |
 | `GET /api/v1/medicamentos` | Princípios ativos com bula indexada e as bulas de cada um (fabricante, forma, data), para o seletor |
 | `POST /api/v1/perguntas` | `{pergunta, principios_ativos?, consulta_origem_id?}` → resposta, fontes, status, rodadas. Erro sai em `ErrorOut`, com o HTTP do catálogo |
+| `POST /api/v1/perguntas/com-progresso` | O mesmo que `POST /perguntas`, em fluxo NDJSON: uma linha por etapa do agente (`{"tipo":"etapa","etapa":"buscando","rodada":1,"de":3}`) e, no fim, `{"tipo":"resposta",...}` ou `{"tipo":"erro",...}`. A tela usa esta |
+| `POST /api/v1/perguntas/{consulta_id}/outra-explicacao/com-progresso` | O "não ajudou" em fluxo, como a rota acima |
 | `POST /api/v1/perguntas/{consulta_id}/outra-explicacao` | "Não ajudou": a pergunta da consulta de novo, sem os trechos citados nela e nas explicações antes dela. Sem corpo; mesma resposta do `POST /perguntas`, com `outra_explicacao: true` |
 | `GET /api/v1/historico?limite=20&pagina=1` | Consultas da mais recente para a mais antiga, com o total |
 | `GET /api/v1/historico/{consulta_id}` | A consulta como foi respondida, com as fontes do snapshot |
@@ -229,13 +235,17 @@ FastAPI em `app/main.py`, rotas em `app/api/routes.py`, documentação interativ
 - **A resposta sai do snapshot gravado**: as fontes do `POST` são as mesmas que o histórico mostra depois, com fabricante, nº de registro, seção (chave e rótulo), página, data da bula, `citado` e `destaques` (as frases do trecho que sustentam a resposta). Os trechos consultados e não citados também vêm.
 - **Sobe sem o banco**: com o PostgreSQL fora do ar, a API sobe, responde 503 `BANCO_INDISPONIVEL` e tenta de novo a cada requisição. `DB_TIMEOUT_S` (5 s) corta a espera de ~130 s que o Windows faz por conexão.
 - **Endpoints síncronos** (`def`): o FastAPI roda cada um numa thread à parte, e a pergunta espera o Ollama por dezenas de segundos.
+- **Progresso** (`app/api/progress.py`, DECISOES §36): nas rotas `com-progresso` a pergunta roda numa thread e cada etapa vira uma linha de JSON na hora; `{"tipo":"vivo"}` a cada 15 s segura proxies. Erros de antes do agente (422, 404, 503) saem como HTTP comum; os que o agente descobre vão na linha `erro`, com o `status` que teriam. Se a tela fechar a conexão, a consulta termina e fica no histórico.
+- **Aviso de saúde** (`aviso` em `AnswerOut` e `InquiryDetail`): o texto fixo de `AVISO_SAUDE`, só quando `status = respondida`. É calculado ao responder, não é gravado e não passa pelo LLM (DECISOES §33).
+- **Ao subir**, a API carrega no Ollama os modelos de embeddings e de geração em segundo plano (`AQUECER_MODELOS`, `KEEP_ALIVE`; DECISOES §35), sem atrasar a subida nem falhar se o Ollama estiver fora.
 
 ### 6. Frontend
 
 React 19 + TypeScript, servido pelo Vite (`frontend/`), em `http://127.0.0.1:5173`. Formato de chat, como Claude e ChatGPT, e nenhuma biblioteca além do React:
 
 - **Conversa**: a pergunta em balão, a resposta ao lado do ícone, com cada `[n]` clicável. Embaixo, as fontes em chips (medicamento e seção); o clique abre o trecho inteiro da bula com fabricante, nº de registro, página, data e se foi usado na resposta. Caixa de mensagem que cresce com o texto (Enter envia, Shift+Enter quebra a linha) e tela inicial com sugestões de pergunta. Sem filtro de medicamento: o sistema acha o remédio na pergunta ou busca em todas as bulas.
-- **Estados** dentro da conversa: pensando (com os segundos contando: na CPU leva de 10 a 45 s), não encontrada (com os trechos consultados), aviso de remédio sem bula no acervo, esclarecimento (botões, para a ambiguidade de forma farmacêutica) e erro com título claro. No 502, cada rodada que falhou vira um item da lista.
+- **Estados** dentro da conversa: pensando (a etapa real que a API avisa, como "Buscando nos trechos das bulas" ou "Rodada 2 de 3: buscando outros trechos", mais uma frase leve e os segundos contando: na CPU leva de 10 a 45 s), não encontrada (com os trechos consultados), aviso de remédio sem bula no acervo, esclarecimento (botões, para a ambiguidade de forma farmacêutica) e erro com título claro. No 502, cada rodada que falhou vira um item da lista.
+- **Aviso de saúde**: embaixo de toda resposta respondida, em texto pequeno e discreto: "Informação da bula, para conferência. Não substitui a avaliação do farmacêutico nem a consulta médica."
 - **Barra lateral**: "Nova pergunta" e o histórico agrupado em Hoje, Ontem, Últimos 7 dias e Anteriores; o clique abre a consulta como estava na hora. No celular, a barra vira menu.
 - **Saúde**: o rodapé da barra mostra se API, banco e Ollama estão no ar (conferido a cada 30 s), e uma faixa no topo da conversa lista o que falta.
 - Em desenvolvimento, o Vite repassa `/api` para a API (`127.0.0.1:8000`): mesma origem, sem depender de CORS. Tema claro e escuro, pelo sistema operacional.
@@ -384,7 +394,7 @@ flowchart LR
 
 `--candidatos 10 25 50 100` roda cada número de candidatos do reranking e compara com o primeiro: mesmos trechos na rodada 1 (= mesmo prompt, mesma resposta), perguntas que passaram a acertar ou deixaram de acertar e, no modo completo, a mesma resposta. No modo completo o LLM só roda de novo onde os trechos mudaram, com semente fixa (`LLM_SEMENTE`, 42 no benchmark), para o mesmo prompt dar a mesma resposta. Resultado de 2026-10-22 (DECISOES §32): **77 de 80 perguntas recebem os mesmos trechos** com 25, 50 ou 100; o acerto vai de 57/70 para 58/70 com 25 ou mais, e com 50 o trecho certo já está entre os candidatos nas 51 perguntas pela semelhança. O que ainda erra é a escolha do reranking, não a falta de candidatos.
 
-**Reranking da rodada 1** (`app/services/rerank.py`, sem modelo): os 10 mais parecidos de cada remédio, mais os 2 melhores de cada seção que a pergunta pede, recebem nota = semelhança + 0,08 se é da seção pedida + 0,08 × fração dos assuntos da pergunta que o trecho cita; os 3 de maior nota vão ao agente, sem repetir trecho quase igual e divididos entre os remédios. "Pode tomar X?" pede contraindicações e advertências; dois remédios pedem interações. `RERANK_CANDIDATOS=0` desliga.
+**Reranking da rodada 1** (`app/services/rerank.py`, sem modelo): os 10 mais parecidos de cada remédio, mais os 2 melhores de cada seção que a pergunta pede, recebem nota = semelhança + 0,08 se é da seção pedida + 0,08 × fração dos assuntos da pergunta que o trecho cita; os 3 de maior nota vão ao agente, sem repetir trecho quase igual e divididos entre os remédios. "Pode tomar X?" pede contraindicações e advertências; dois remédios pedem interações. `RERANK_CANDIDATOS=0` desliga. Desde a F3b (DECISOES §34), a rodada 1 também leva **um trecho da seção pedida por remédio** (no lugar do escolhido de menor semelhança) e "resultados de eficácia" e "características farmacológicas" só ficam na frente se a pergunta as pede (estudo, mecanismo, farmacocinética, "fazer efeito"); `RERANK_GARANTE_SECAO=false` volta ao reranking sem isso.
 
 ### 4. Entrega
 
@@ -440,7 +450,7 @@ farma-rag/
 │   ├── app/
 │   │   ├── config.py          # Settings (pydantic-settings), tudo vem do .env
 │   │   ├── main.py            # aplicação FastAPI: CORS, erros, rotas, carga do acervo ao subir
-│   │   ├── api/               # routes.py (rotas /api/v1) e errors.py (erros no formato ErrorOut)
+│   │   ├── api/               # routes.py (rotas /api/v1), errors.py (erros no formato ErrorOut) e progress.py (fluxo NDJSON com o progresso)
 │   │   ├── db/                # models SQLAlchemy, connection.py, vector_search.py (InMemoryIndex), pgvector_search.py
 │   │   ├── llm/               # cliente do Ollama (chat + embed) e cálculo de embeddings
 │   │   ├── schemas/           # contratos do dataset e da API, catálogo de erros

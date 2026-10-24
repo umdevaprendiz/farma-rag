@@ -893,3 +893,132 @@ a comparação mediria o sorteio junto com a configuração.
 - Custo: nenhum que se meça (0,08 s de mediana por pergunta sem o embedding, igual nos quatro valores).
 - Mesmo limite da seção 30: os pesos foram ajustados olhando estas 80 perguntas.
 - `RERANK_CANDIDATOS` continua 10 até o usuário decidir.
+
+## 33. Aviso de saúde em toda resposta (F2, 2026-10-24)
+Pedido do usuário: toda resposta traz um aviso fixo de que a informação é da bula e não substitui o
+farmacêutico. O rodapé da caixa de mensagem já dizia isso em geral; agora cada resposta leva o aviso.
+
+**Texto** (`AVISO_SAUDE`, `schemas/api.py`): "Informação da bula, para conferência. Não substitui a
+avaliação do farmacêutico nem a consulta médica."
+
+**Decisões tomadas por mim, porque o usuário mandou fazer sem responder as três perguntas que o plano
+(`.claude/FEATURES.md`) deixava em aberto. Mudar qualquer uma custa uma linha:**
+- **Onde aparece:** só em `status = respondida` (também na resposta copiada da bula e na outra
+  explicação do "não ajudou"). Em `nao_encontrada`, esclarecimento e erro não há informação de bula a
+  avisar, e o aviso viraria ruído.
+- **Quem monta:** a API, no campo `aviso` de `AnswerOut` e de `InquiryDetail` (`computed_field`: sai no JSON
+  e na documentação em `/docs`). Um só texto, lido pela tela e pelo `benchmark.ask`; outro cliente da API
+  também o recebe.
+- **Nunca pelo LLM e nunca gravado:** não passa pela fundamentação, não entra em `resposta` nem em
+  nenhuma coluna de `consultas`, e não custa tempo. O histórico o calcula ao abrir a consulta, então
+  trocar o texto vale também para as respostas antigas.
+
+**Tela:** `<p className="aviso-saude">` em `Message.tsx`, depois das fontes e antes da linha de
+rodadas e tempo: texto pequeno, cor de apoio, só uma linha lateral (sem o fundo amarelo do
+`.nota-aviso`, que é para avisos da resposta). `benchmark/ask.py` o imprime depois da resposta.
+
+**Continua pendente** (F4/plano): tirar do prompt o conselho genérico "consulte um médico"; o aviso fixo
+já cobre.
+
+## 34. A seção da pergunta já na rodada 1 (F3b, 2026-10-24)
+**Problema** (consulta `12f61084`, 98 s em 2 rodadas): a pergunta de indicação trouxe na rodada 1 dois
+trechos de "resultados de eficácia" e um de indicações. O bônus de seção do reranking (seção 30) é de
+0,08, e um trecho da seção pedida muito menos parecido que os outros ficava de fora.
+
+**Duas regras em `services/rerank.py`**, ligadas por `RERANK_GARANTE_SECAO` (padrão `true`):
+1. **Seções raras** (`SECOES_RARAS`: "resultados de eficácia" e "características farmacológicas"): só
+   estudos clínicos e farmacologia, trechos longos que pesam no prompt (cada trecho a mais custa ~5 s de
+   leitura) e quase nunca são a resposta no balcão. Só ficam na frente se a pergunta as pede; senão a
+   nota cai `PENALIDADE_SECAO_RARA` (0,5), e elas vão para o fim da fila: entram só se faltar candidato
+   (rebaixadas, não excluídas). Quem as pede: `intent._MAIS_GATILHOS` ganhou estudo, ensaio, eficácia,
+   evidência, farmacocinética, farmacodinâmica, absorção, metabolização, excreção, "fazer efeito",
+   "início de ação" e "duração do efeito"; "mecanismo", "como age" e "meia-vida" já existiam. Os
+   gatilhos novos valem só no reranking (`secoes_para_rerank`), não na busca geral nem nas rodadas 2 e 3.
+2. **Garantia:** se a pergunta indica seção e nenhum trecho escolhido de um remédio é de uma delas, o
+   trecho da seção mais bem colocado desse remédio (pela nota) entra no lugar do escolhido de menor
+   semelhança. Vale por remédio (pergunta de interação com 2 remédios leva um trecho de interações de
+   cada). Não entra trecho quase igual (Jaccard >= 0,8) a um que fica, nem remédio sem trecho da seção
+   entre os candidatos. O `score` devolvido continua sendo a semelhança (é o que a tela mostra).
+
+`RERANK_GARANTE_SECAO=false` volta ao reranking da seção 30 (a linha de base para comparar).
+
+**O que foi verificado e o que não foi:**
+- Testes sem Ollama: `test_rerank.py` (reranking, garantia, remédios, duplicata, gatilhos) e um teste
+  de grafo em `test_rag.py` (com a garantia a rodada 1 já leva a reação adversa e a pergunta acaba em 1
+  chamada; sem ela, a rodada 1 erra a seção e paga a rodada 2 inteira).
+- Gabarito de 80 perguntas: nenhuma âncora está em "resultados de eficácia" nem em "características
+  farmacológicas" (conferido no arquivo), então a regra 1 não tira trecho certo do benchmark.
+- **Não medido:** o acerto@k do modo busca com e sem a garantia precisa dos embeddings das 80 perguntas
+  (Ollama), então fica para a quinta: `python -m benchmark.run` e
+  `RERANK_GARANTE_SECAO=false python -m benchmark.run`. Pode mudar o acerto das perguntas em que a âncora
+  era o escolhido de menor semelhança e a seção inferida estava errada.
+
+## 35. Modelo aquecido e KEEP_ALIVE configurável (F3c, 2026-10-24)
+**Problema:** a primeira pergunta depois de subir o Ollama paga a carga dos modelos (medido na etapa 0:
+~4 s o bge-m3, ~7 s o llama3.2:3b; o qwen2.5:1.5b fica entre os dois), além da leitura do prompt.
+
+- **`KEEP_ALIVE`** (`.env`, padrão `30m`): antes fixo no código. Aceita duração (`30m`, `2h`), segundos
+  (`300`) e `-1` (para sempre). O Ollama recusa o texto "-1", então `ollama._keep_alive` o converte em
+  número.
+- **`ollama.aquecer(s)`**: carrega o modelo de embeddings (toda pergunta começa por ele), o de geração e,
+  se for outro, o de verificação (`LLM_MODELO_VERIFICACAO`). Geração: `/api/generate` sem prompt e sem
+  stream (o Ollama só carrega). Embeddings: `/api/embed` com um texto curto, porque o `/api/embed` não
+  tem "só carregar". Devolve `{modelo: None | motivo}`; nunca levanta, e um modelo que falha (não
+  baixado) não impede os outros.
+- **Na subida da API** (`main.aquecer_em_segundo_plano`): uma thread daemon, em paralelo com a leitura
+  do acervo no banco. Não atrasa a subida e não a derruba: Ollama fora do ar ou modelo não baixado viram
+  um aviso no log (o `/saude` já mostra o que falta). Desliga com `AQUECER_MODELOS=false`.
+- **Testes nunca aquecem de verdade:** o `conftest.py` põe `AQUECER_MODELOS=false` no ambiente na
+  importação (as `Settings` dos testes são criadas antes de qualquer fixture); o teste do aquecimento liga
+  a opção por argumento.
+
+**Limites:** só a API aquece (`benchmark.ask` e `benchmark.run` carregam na primeira chamada, como antes).
+Se o Ollama subir depois da API, a primeira pergunta ainda paga a carga. Com `uvicorn --reload` cada
+reinício aquece de novo (inofensivo: o modelo já está carregado). **Não medido:** o ganho em segundos
+na primeira pergunta (precisa do Ollama; quinta).
+
+## 36. Progresso de verdade na tela (F3d, 2026-10-24)
+**Problema:** uma pergunta leva de 6 s a ~2 min na CPU, e a tela só dizia "Pensando..." com frases
+engraçadas (F1) que não diziam nada sobre o andamento. Quem espera não sabe se está buscando, escrevendo ou
+refazendo uma rodada.
+
+**O agente avisa cada etapa** (`services/graph.py`): `montar_grafo(acervo, s, avisar)` e
+`responder(..., avisar)` recebem um `Progress = Callable[[etapa, rodada], None]` opcional, chamado quando
+começa: `buscando` (nó `buscar`), `escrevendo` (nó `gerar`, só quando o LLM roda: a frase copiada da bula é
+instantânea), `conferindo` (nó `validar`) e `verificando` (nó `verificar_llm`, só na rodada 3). O aviso só
+informa: erro de quem ouve é engolido e nunca muda a resposta. No "não ajudou" a contagem recomeça em 1
+(é uma pergunta nova para o agente).
+
+**Transporte** (`api/progress.py`): NDJSON, uma linha de JSON por evento, via `StreamingResponse`.
+- `{"tipo":"etapa","etapa":...,"rodada":n,"de":RODADAS_MAX}`, depois `{"tipo":"resposta","resposta":{AnswerOut}}`
+  ou `{"tipo":"erro","erro":{codigo,mensagem},"consulta_id":...,"status":HTTP que o erro teria}`;
+- `{"tipo":"vivo"}` a cada 15 s sem novidade (uma geração longa não manda nada por dezenas de segundos, e
+  proxies fecham conexão parada);
+- o trabalho roda numa thread e fala com o fluxo por uma fila. Se quem espera fechar a conexão, a thread
+  termina a pergunta e grava a consulta no histórico: nada se perde;
+- falha inesperada (bug): o fluxo acaba sem a linha final, e o cliente trata isso como "resposta
+  interrompida" (o erro fica no log da API).
+
+**Rotas novas** (as antigas continuam, com o mesmo resultado): `POST /api/v1/perguntas/com-progresso` e
+`POST /api/v1/perguntas/{id}/outra-explicacao/com-progresso`. O que se checa antes do agente (entrada
+inválida 422, acervo, banco fora 503, consulta inexistente 404, "não ajudou" de consulta não respondida
+422) sai como erro HTTP comum; o que o agente descobre (filtro desconhecido, Ollama fora, rodadas
+esgotadas) vai como a linha `erro` do fluxo. `_preparar_outra_explicacao` separou, em `routes.py`, o que
+o "não ajudou" checa antes de rodar o agente, para as duas rotas usarem o mesmo código;
+`errors.mensagem_banco_fora` guarda o texto do 503 num lugar só.
+
+**Tela:** `api.ts` ganhou `transmitir` (lê o fluxo por `fetch` + `ReadableStream`, junta as linhas que
+chegam partidas entre blocos); `perguntar` e `outraExplicacao` passam a usá-lo e recebem `aoEtapa`. `App.tsx`
+guarda a etapa na mensagem em espera (`Message.etapa`); `format.rotuloEtapa` escreve o texto ("Buscando
+nos trechos das bulas", "Escrevendo a resposta", "Conferindo se a resposta está na bula", "Rodada 2 de 3:
+buscando outros trechos nas bulas", "verificando afirmação por afirmação"). A espera mostra a etapa, a frase
+engraçada da F1 mais apagada ao lado e os segundos. O leitor de tela agora ouve a etapa (ela é real e muda
+poucas vezes); a frase e o contador continuam fora dele.
+
+**Verificado:** `test_progress.py` (ordem, erro, banco que cai, bug, chegada antes do fim, batimento,
+cabeçalhos), 5 testes de aviso no grafo em `test_rag.py` e, fora da suíte, o `api.ts` real contra um
+servidor FastAPI de mentira com o `progress.py` real, via HTTP e Node: a 1ª etapa chegou em 231 ms
+enquanto a resposta só em 1221 ms (o fluxo é incremental de verdade), e erro no fluxo, fluxo cortado,
+erro HTTP antes do fluxo e API fora do ar viram `ApiError` certo. **Não verificado:** os 4 testes novos
+de `test_api.py` (precisam do PostgreSQL, ficaram pulados), o Vite repassando o fluxo (o proxy do Vite
+não costuma guardar a resposta, mas não foi aberto no navegador) e o visual da espera.

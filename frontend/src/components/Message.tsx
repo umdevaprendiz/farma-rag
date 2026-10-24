@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
-import type { Option, QuestionIn } from "../api";
+import type { Option, Progress, QuestionIn } from "../api";
 import type { Message, View } from "../conversation";
-import { ROTULO_MOTIVO, duracao, emLista } from "../format";
+import { ROTULO_MOTIVO, duracao, emLista, rotuloEtapa } from "../format";
 import { Fontes, TextoComCitacoes } from "./Citations";
 import type { ActiveSource } from "./Citations";
 import { ErrorNotice } from "./ErrorNotice";
@@ -30,7 +30,7 @@ export function MessageView({ mensagem: m, aoEscolherOpcao, aoNaoAjudou, ocupado
       </span>
       <div className="conteudo">
         {m.carregando ? (
-          <Pensando inicio={m.inicio} />
+          <Pensando inicio={m.inicio} etapa={m.etapa} />
         ) : (
           <Resposta
             vista={m.vista}
@@ -69,7 +69,7 @@ function embaralhar<T>(lista: readonly T[]): T[] {
   return copia;
 }
 
-function Pensando({ inicio }: { inicio: number }) {
+function Pensando({ inicio, etapa }: { inicio: number; etapa: Progress | null }) {
   const [agora, setAgora] = useState(Date.now());
   // Sorteada uma vez por pergunta: sortear a cada render trocaria a frase a cada segundo.
   const [frases] = useState(() => embaralhar(FRASES_ESPERA));
@@ -79,7 +79,9 @@ function Pensando({ inicio }: { inicio: number }) {
   }, []);
   const s = Math.max(0, Math.floor((agora - inicio) / 1000));
   const frase = frases[Math.floor(s / SEGUNDOS_POR_FRASE) % frases.length];
-  // O leitor de tela ouve só o texto fixo do status; a frase e o contador mudam e ficam de fora.
+  const rotulo = rotuloEtapa(etapa);
+  // F3d: a etapa é real (a API avisa cada uma) e muda poucas vezes, então o leitor de tela a ouve; a
+  // frase engraçada (F1) e o contador mudam a cada poucos segundos e ficam de fora.
   return (
     <div className="pensando">
       <span className="pontos" aria-hidden="true">
@@ -88,7 +90,10 @@ function Pensando({ inicio }: { inicio: number }) {
         <i />
       </span>
       <span role="status" className="sr-only">
-        Consultando as bulas
+        {rotulo}
+      </span>
+      <span className="etapa" aria-hidden="true">
+        {rotulo}
       </span>
       <span key={frase} className="frase-espera" aria-hidden="true">
         {frase}
@@ -191,6 +196,9 @@ function Resposta({ vista: v, aoEscolherOpcao, aoNaoAjudou, ocupado }: AnswerPro
           aoEscolher={abrir}
         />
       )}
+
+      {/* F2: aviso de saúde da API, fixo e discreto, embaixo de toda resposta (também a copiada da bula). */}
+      {v.status === "respondida" && v.aviso && <p className="aviso-saude">{v.aviso}</p>}
 
       {(v.status === "respondida" || v.status === "nao_encontrada") && (
         <p className="meta">

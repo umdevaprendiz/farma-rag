@@ -10,10 +10,12 @@ from collections import defaultdict
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy import Engine, text
 from sqlalchemy.exc import OperationalError
 
-from app.api.errors import ApiError
+from app.api.errors import ApiError, mensagem_banco_fora
+from app.api.progress import transmitir
 from app.config import Settings
 from app.db.connection import preparar_banco
 from app.llm import ollama
@@ -33,7 +35,7 @@ from app.schemas.api import (
 from app.services import history
 from app.services.corpus import Corpus, IncompleteCorpusError
 from app.services.medicines import normalizar
-from app.services.rag import AnotherExplanation, PreviousQuestion, responder
+from app.services.rag import AnotherExplanation, PreviousQuestion, Progress, responder
 
 router = APIRouter(prefix="/api/v1")
 
@@ -126,12 +128,25 @@ def perguntar(entrada: QuestionIn, sv: Services = Depends(servicos)) -> AnswerOu
     return _responder(sv, acervo, entrada, _anterior(sv.engine, entrada.consulta_origem_id))
 
 
-@router.post("/perguntas/{consulta_id}/outra-explicacao", response_model=AnswerOut)
-def outra_explicacao(consulta_id: UUID, sv: Services = Depends(servicos)) -> AnswerOut:
-    """"Não ajudou, explique de outro jeito" (docs/DECISOES.md, seção 26): a pergunta da consulta
-    roda de novo sem os trechos citados nela e nas explicações antes dela, com o mesmo filtro e a
-    mesma pergunta anterior da original. A resposta vira uma consulta nova, ligada à que não
-    ajudou (consulta_origem_id, com outra_explicacao)."""
+@router.post("/perguntas/com-progresso")
+def perguntar_com_progresso(entrada: QuestionIn, sv: Services = Depends(servicos)) -> StreamingResponse:
+    """O mesmo que POST /perguntas, em fluxo NDJSON: uma linha por etapa do agente e, no fim, a
+    resposta ou o erro (api/progress.py; docs/DECISOES.md, seção 36). O que se checa antes do agente
+    (entrada inválida, acervo, banco fora do ar) continua saindo como erro HTTP comum; o que o agente
+    descobre (filtro desconhecido, Ollama fora, rodadas esgotadas) vai como a linha de erro do fluxo."""
+    acervo = sv.acervo()
+    anterior = _anterior(sv.engine, entrada.consulta_origem_id)
+    return transmitir(
+        lambda avisar: _responder(sv, acervo, entrada, anterior, avisar=avisar), sv.s.rodadas_max, mensagem_banco_fora(sv.s)
+    )
+
+
+def _preparar_outra_explicacao(
+    sv: Services, consulta_id: UUID
+) -> tuple[Corpus, QuestionIn, PreviousQuestion | None, AnotherExplanation]:
+    """O que "não ajudou" precisa antes de rodar o agente: a pergunta da consulta, sem os trechos
+    citados nela e nas explicações antes dela, com o mesmo filtro e a mesma pergunta anterior da
+    original. Levanta 404 (consulta que não existe) e 422 (consulta que não foi respondida)."""
     acervo = sv.acervo()
     cadeia = history.explicacoes(sv.engine, consulta_id)
     if not cadeia:
@@ -148,7 +163,26 @@ def outra_explicacao(consulta_id: UUID, sv: Services = Depends(servicos)) -> Ans
     # Se um elo da cadeia foi apagado, a última da lista já é uma explicação: a origem dela não é
     # a pergunta anterior da conversa.
     anterior = None if original.outra_explicacao else _anterior(sv.engine, original.consulta_origem_id)
-    return _responder(sv, acervo, entrada, anterior, history.para_outra_explicacao(cadeia))
+    return acervo, entrada, anterior, history.para_outra_explicacao(cadeia)
+
+
+@router.post("/perguntas/{consulta_id}/outra-explicacao", response_model=AnswerOut)
+def outra_explicacao(consulta_id: UUID, sv: Services = Depends(servicos)) -> AnswerOut:
+    """"Não ajudou, explique de outro jeito" (docs/DECISOES.md, seção 26): a pergunta da consulta
+    roda de novo sem os trechos citados nela e nas explicações antes dela, com o mesmo filtro e a
+    mesma pergunta anterior da original. A resposta vira uma consulta nova, ligada à que não
+    ajudou (consulta_origem_id, com outra_explicacao)."""
+    acervo, entrada, anterior, outra = _preparar_outra_explicacao(sv, consulta_id)
+    return _responder(sv, acervo, entrada, anterior, outra)
+
+
+@router.post("/perguntas/{consulta_id}/outra-explicacao/com-progresso")
+def outra_explicacao_com_progresso(consulta_id: UUID, sv: Services = Depends(servicos)) -> StreamingResponse:
+    """O "não ajudou" em fluxo NDJSON, como POST /perguntas/com-progresso."""
+    acervo, entrada, anterior, outra = _preparar_outra_explicacao(sv, consulta_id)
+    return transmitir(
+        lambda avisar: _responder(sv, acervo, entrada, anterior, outra, avisar), sv.s.rodadas_max, mensagem_banco_fora(sv.s)
+    )
 
 
 def _anterior(engine: Engine, consulta_id: UUID | None) -> PreviousQuestion | None:
@@ -160,10 +194,10 @@ def _anterior(engine: Engine, consulta_id: UUID | None) -> PreviousQuestion | No
 
 def _responder(
     sv: Services, acervo: Corpus, entrada: QuestionIn, anterior: PreviousQuestion | None,
-    outra: AnotherExplanation | None = None,
+    outra: AnotherExplanation | None = None, avisar: Progress | None = None,
 ) -> AnswerOut:
     inicio = time.perf_counter()
-    r = responder(entrada.pergunta, acervo, entrada.principios_ativos, sv.s, anterior, outra)
+    r = responder(entrada.pergunta, acervo, entrada.principios_ativos, sv.s, anterior, outra, avisar)
     latencia_ms = round((time.perf_counter() - inicio) * 1000)
     modelo = "frases da bula (sem LLM)" if r.extrativa else sv.s.llm_modelo
     consulta = history.gravar(sv.engine, entrada, r, acervo, modelo, latencia_ms)

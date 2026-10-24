@@ -462,6 +462,17 @@ button {
   font-size: 0.75rem;
 }
 
+/* Aviso de saúde fixo (F2): discreto, com a mesma linha lateral da cor de apoio, sem competir
+   com a resposta nem com o aviso amarelo de .nota-aviso. */
+.aviso-saude {
+  margin: 0;
+  padding-left: 10px;
+  border-left: 2px solid var(--borda);
+  color: var(--texto-2);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+}
+
 .pensando {
   display: flex;
   flex-wrap: wrap;
@@ -471,9 +482,21 @@ button {
   font-size: 0.9375rem;
 }
 
+/* A etapa real avisada pela API (F3d); a frase engraçada da F1 fica ao lado, mais apagada. */
+.etapa {
+  color: var(--texto);
+  font-weight: 500;
+}
+
 /* key={frase} remonta o span a cada troca, e a animação roda de novo. */
 .frase-espera {
   animation: surgir 0.35s ease-out;
+  color: var(--texto-3);
+  font-size: 0.875rem;
+}
+
+.frase-espera::before {
+  content: "· ";
 }
 
 .segundos {

@@ -12,6 +12,7 @@ um pedido de esclarecimento deixa escolher o medicamento e refaz a pergunta com 
 import sys
 
 from app.config import get_settings
+from app.schemas.api import AVISO_SAUDE
 from app.schemas.dataset import ROTULO_SECAO
 from app.services.corpus import Corpus, IncompleteCorpusError
 from app.services.rag import Result, responder
@@ -26,7 +27,7 @@ def mostrar(r: Result) -> None:
         print(f"Sem bula indexada: {', '.join(r.medicamentos_nao_indexados)}")
 
     if r.status == "respondida":
-        print(f"\nRESPOSTA\n{r.resposta}")
+        print(f"\nRESPOSTA\n{r.resposta}\n\n{AVISO_SAUDE}")
     elif r.status == "precisa_esclarecimento":
         print(f"\nPRECISO SABER: {r.esclarecimento.pergunta}")
         for i, opcao in enumerate(r.esclarecimento.opcoes, start=1):

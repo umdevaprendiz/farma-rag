@@ -222,6 +222,34 @@ def test_reranking_traz_a_secao_da_pergunta_ja_na_rodada_1(acervo, modelo):
     assert "reacoes_adversas" in [f.chunk.secao for f in r.fontes]
 
 
+def test_secao_da_pergunta_distante_entra_na_rodada_1_e_poupa_a_rodada_2(acervo, monkeypatch):
+    # F3b (docs/DECISOES.md, seção 34). A semelhança traz posologia (1,0) e advertências (0,5); as reações
+    # adversas, que a pergunta pede ("causa"), ficam a 0,01: o bônus de seção (0,08) não as alcança.
+    trechos = list(acervo.chunks.values())
+    vetor = np.full(len(trechos), 0.01)
+    vetor[next(i for i, c in enumerate(trechos) if c.secao == "posologia")] = 1.0
+    vetor[next(i for i, c in enumerate(trechos) if c.secao == "advertencias")] = 0.5
+    chamadas = []
+
+    def chat(sistema, usuario, formato, s=None, modelo=None):
+        chamadas.append(usuario)
+        return ollama.LLMResponse('{"status": "nao_encontrada", "afirmacoes": []}', 400, 0, 8.0, 0.0)
+
+    monkeypatch.setattr(ollama, "embed", lambda textos, s=None: [vetor.tolist()])
+    monkeypatch.setattr(ollama, "chat", chat)
+
+    com = rag.responder("Exemplol causa queda de cabelo?", acervo, s=S)
+    primeira = [acervo.chunks[c].secao for c in com.tentativas[0].chunk_ids]
+    assert "reacoes_adversas" in primeira and len(primeira) == 2  # entrou no lugar da menos parecida
+    assert "advertencias" not in primeira
+    assert (com.status, com.rodadas, len(chamadas)) == ("nao_encontrada", 1, 1)
+
+    chamadas.clear()
+    sem = rag.responder("Exemplol causa queda de cabelo?", acervo, s=S.model_copy(update={"rerank_garante_secao": False}))
+    assert "reacoes_adversas" not in [acervo.chunks[c].secao for c in sem.tentativas[0].chunk_ids]
+    assert (sem.rodadas, len(chamadas)) == (2, 2)  # a linha de base paga a segunda rodada inteira
+
+
 def test_numero_sem_fonte_reprova_e_a_rodada_2_corrige(acervo, modelo):
     chamadas = modelo(
         "posologia",
@@ -349,3 +377,63 @@ def test_abaixo_do_limiar_nao_chama_o_modelo(acervo, modelo):
 
 def test_formato_so_permite_citar_trechos_enviados():
     assert rag.formato(3)["properties"]["afirmacoes"]["items"]["properties"]["trecho"]["enum"] == [1, 2, 3]
+
+
+# --- F3d: o agente avisa cada etapa que começa (docs/DECISOES.md, seção 36) -----------------------
+
+
+def _etapas():
+    avisos: list[tuple[str, int]] = []
+    return avisos, lambda etapa, rodada: avisos.append((etapa, rodada))
+
+
+def test_avisa_cada_etapa_de_uma_resposta_na_rodada_1(acervo, modelo):
+    modelo("posologia", _resposta(("A dose máxima é de 100 mg uma vez ao dia", 1)))
+    avisos, avisar = _etapas()
+    r = rag.responder("Como tomar o Exemplol?", acervo, s=S, avisar=avisar)
+    assert r.rodadas == 1
+    assert avisos == [("buscando", 1), ("escrevendo", 1), ("conferindo", 1)]
+
+
+def test_avisa_a_rodada_2_quando_a_primeira_reprova(acervo, modelo):
+    modelo(
+        "posologia",
+        _resposta(("A dose máxima é de 200 mg uma vez ao dia", 1)),
+        _resposta(("A dose máxima é de 100 mg uma vez ao dia", 1)),
+    )
+    avisos, avisar = _etapas()
+    assert rag.responder("Como tomar o Exemplol?", acervo, s=S, avisar=avisar).rodadas == 2
+    assert avisos == [
+        ("buscando", 1), ("escrevendo", 1), ("conferindo", 1),
+        ("buscando", 2), ("escrevendo", 2), ("conferindo", 2),
+    ]
+
+
+def test_avisa_a_verificacao_na_rodada_3(acervo, modelo):
+    errada = _resposta(("A dose máxima é de 300 mg", 1))
+    certa = _resposta(("A dose máxima é de 100 mg uma vez ao dia", 1))
+    modelo("posologia", errada, errada, certa, verificacao={"a1": "sim"})
+    avisos, avisar = _etapas()
+    assert rag.responder("Como tomar o Exemplol?", acervo, s=S, avisar=avisar).rodadas == 3
+    assert avisos[-2:] == [("conferindo", 3), ("verificando", 3)]
+    assert [a for a in avisos if a[0] == "verificando"] == [("verificando", 3)]  # só uma vez, só na 3
+
+
+def test_frase_copiada_da_bula_nao_avisa_escrevendo(acervo, monkeypatch, modelo):
+    # Sem LLM não há "escrevendo": a frase vem pronta, e o aviso ficaria piscando por 1 ms.
+    modelo("posologia", {"status": "nao_encontrada", "afirmacoes": []})
+    monkeypatch.setattr(ollama, "chat", lambda *a, **k: pytest.fail("a frase vem da bula, sem o LLM"))
+    avisos, avisar = _etapas()
+    r = rag.responder("Qual a dose máxima do Exemplol?", acervo, s=S, avisar=avisar)  # dose: frase da posologia
+    assert r.extrativa and avisos == [("buscando", 1), ("conferindo", 1)]
+
+
+def test_quem_ouve_o_aviso_nunca_muda_a_resposta(acervo, modelo):
+    # O aviso é só informação: se o ouvinte quebrar (conexão fechada), a pergunta segue igual.
+    modelo("posologia", _resposta(("A dose máxima é de 100 mg uma vez ao dia", 1)))
+
+    def quebrado(etapa, rodada):
+        raise RuntimeError("conexão fechada")
+
+    r = rag.responder("Como tomar o Exemplol?", acervo, s=S, avisar=quebrado)
+    assert (r.status, r.resposta) == ("respondida", "A dose máxima é de 100 mg uma vez ao dia [1].")

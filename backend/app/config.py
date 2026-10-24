@@ -17,6 +17,12 @@ class Settings(BaseSettings):
     llm_modelo_verificacao: str | None = None
     embed_modelo: str = "bge-m3"
     embed_dim: int = 1024
+    # F3c (docs/DECISOES.md, seção 35). Quanto tempo o Ollama mantém cada modelo na memória depois do
+    # último uso: "30m", "2h", segundos ("300") ou "-1" (para sempre). Recarregar custa vários
+    # segundos na CPU.
+    keep_alive: str = "30m"
+    # Ao subir, a API carrega no Ollama os modelos que a pergunta usa, em segundo plano.
+    aquecer_modelos: bool = True
 
     # PostgreSQL. O banco é montado a partir de partes: DB_HOST é "127.0.0.1" nos scripts
     # rodados no host (ingestão, benchmark) e "db" dentro do Docker Compose.
@@ -32,6 +38,10 @@ class Settings(BaseSettings):
     # Reranking (services/rerank.py): a rodada 1 olha os N mais parecidos por remédio e escolhe os
     # top_k pela seção da pergunta, pelas palavras dela e sem repetir trecho. 0 = só semelhança.
     rerank_candidatos: int = 10
+    # F3b (docs/DECISOES.md, seção 34): a seção que a pergunta indica já na rodada 1 (um trecho dela por
+    # remédio) e as seções "resultados de eficácia" e "características farmacológicas" só na frente
+    # quando pedidas. False = o reranking da seção 30 sozinho (a linha de base do benchmark).
+    rerank_garante_secao: bool = True
     # Pergunta sem medicamento indexado: busca em todas as bulas, um trecho por princípio ativo.
     # Cada trecho é uma opção na resposta ("melhor remédio pra dor de cabeça").
     top_k_geral: int = 4

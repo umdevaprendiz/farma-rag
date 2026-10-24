@@ -1,6 +1,13 @@
+import os
 from uuid import uuid4
 
 import pytest
+
+# F3c: a API aquece os modelos no Ollama ao subir. Nos testes isso nunca pode acontecer (carregaria o
+# modelo de verdade, ou esperaria o Ollama). No módulo, não numa fixture: os `Settings(...)` dos
+# testes são criados na importação, antes de qualquer fixture rodar. O teste do aquecimento liga
+# `aquecer_modelos=True` por argumento, que vale mais que esta variável.
+os.environ["AQUECER_MODELOS"] = "false"
 
 
 @pytest.fixture(scope="module")

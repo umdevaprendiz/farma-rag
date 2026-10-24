@@ -26,6 +26,9 @@ pergunta roda de novo sem os trechos citados na resposta que não ajudou; os env
 ainda valem, depois dos nunca enviados. Sem frases copiadas da bula (a cópia pode ter sido o que não
 ajudou). Sem trecho novo, "não há outra explicação", sem chamar o LLM.
 
+Progresso (docs/DECISOES.md, seção 36): `avisar(etapa, rodada)` é chamado quando começa cada etapa de
+verdade (buscando, escrevendo, conferindo, verificando); a API o usa para mostrar na tela onde a pergunta está.
+
 Só `gerar` e `verificar_llm` chamam o LLM. As decisões ficam nas funções `depois_de_*`
 (arestas condicionais), em código: com um modelo de 1,5B na CPU, cada chamada custa 30-45 s
 e o modelo não é confiável para escolher caminho.
@@ -69,6 +72,7 @@ from app.services.rag import (
     Clarification,
     Option,
     PreviousQuestion,
+    Progress,
     Result,
     Source,
     _para_saida,
@@ -237,7 +241,16 @@ def _explicar(e: State, s: Settings) -> str:
     )
 
 
-def montar_grafo(acervo: Corpus, s: Settings):
+def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
+    def _avisar(etapa: str, rodada: int) -> None:
+        """F3d (docs/DECISOES.md, seção 36): diz a quem espera em que etapa a pergunta está. Só
+        informa: um erro de quem ouve (conexão fechada, fila cheia) nunca pode mudar a resposta."""
+        if avisar is not None:
+            try:
+                avisar(etapa, rodada)
+            except Exception:
+                pass
+
     # ---- Nós ---------------------------------------------------------------------------
 
     def entender(e: State) -> State:
@@ -339,6 +352,7 @@ def montar_grafo(acervo: Corpus, s: Settings):
         "Não ajudou": já começa como uma rodada seguinte (a resposta que não ajudou foi a primeira),
         sem os trechos citados nela."""
         rodada = e["rodada"] + 1
+        _avisar("buscando", rodada)
         t = time.perf_counter()
         # Os caminhos da primeira tentativa: frases copiadas da bula e o top-k direto.
         primeira = rodada == 1 and not e.get("outra")
@@ -474,7 +488,11 @@ def montar_grafo(acervo: Corpus, s: Settings):
     def _primeira_busca(vetor: list[float], e: State) -> list[SearchHit]:
         """Rodada 1 com remédio indexado: os `rerank_candidatos` mais parecidos de cada remédio,
         mais os melhores das seções que a pergunta pede, e o reranking escolhe os top_k
-        (services/rerank.py). `rerank_candidatos=0`: só a semelhança (a linha de base)."""
+        (services/rerank.py). `rerank_candidatos=0`: só a semelhança (a linha de base).
+
+        F3b: com seção indicada pela pergunta, a rodada 1 já leva um trecho dela por remédio
+        (`rerank_garante_secao`); antes ela só ganhava um bônus de nota e, muito menos parecida que as
+        outras, ficava de fora até a rodada 2 (~45 s a mais)."""
         ativos = e["principios_ativos"]
         if not s.rerank_candidatos:
             return acervo.indice.buscar(vetor, s.top_k, ativos)
@@ -488,7 +506,9 @@ def montar_grafo(acervo: Corpus, s: Settings):
                 if c.secao in secoes and vistos[chave] < rerank.EXTRA_POR_SECAO:
                     vistos[chave] += 1
                     candidatos.append(a)
-        return rerank.reordenar(candidatos, acervo.chunks, secoes, _grupos_da_pergunta(e), s.top_k, ativos)
+        return rerank.reordenar(
+            candidatos, acervo.chunks, secoes, _grupos_da_pergunta(e), s.top_k, ativos, s.rerank_garante_secao
+        )
 
     def _grupos_da_pergunta(e: State) -> list[tuple[str, ...]]:
         """Os assuntos da pergunta nova sem os que são só nome: do princípio ativo, da marca ou do
@@ -625,6 +645,7 @@ def montar_grafo(acervo: Corpus, s: Settings):
             # Frases copiadas da bula (services/extract.py): o modelo não entra.
             saida = {"status": "respondida", "afirmacoes": [{"texto": f, "trecho": p} for p, f in e["extrato"]]}
             return {"saida_bruta": json.dumps(saida, ensure_ascii=False), "extrativa": True, "tempos_s": _somar_tempo(e, "geracao", t)}
+        _avisar("escrevendo", e["rodada"])  # só aqui: a frase copiada da bula é instantânea
         avisos = [e["dica"]] if e.get("dica") else []
         if nome := e.get("alergia_a"):
             da_bula = any(normalizar(f.chunk.principio_ativo) == normalizar(nome) for f in e["fontes"])
@@ -653,6 +674,7 @@ def montar_grafo(acervo: Corpus, s: Settings):
     def validar(e: State) -> State:
         """Sem LLM: formato e citações (validar_saida), a citação trocada corrigida no código
         (docs/DECISOES.md, seção 31) e depois a fundamentação de cada afirmação."""
+        _avisar("conferindo", e["rodada"])
         bruto, fontes = e["saida_bruta"], e["fontes"]
         tentativa = {"rodada": e["rodada"], "chunk_ids": [f.chunk.chunk_id for f in fontes], "saida_bruta": bruto}
         limpo: State = {"falha": None, "recusou": False, "resposta": None, "citacoes": [], "afirmacoes": []}
@@ -733,6 +755,7 @@ def montar_grafo(acervo: Corpus, s: Settings):
 
     def verificar_llm(e: State) -> State:
         """Rodada 3: o LLM confere, afirmação por afirmação, se o trecho citado diz aquilo."""
+        _avisar("verificando", e["rodada"])
         chunks = {f.posicao: f.chunk for f in e["fontes"]}
         frases = e["afirmacoes"]
         usuario = "\n\n".join(
@@ -859,9 +882,10 @@ def executar(
     s: Settings | None = None,
     anterior: PreviousQuestion | None = None,
     outra: AnotherExplanation | None = None,
+    avisar: Progress | None = None,
 ) -> Result:
     s = s or get_settings()
-    final = montar_grafo(acervo, s).invoke({
+    final = montar_grafo(acervo, s, avisar).invoke({
         "pergunta": pergunta, "filtro": principios_ativos or [], "inicio": time.perf_counter(),
         "anterior": anterior, "outra": outra,
     })

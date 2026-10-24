@@ -59,6 +59,8 @@ export interface Answer {
   alergia_a: string | null; // a resposta traz alternativas a este remédio
   extrativa: boolean; // frases copiadas da bula, sem o modelo de linguagem
   outra_explicacao: boolean; // resposta ao "não ajudou", sem os trechos já citados
+  // Aviso de saúde, montado pela API (nunca pelo modelo): só na resposta "respondida".
+  aviso: string | null;
   modelo: string;
   latencia_ms: number;
 }
@@ -105,6 +107,7 @@ export interface InquiryDetail extends InquirySummary {
   latencia_ms: number;
   consulta_origem_id: string | null;
   fontes: Source[];
+  aviso: string | null; // o mesmo aviso da resposta, calculado ao abrir a consulta
 }
 
 export interface Health {
@@ -116,6 +119,22 @@ export interface Health {
   trechos: number;
   problemas: string[];
 }
+
+/** Etapa de verdade do agente, avisada pela API quando começa (F3d). */
+export type Stage = "buscando" | "escrevendo" | "conferindo" | "verificando";
+
+export interface Progress {
+  etapa: Stage;
+  rodada: number; // começa em 1; cada rodada a mais é uma nova tentativa depois de uma conferência que falhou
+  de: number; // máximo de rodadas (RODADAS_MAX)
+}
+
+/** Uma linha do fluxo NDJSON de POST /perguntas/com-progresso (backend/app/api/progress.py). */
+type StreamEvent =
+  | ({ tipo: "etapa" } & Progress)
+  | { tipo: "vivo" } // batimento: nada de novo, a conexão segue aberta
+  | { tipo: "resposta"; resposta: Answer }
+  | { tipo: "erro"; erro: { codigo: ErrorCode; mensagem: string }; consulta_id: string | null; status: number };
 
 export interface QuestionIn {
   pergunta: string;
@@ -140,6 +159,15 @@ export class ApiError extends Error {
 const FORA_DO_AR =
   "A API não respondeu. Ela está rodando? Na raiz: uvicorn app.main:app --app-dir backend";
 
+const INTERROMPIDA = "A resposta foi interrompida antes do fim. Veja o log da API.";
+
+/** O erro de uma resposta HTTP que não é 2xx. */
+function erroHttp(status: number, corpo: { erro?: { codigo: ErrorCode; mensagem: string }; consulta_id?: string } | null) {
+  // Sem corpo de ErrorOut: quem respondeu foi o proxy do Vite, com a API desligada.
+  if (!corpo?.erro) return new ApiError("API_FORA_DO_AR", FORA_DO_AR, status);
+  return new ApiError(corpo.erro.codigo, corpo.erro.mensagem, status, corpo.consulta_id ?? null);
+}
+
 async function pedir<T>(caminho: string, init?: RequestInit): Promise<T> {
   let r: Response;
   try {
@@ -148,26 +176,69 @@ async function pedir<T>(caminho: string, init?: RequestInit): Promise<T> {
     throw new ApiError("API_FORA_DO_AR", FORA_DO_AR, 0);
   }
   const corpo = await r.json().catch(() => null);
-  if (!r.ok) {
-    const erro = corpo?.erro;
-    // Sem corpo de ErrorOut: quem respondeu foi o proxy do Vite, com a API desligada.
-    if (!erro) throw new ApiError("API_FORA_DO_AR", FORA_DO_AR, r.status);
-    throw new ApiError(erro.codigo, erro.mensagem, r.status, corpo?.consulta_id ?? null);
-  }
+  if (!r.ok) throw erroHttp(r.status, corpo);
   return corpo as T;
+}
+
+/**
+ * Pergunta em fluxo (F3d): chama `aoEtapa` a cada etapa que o agente começa e devolve a resposta.
+ * Erro HTTP antes do fluxo (entrada inválida, banco fora) e a linha "erro" do fluxo viram ApiError,
+ * como no `pedir`. Fluxo que acaba sem a resposta (conexão cortada, bug na API) também.
+ */
+async function transmitir(caminho: string, init: RequestInit, aoEtapa: (p: Progress) => void): Promise<Answer> {
+  let r: Response;
+  try {
+    r = await fetch(`/api/v1${caminho}`, init);
+  } catch {
+    throw new ApiError("API_FORA_DO_AR", FORA_DO_AR, 0);
+  }
+  if (!r.ok) throw erroHttp(r.status, await r.json().catch(() => null));
+  if (!r.body) throw new ApiError("API_FORA_DO_AR", INTERROMPIDA, 0);
+
+  const final: { resposta: Answer | null } = { resposta: null };
+  const tratar = (linha: string) => {
+    if (!linha.trim()) return;
+    const ev = JSON.parse(linha) as StreamEvent;
+    if (ev.tipo === "etapa") aoEtapa({ etapa: ev.etapa, rodada: ev.rodada, de: ev.de });
+    else if (ev.tipo === "resposta") final.resposta = ev.resposta;
+    else if (ev.tipo === "erro") throw new ApiError(ev.erro.codigo, ev.erro.mensagem, ev.status, ev.consulta_id);
+    // "vivo" e tipos que este cliente não conhece: ignorados.
+  };
+
+  const leitor = r.body.getReader();
+  const decodificador = new TextDecoder();
+  let pendente = ""; // o pedaço de linha que ainda não terminou
+  try {
+    for (;;) {
+      const { done, value } = await leitor.read();
+      if (done) break;
+      pendente += decodificador.decode(value, { stream: true });
+      const linhas = pendente.split("\n");
+      pendente = linhas.pop() ?? "";
+      linhas.forEach(tratar);
+    }
+    tratar(pendente + decodificador.decode());
+  } catch (e) {
+    if (e instanceof ApiError) throw e;
+    throw new ApiError("API_FORA_DO_AR", INTERROMPIDA, 0); // conexão cortada no meio, ou linha ilegível
+  }
+  if (final.resposta === null) throw new ApiError("API_FORA_DO_AR", INTERROMPIDA, 0);
+  return final.resposta;
 }
 
 export const api = {
   saude: () => pedir<Health>("/saude"),
   medicamentos: () => pedir<Medicine[]>("/medicamentos"),
-  perguntar: (entrada: QuestionIn) =>
-    pedir<Answer>("/perguntas", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(entrada),
-    }),
+  // As duas perguntas usam o fluxo com progresso (F3d); a API mantém as rotas sem fluxo, com o mesmo resultado.
+  perguntar: (entrada: QuestionIn, aoEtapa: (p: Progress) => void) =>
+    transmitir(
+      "/perguntas/com-progresso",
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(entrada) },
+      aoEtapa,
+    ),
   // "Não ajudou": a mesma pergunta da consulta, sem os trechos que ela (e as explicações antes dela) citou.
-  outraExplicacao: (consultaId: string) => pedir<Answer>(`/perguntas/${consultaId}/outra-explicacao`, { method: "POST" }),
+  outraExplicacao: (consultaId: string, aoEtapa: (p: Progress) => void) =>
+    transmitir(`/perguntas/${consultaId}/outra-explicacao/com-progresso`, { method: "POST" }, aoEtapa),
   historico: (pagina: number, limite: number) =>
     pedir<History>(`/historico?pagina=${pagina}&limite=${limite}`),
   consulta: (id: string) => pedir<InquiryDetail>(`/historico/${id}`),

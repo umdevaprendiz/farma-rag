@@ -7,6 +7,7 @@ o catálogo de nomes real de data/. Pulado sem o banco, menos o teste de banco f
 import json
 from datetime import date
 from pathlib import Path
+from uuid import uuid4
 
 import numpy as np
 import pytest
@@ -17,7 +18,7 @@ from app.config import Settings
 from app.db.models import EMBED_DIM
 from app.llm import ollama
 from app.main import criar_app
-from app.schemas.api import ErrorCode
+from app.schemas.api import AVISO_SAUDE, ErrorCode
 from app.services import graph
 from ingestion.generate_chunks import gerar_chunks
 from ingestion.load_database import gravar
@@ -130,6 +131,8 @@ def test_resposta_com_fontes_fica_no_historico_igual(cliente, modelo, engine):
     corpo = r.json()
     assert (corpo["status"], corpo["rodadas"], corpo["modelo"]) == ("respondida", 1, "qwen2.5:1.5b")
     assert corpo["resposta"] == "Pode reduzir o efeito anti-hipertensivo [1]."
+    # F2: o aviso vem da API, fora do texto da resposta, e a consulta do histórico o traz igual.
+    assert corpo["aviso"] == AVISO_SAUDE and AVISO_SAUDE not in corpo["resposta"]
     primeira = corpo["fontes"][0]
     assert (primeira["posicao"], primeira["citado"], primeira["rotulo_secao"]) == (1, True, "Interações medicamentosas")
     assert (primeira["fabricante"], primeira["numero_registro"], primeira["data_versao"]) == ("Laboratório Teste", None, "2025-03-15")
@@ -139,6 +142,7 @@ def test_resposta_com_fontes_fica_no_historico_igual(cliente, modelo, engine):
     assert detalhe["fontes"] == corpo["fontes"]
     assert (detalhe["status"], detalhe["resposta"], detalhe["rodadas"]) == ("respondida", corpo["resposta"], 1)
     assert detalhe["consulta_origem_id"] is None and detalhe["codigo_erro"] is None
+    assert detalhe["aviso"] == AVISO_SAUDE
     with engine.connect() as conexao:
         tentativas = conexao.execute(text("SELECT tentativas FROM consultas")).scalar_one()
     assert [t["resultado"] for t in tentativas] == ["aprovada"] and tentativas[0]["saida_bruta"]
@@ -190,6 +194,7 @@ def test_remedio_sem_bula_que_nenhuma_bula_cita(cliente, modelo):
     assert (corpo["status"], corpo["motivo"], corpo["medicamentos_nao_indexados"], corpo["fontes"]) == (
         "nao_encontrada", "medicamento_nao_indexado", ["captopril"], [],
     )
+    assert corpo["aviso"] is None  # F2: sem resposta da bula, sem aviso
 
 
 def test_filtro_desconhecido_da_404(cliente):
@@ -318,6 +323,7 @@ def test_interacao_vem_da_frase_da_bula_sem_llm(cliente, monkeypatch, modelo):
     monkeypatch.setattr(ollama, "chat", lambda *a, **k: pytest.fail("a frase vem da bula, sem o LLM"))
     corpo = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol pode ser usado com ibuprofeno?"}).json()
     assert (corpo["status"], corpo["extrativa"], corpo["modelo"]) == ("respondida", True, "frases da bula (sem LLM)")
+    assert corpo["aviso"] == AVISO_SAUDE  # também na resposta copiada da bula
     assert corpo["resposta"] == (
         "O uso com anti-inflamatórios não esteroidais, como o ibuprofeno, pode reduzir o efeito "
         "anti-hipertensivo da exemplina e piorar a função renal [1]."
@@ -418,3 +424,69 @@ def test_nao_ajudou_mantem_a_pergunta_anterior_da_conversa(cliente, modelo):
     assert (outra["status"], outra["motivo"], outra["principios_ativos"], outra["continuacao"]) == (
         "nao_encontrada", "sem_outra_explicacao", ["maleato de exemplina"], True,
     )
+
+
+# --- F3d: o mesmo agente em fluxo NDJSON, com o progresso (docs/DECISOES.md, seção 36) ------------
+
+
+def _fluxo(r) -> list[dict]:
+    assert r.status_code == 200 and r.headers["content-type"].startswith("application/x-ndjson")
+    return [json.loads(linha) for linha in r.text.splitlines()]
+
+
+def _etapas(eventos) -> list[tuple[str, int, int]]:
+    return [(e["etapa"], e["rodada"], e["de"]) for e in eventos if e["tipo"] == "etapa"]
+
+
+def test_pergunta_com_progresso_manda_as_etapas_e_a_mesma_resposta(cliente, modelo):
+    modelo("interacoes", _resposta(("Pode reduzir o efeito anti-hipertensivo", 1)))
+    eventos = _fluxo(cliente.post("/api/v1/perguntas/com-progresso", json={"pergunta": "Exemplol tem interação medicamentosa?"}))
+    assert _etapas(eventos) == [("buscando", 1, 3), ("escrevendo", 1, 3), ("conferindo", 1, 3)]
+    final = eventos[-1]
+    assert final["tipo"] == "resposta"
+    resposta = final["resposta"]
+    assert (resposta["status"], resposta["resposta"], resposta["aviso"]) == (
+        "respondida", "Pode reduzir o efeito anti-hipertensivo [1].", AVISO_SAUDE,
+    )
+    # A consulta foi gravada como na rota comum.
+    detalhe = cliente.get(f"/api/v1/historico/{resposta['consulta_id']}").json()
+    assert (detalhe["status"], detalhe["resposta"]) == ("respondida", resposta["resposta"])
+
+
+def test_rodadas_esgotadas_vem_como_erro_no_fluxo_com_as_tres_rodadas(cliente, modelo):
+    modelo("posologia", _resposta(("A dose máxima é de 200 mg uma vez ao dia", 1)))
+    eventos = _fluxo(cliente.post("/api/v1/perguntas/com-progresso", json={"pergunta": "Como tomar o Exemplol?"}))
+    assert [(e, r) for e, r, _ in _etapas(eventos)] == [
+        ("buscando", 1), ("escrevendo", 1), ("conferindo", 1),
+        ("buscando", 2), ("escrevendo", 2), ("conferindo", 2),
+        ("buscando", 3), ("escrevendo", 3), ("conferindo", 3),
+    ]
+    erro = eventos[-1]
+    assert (erro["tipo"], erro["status"], erro["erro"]["codigo"]) == ("erro", 502, "RESPOSTA_NAO_VERIFICADA")
+    assert "3 rodada(s)" in erro["erro"]["mensagem"] and erro["consulta_id"]  # a conversa continua depois do erro
+
+
+def test_entrada_invalida_e_http_comum_e_erro_do_agente_vai_no_fluxo(cliente):
+    # Entrada inválida (Pydantic) sai como no POST /perguntas, antes do fluxo.
+    assert _erro(cliente.post("/api/v1/perguntas/com-progresso", json={"pergunta": "oi"})) == (422, "ENTRADA_INVALIDA")
+    # Filtro desconhecido só o agente descobre: vai como evento de erro, com o 404 que ele teria.
+    eventos = _fluxo(
+        cliente.post("/api/v1/perguntas/com-progresso", json={"pergunta": "Como tomar o Exemplol?", "principios_ativos": ["xyzabc"]})
+    )
+    erro = eventos[-1]
+    assert (erro["tipo"], erro["status"], erro["erro"]["codigo"]) == ("erro", 404, "MEDICAMENTO_NAO_ENCONTRADO")
+    assert _etapas(eventos) == []  # nem chegou a buscar
+
+
+def test_nao_ajudou_com_progresso_manda_as_etapas_e_a_resposta_nova(cliente, modelo):
+    ordem = ["indicacoes", "caracteristicas_farmacologicas", "contraindicacoes", "advertencias", "armazenamento", "posologia"]
+    modelo(ordem, [_resposta((INDICACAO, 1)), _resposta((CONTRAINDICACAO, 1))])
+    primeira = cliente.post("/api/v1/perguntas", json={"pergunta": "O que é o Exemplol?"}).json()
+    eventos = _fluxo(cliente.post(f"/api/v1/perguntas/{primeira['consulta_id']}/outra-explicacao/com-progresso"))
+    # O "não ajudou" é uma pergunta nova para o agente: a contagem de rodadas recomeça em 1.
+    assert _etapas(eventos) == [("buscando", 1, 3), ("escrevendo", 1, 3), ("conferindo", 1, 3)]
+    final = eventos[-1]["resposta"]
+    assert (eventos[-1]["tipo"], final["outra_explicacao"], final["resposta"]) == ("resposta", True, f"{CONTRAINDICACAO} [1].")
+    # Consulta que não existe: 404 comum, antes do fluxo.
+    r = cliente.post(f"/api/v1/perguntas/{uuid4()}/outra-explicacao/com-progresso")
+    assert _erro(r) == (404, "CONSULTA_NAO_ENCONTRADA")

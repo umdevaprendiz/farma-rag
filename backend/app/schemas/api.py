@@ -11,6 +11,13 @@ from app.schemas.dataset import ROTULO_SECAO
 
 MAX_MEDICAMENTOS_POR_PERGUNTA = 3
 
+# Aviso fixo de toda resposta `respondida` (docs/DECISOES.md, seção 33). Montado aqui, nunca pelo
+# LLM: não passa pela fundamentação, não entra em `resposta` nem no histórico gravado e não custa
+# tempo. Quem mostra a resposta (a tela, o benchmark.ask) lê este texto de `AnswerOut.aviso`.
+AVISO_SAUDE = (
+    "Informação da bula, para conferência. Não substitui a avaliação do farmacêutico nem a consulta médica."
+)
+
 
 class ErrorCode(str, Enum):
     MEDICAMENTO_NAO_ENCONTRADO = "MEDICAMENTO_NAO_ENCONTRADO"
@@ -147,6 +154,12 @@ class AnswerOut(BaseModel):
     modelo: str
     latencia_ms: int
 
+    @computed_field
+    @property
+    def aviso(self) -> str | None:
+        """O aviso de saúde: só na resposta respondida (nas outras não há informação de bula a avisar)."""
+        return AVISO_SAUDE if self.status == "respondida" else None
+
 
 class LeafletSummary(BaseModel):
     id: str
@@ -193,6 +206,12 @@ class InquiryDetail(InquirySummary):
     latencia_ms: int
     consulta_origem_id: UUID | None
     fontes: list[SourceOut]
+
+    @computed_field
+    @property
+    def aviso(self) -> str | None:
+        """Calculado ao responder, não gravado: o texto do aviso pode mudar sem mexer no histórico."""
+        return AVISO_SAUDE if self.status == "respondida" else None
 
 
 class HealthOut(BaseModel):

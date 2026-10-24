@@ -1,4 +1,4 @@
-import type { InquiryStatus } from "./api";
+import type { InquiryStatus, Progress } from "./api";
 
 /** "2025-03-15" -> "15/03/2025", sem passar por Date (que mudaria o dia pelo fuso). */
 export function dataBula(iso: string): string {
@@ -27,6 +27,23 @@ export const ROTULO_STATUS: Record<InquiryStatus, string> = {
   precisa_esclarecimento: "Pediu esclarecimento",
   erro: "Erro",
 };
+
+/** O que a espera mostra: a etapa real que a API avisou (F3d). A rodada 2 em diante diz qual é, para
+ * quem espera entender por que a pergunta está demorando mais. */
+export function rotuloEtapa(p: Progress | null): string {
+  if (!p) return "Enviando a pergunta";
+  const rodada = p.rodada > 1 ? `Rodada ${p.rodada} de ${p.de}: ` : "";
+  switch (p.etapa) {
+    case "buscando":
+      return p.rodada > 1 ? `${rodada}buscando outros trechos nas bulas` : "Buscando nos trechos das bulas";
+    case "escrevendo":
+      return p.rodada > 1 ? `${rodada}escrevendo a resposta de novo` : "Escrevendo a resposta";
+    case "conferindo":
+      return p.rodada > 1 ? `${rodada}conferindo com a bula` : "Conferindo se a resposta está na bula";
+    case "verificando":
+      return `${rodada}verificando afirmação por afirmação`;
+  }
+}
 
 export const ROTULO_MOTIVO: Record<string, string> = {
   medicamento_nao_indexado: "A bula desse medicamento não está no acervo, e nenhuma outra bula fala disso.",

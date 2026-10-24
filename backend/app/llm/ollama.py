@@ -1,6 +1,7 @@
 """Cliente mínimo do Ollama: embeddings, chat e lista de modelos. Só biblioteca padrão."""
 
 import json
+import re
 import socket
 import urllib.error
 import urllib.request
@@ -10,8 +11,13 @@ from app.config import Settings, get_settings
 from app.schemas.api import ErrorCode
 
 NS = 1e9
-# Mantém o modelo na memória entre perguntas: recarregar custa vários segundos na CPU.
-KEEP_ALIVE = "30m"
+
+
+def _keep_alive(s: Settings) -> str | int:
+    """KEEP_ALIVE do .env no formato que o Ollama aceita: duração ("30m") como texto, segundos e
+    "-1" (para sempre) como número. O Ollama recusa "-1" escrito como texto."""
+    v = s.keep_alive.strip()
+    return int(v) if re.fullmatch(r"-?\d+", v) else v
 
 
 class OllamaError(Exception):
@@ -54,7 +60,7 @@ def embed(textos: list[str], s: Settings | None = None) -> list[list[float]]:
     s = s or get_settings()
     # Na CPU cada trecho leva ~3 s; o tempo limite cresce com o lote.
     timeout = s.timeout_llm_s + 10 * len(textos)
-    r = _pedir("/api/embed", {"model": s.embed_modelo, "input": textos, "keep_alive": KEEP_ALIVE}, timeout, s)
+    r = _pedir("/api/embed", {"model": s.embed_modelo, "input": textos, "keep_alive": _keep_alive(s)}, timeout, s)
     vetores = r["embeddings"]
     if vetores and len(vetores[0]) != s.embed_dim:
         raise OllamaError(
@@ -75,7 +81,7 @@ def chat(
         "messages": [{"role": "system", "content": sistema}, {"role": "user", "content": usuario}],
         "stream": False,
         "format": formato,
-        "keep_alive": KEEP_ALIVE,
+        "keep_alive": _keep_alive(s),
         "options": {"temperature": s.temperatura, "num_ctx": s.num_ctx, "num_predict": s.num_predict},
     }
     if s.llm_semente is not None:
@@ -88,6 +94,34 @@ def chat(
         prompt_s=r.get("prompt_eval_duration", 0) / NS,
         geracao_s=r.get("eval_duration", 0) / NS,
     )
+
+
+def aquecer(s: Settings | None = None) -> dict[str, str | None]:
+    """Carrega no Ollama os modelos que uma pergunta usa, sem gerar nada (F3c, docs/DECISOES.md,
+    seção 35): sem isto, a primeira pergunta depois de subir o Ollama paga a carga do modelo.
+
+    O de embeddings vem primeiro (toda pergunta começa por ele), depois o de geração e, se for outro,
+    o de verificação. Devolve {modelo: None se carregou, ou o motivo da falha}: um modelo que falha
+    (ex.: não baixado) não impede os outros, e nada aqui levanta erro (quem chama é a subida da API).
+
+    Geração: /api/generate sem prompt só carrega o modelo. Embeddings: /api/embed com um texto curto
+    (o /api/embed não tem "só carregar")."""
+    s = s or get_settings()
+    ka = _keep_alive(s)
+    pedidos: dict[str, tuple[str, dict]] = {
+        s.embed_modelo: ("/api/embed", {"model": s.embed_modelo, "input": ["aquecer"], "keep_alive": ka}),
+    }
+    for modelo in [s.llm_modelo, s.llm_modelo_verificacao]:
+        if modelo and modelo not in pedidos:
+            pedidos[modelo] = ("/api/generate", {"model": modelo, "stream": False, "keep_alive": ka})
+    resultado: dict[str, str | None] = {}
+    for modelo, (caminho, corpo) in pedidos.items():
+        try:
+            _pedir(caminho, corpo, s.timeout_llm_s, s)
+            resultado[modelo] = None
+        except OllamaError as e:
+            resultado[modelo] = e.detalhe
+    return resultado
 
 
 def modelos(s: Settings | None = None, timeout: float = 3) -> list[str]:

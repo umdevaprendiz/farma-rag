@@ -7,6 +7,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import OperationalError
 
+from app.config import Settings
 from app.schemas.api import HTTP_POR_CODIGO, ErrorCode, ErrorDetail, ErrorOut
 
 
@@ -21,6 +22,11 @@ class ApiError(Exception):
 def resposta_de_erro(codigo: ErrorCode, mensagem: str, consulta_id: UUID | None = None) -> JSONResponse:
     corpo = ErrorOut(erro=ErrorDetail(codigo=codigo, mensagem=mensagem), consulta_id=consulta_id)
     return JSONResponse(corpo.model_dump(mode="json"), status_code=HTTP_POR_CODIGO[codigo])
+
+
+def mensagem_banco_fora(s: Settings) -> str:
+    """O texto do BANCO_INDISPONIVEL, o mesmo no erro HTTP comum e no erro do fluxo com progresso."""
+    return f"O banco não respondeu em {s.db_host}:{s.db_port}. Suba com: docker compose up -d db"
 
 
 def _campo(local: tuple) -> str:
@@ -40,8 +46,4 @@ def registrar(app: FastAPI) -> None:
 
     @app.exception_handler(OperationalError)
     async def _banco_fora(request: Request, _: OperationalError) -> JSONResponse:
-        s = request.app.state.servicos.s
-        return resposta_de_erro(
-            ErrorCode.BANCO_INDISPONIVEL,
-            f"O banco não respondeu em {s.db_host}:{s.db_port}. Suba com: docker compose up -d db",
-        )
+        return resposta_de_erro(ErrorCode.BANCO_INDISPONIVEL, mensagem_banco_fora(request.app.state.servicos.s))

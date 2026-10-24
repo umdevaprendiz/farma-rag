@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 
 import { ApiError, api } from "./api";
-import type { Answer, Health, InquirySummary, Option, QuestionIn } from "./api";
+import type { Answer, Health, InquirySummary, Option, Progress, QuestionIn } from "./api";
 import { Conversation } from "./components/Conversation";
 import { IconeMenu, IconeNovo } from "./components/Icons";
 import { Sidebar } from "./components/Sidebar";
@@ -62,29 +62,33 @@ export function App() {
     if (!entrada.consulta_origem_id && ultima?.autor === "assistente" && !ultima.carregando && ultima.vista.consultaId) {
       entrada = { ...entrada, consulta_origem_id: ultima.vista.consultaId };
     }
-    enviar(entrada, textoDoUsuario, () => api.perguntar(entrada));
+    enviar(entrada, textoDoUsuario, (aoEtapa) => api.perguntar(entrada, aoEtapa));
   }
 
   function naoAjudou(pergunta: QuestionIn, vista: View) {
     // A API refaz a pergunta da consulta sem os trechos citados; a tela só diz qual consulta.
     if (ocupado || !vista.consultaId) return;
     const consultaId = vista.consultaId;
-    enviar(pergunta, "Não ajudou, explique de outro jeito.", () => api.outraExplicacao(consultaId));
+    enviar(pergunta, "Não ajudou, explique de outro jeito.", (aoEtapa) => api.outraExplicacao(consultaId, aoEtapa));
   }
 
-  /** Mostra a mensagem do usuário e a espera, faz o pedido e troca a espera pela resposta. */
-  async function enviar(entrada: QuestionIn, textoDoUsuario: string, pedido: () => Promise<Answer>) {
+  /** Mostra a mensagem do usuário e a espera, faz o pedido e troca a espera pela resposta. A cada
+   * etapa que a API avisa (F3d), a espera mostra onde a pergunta está. */
+  async function enviar(entrada: QuestionIn, textoDoUsuario: string, pedido: (aoEtapa: (p: Progress) => void) => Promise<Answer>) {
     const id = crypto.randomUUID();
     setAberta(null);
     setOcupado(true);
     setMensagens((m) => [
       ...m,
       { id: `${id}-pergunta`, autor: "usuario", texto: textoDoUsuario },
-      { id, autor: "assistente", pergunta: entrada, carregando: true, inicio: Date.now() },
+      { id, autor: "assistente", pergunta: entrada, carregando: true, inicio: Date.now(), etapa: null },
     ]);
+    // Se a conversa foi trocada no meio, a mensagem não está mais na lista e o aviso não muda nada.
+    const aoEtapa = (etapa: Progress) =>
+      setMensagens((m) => m.map((x) => (x.id === id && x.autor === "assistente" && x.carregando ? { ...x, etapa } : x)));
     let vista: View;
     try {
-      vista = daResposta(await pedido());
+      vista = daResposta(await pedido(aoEtapa));
     } catch (e) {
       vista = doErro(comoErroApi(e));
     }

@@ -1,7 +1,7 @@
 // O modelo da conversa na tela. A API não guarda conversa (cada pergunta é independente); a lista
 // de mensagens vive só aqui, e o histórico da barra lateral vem da API.
 
-import type { Answer, ApiError, Clarification, ErrorCode, InquiryDetail, QuestionIn, Source } from "./api";
+import type { Answer, ApiError, Clarification, ErrorCode, InquiryDetail, Progress, QuestionIn, Source } from "./api";
 
 /** O que a tela mostra de uma resposta, venha ela da pergunta de agora, do histórico ou de um erro. */
 export interface View {
@@ -18,6 +18,7 @@ export interface View {
   alergiaA: string | null;
   extrativa: boolean;
   outraExplicacao: boolean; // resposta ao "não ajudou"
+  aviso: string | null; // aviso de saúde da API, só na resposta "respondida"
   esclarecimento: Clarification | null;
   erro: { codigo: ErrorCode | "API_FORA_DO_AR"; mensagem: string } | null;
   rodadas: number;
@@ -26,7 +27,8 @@ export interface View {
 
 export type Message =
   | { id: string; autor: "usuario"; texto: string }
-  | { id: string; autor: "assistente"; pergunta: QuestionIn; carregando: true; inicio: number }
+  // etapa: a etapa real que a API avisou por último (F3d); nula até o primeiro aviso chegar.
+  | { id: string; autor: "assistente"; pergunta: QuestionIn; carregando: true; inicio: number; etapa: Progress | null }
   | { id: string; autor: "assistente"; pergunta: QuestionIn; carregando: false; vista: View };
 
 export function daResposta(r: Answer): View {
@@ -44,6 +46,7 @@ export function daResposta(r: Answer): View {
     alergiaA: r.alergia_a,
     extrativa: r.extrativa,
     outraExplicacao: r.outra_explicacao,
+    aviso: r.aviso,
     esclarecimento: r.esclarecimento,
     erro: null,
     rodadas: r.rodadas,
@@ -67,6 +70,7 @@ export function doHistorico(c: InquiryDetail): View {
     alergiaA: null,
     extrativa: c.modelo.startsWith("frases da bula"),
     outraExplicacao: c.outra_explicacao,
+    aviso: c.aviso ?? null,
     esclarecimento: null,
     erro: c.codigo_erro ? { codigo: c.codigo_erro, mensagem: c.mensagem_erro ?? "" } : null,
     rodadas: c.rodadas,
@@ -89,6 +93,7 @@ export function doErro(e: ApiError): View {
     alergiaA: null,
     extrativa: false,
     outraExplicacao: false,
+    aviso: null,
     esclarecimento: null,
     erro: { codigo: e.codigo, mensagem: e.message },
     rodadas: 0,
