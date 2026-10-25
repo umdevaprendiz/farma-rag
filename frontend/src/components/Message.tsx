@@ -12,10 +12,11 @@ interface Props {
   mensagem: Message;
   aoEscolherOpcao: (pergunta: QuestionIn, vista: View, opcao: Option) => void;
   aoNaoAjudou?: (pergunta: QuestionIn, vista: View) => void; // sem ele, a resposta não mostra o botão
+  aoSugerir?: (pergunta: string, vista: View) => void; // F4: sem ele, não mostra as perguntas seguintes
   ocupado: boolean;
 }
 
-export function MessageView({ mensagem: m, aoEscolherOpcao, aoNaoAjudou, ocupado }: Props) {
+export function MessageView({ mensagem: m, aoEscolherOpcao, aoNaoAjudou, aoSugerir, ocupado }: Props) {
   if (m.autor === "usuario") {
     return (
       <div className="msg msg-usuario">
@@ -36,6 +37,7 @@ export function MessageView({ mensagem: m, aoEscolherOpcao, aoNaoAjudou, ocupado
             vista={m.vista}
             aoEscolherOpcao={(opcao) => aoEscolherOpcao(m.pergunta, m.vista, opcao)}
             aoNaoAjudou={aoNaoAjudou && (() => aoNaoAjudou(m.pergunta, m.vista))}
+            aoSugerir={aoSugerir && ((pergunta) => aoSugerir(pergunta, m.vista))}
             ocupado={ocupado}
           />
         )}
@@ -109,10 +111,19 @@ interface AnswerProps {
   vista: View;
   aoEscolherOpcao: (opcao: Option) => void;
   aoNaoAjudou?: () => void;
+  aoSugerir?: (pergunta: string) => void;
   ocupado: boolean;
 }
 
-function Resposta({ vista: v, aoEscolherOpcao, aoNaoAjudou, ocupado }: AnswerProps) {
+/** O rodapé da resposta: de onde veio o texto e quanto levou. */
+function origem(v: View): string {
+  if (!v.extrativa) return `${v.rodadas} rodada${v.rodadas === 1 ? "" : "s"} · ${duracao(v.latenciaMs)}`;
+  return v.explicacao
+    ? `Copiado da bula, com explicação do assistente conferida nos trechos · ${duracao(v.latenciaMs)}`
+    : `Copiado da bula, sem resumo do assistente · ${duracao(v.latenciaMs)}`;
+}
+
+function Resposta({ vista: v, aoEscolherOpcao, aoNaoAjudou, aoSugerir, ocupado }: AnswerProps) {
   const [ativa, setAtiva] = useState<ActiveSource | null>(null);
   const abrir = (posicao: number | null) =>
     setAtiva((a) => (posicao === null ? null : { posicao, vez: (a?.vez ?? 0) + 1 }));
@@ -146,10 +157,23 @@ function Resposta({ vista: v, aoEscolherOpcao, aoNaoAjudou, ocupado }: AnswerPro
         </p>
       )}
 
+      {/* F4: a abertura (montada pelo sistema, nunca pelo modelo) vem antes de tudo. */}
+      {v.status === "respondida" && v.abertura && <p className="resposta-texto abertura">{v.abertura}</p>}
+
       {/* Pergunta de para que serve: o veredito vem antes das frases da bula que o sustentam. */}
       {v.conclusao && <p className="resposta-texto conclusao">{v.conclusao}</p>}
 
-      {v.status === "respondida" && v.texto && <TextoComCitacoes texto={v.texto} ativa={ativa} aoCitar={abrir} />}
+      {v.status === "respondida" && v.texto && (
+        <TextoComCitacoes texto={v.texto} marcas={v.marcas} fontes={v.fontes} ativa={ativa} aoCitar={abrir} />
+      )}
+
+      {/* F4: o "para que serve" copiado da bula, explicado em palavras simples pelo assistente. */}
+      {v.status === "respondida" && v.explicacao && (
+        <div className="explicacao">
+          <span className="explicacao-rotulo">Em outras palavras</span>
+          <TextoComCitacoes texto={v.explicacao} ativa={ativa} aoCitar={abrir} />
+        </div>
+      )}
 
       {v.status === "nao_encontrada" && v.motivo === "sem_outra_explicacao" && (
         <p className="resposta-texto">
@@ -200,12 +224,18 @@ function Resposta({ vista: v, aoEscolherOpcao, aoNaoAjudou, ocupado }: AnswerPro
       {/* F2: aviso de saúde da API, fixo e discreto, embaixo de toda resposta (também a copiada da bula). */}
       {v.status === "respondida" && v.aviso && <p className="aviso-saude">{v.aviso}</p>}
 
-      {(v.status === "respondida" || v.status === "nao_encontrada") && (
-        <p className="meta">
-          {v.extrativa
-            ? `Frases copiadas da bula, sem resumo do modelo · ${duracao(v.latenciaMs)}`
-            : `${v.rodadas} rodada${v.rodadas === 1 ? "" : "s"} · ${duracao(v.latenciaMs)}`}
-        </p>
+      {(v.status === "respondida" || v.status === "nao_encontrada") && <p className="meta">{origem(v)}</p>}
+
+      {/* F4: o fim da resposta convida a continuar, com perguntas que o sistema responde bem. */}
+      {aoSugerir && v.status === "respondida" && v.sugestoes.length > 0 && (
+        <div className="seguintes">
+          <span>Quer saber mais?</span>
+          {v.sugestoes.map((s) => (
+            <button key={s} type="button" onClick={() => aoSugerir(s)} disabled={ocupado}>
+              {s}
+            </button>
+          ))}
+        </div>
       )}
 
       {aoNaoAjudou && v.status === "respondida" && v.consultaId && (

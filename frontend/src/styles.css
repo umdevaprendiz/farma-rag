@@ -425,6 +425,75 @@ button {
   font-weight: 600;
 }
 
+/* ---- F4: resposta menos robótica ------------------------------------------------------- */
+
+/* O que foi perguntado, em negrito dentro da frase da bula. */
+.foco {
+  font-weight: 650;
+}
+
+/* A palavra do dia a dia depois do termo técnico: do glossário do sistema, não da bula. */
+.glossario {
+  color: var(--texto-2);
+  font-style: italic;
+}
+
+/* Uma frase por bula (gotas, comprimido...) lê melhor como lista. */
+.resposta-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-left: 20px;
+}
+
+/* A explicação em palavras simples do "para que serve", escrita pelo assistente. */
+.explicacao {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--acento-fraco);
+}
+
+.explicacao-rotulo {
+  color: var(--acento-forte);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+/* Perguntas seguintes no fim da resposta (mais discretas que as sugestões da tela inicial). */
+.seguintes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  color: var(--texto-3);
+  font-size: 0.8125rem;
+}
+
+.seguintes button {
+  padding: 4px 12px;
+  border: 1px solid var(--borda);
+  border-radius: 999px;
+  background: var(--superficie);
+  color: var(--texto-2);
+  font-size: 0.8125rem;
+  text-align: left;
+}
+
+.seguintes button:hover:not(:disabled) {
+  background: var(--superficie-2);
+  color: var(--texto);
+}
+
+.seguintes button:disabled {
+  color: var(--texto-3);
+  cursor: not-allowed;
+}
+
 .citacao {
   display: inline-flex;
   align-items: center;

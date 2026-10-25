@@ -29,6 +29,15 @@ export interface Source {
   destaques: [number, number][];
 }
 
+/** F4: uma marca em `resposta` (posições em code points, como `destaques`). foco = o que foi perguntado,
+ * em negrito; termo = termo técnico, com `explicacao` (a palavra do dia a dia) entre parênteses depois dele. */
+export interface Mark {
+  inicio: number;
+  fim: number; // exclusivo
+  tipo: "foco" | "termo";
+  explicacao: string | null;
+}
+
 export interface Option {
   rotulo: string;
   principios_ativos: string[];
@@ -50,7 +59,12 @@ export interface Answer {
   motivo: "sem_contexto" | "medicamento_nao_indexado" | "sem_outra_explicacao" | null;
   // Pergunta de para que serve: o veredito montado pelo sistema a partir das indicações da bula.
   conclusao: string | null;
+  abertura: string | null; // F4: a frase antes da resposta, montada pelo sistema
   resposta: string | null;
+  // F4: no "para que serve", a explicação em palavras simples escrita pelo modelo e conferida, com [n].
+  explicacao: string | null;
+  marcas: Mark[];
+  sugestoes: string[]; // F4: perguntas seguintes sobre o mesmo remédio
   fontes: Source[];
   medicamentos_nao_indexados: string[];
   classes_terapeuticas: Record<string, string>; // remédio sem bula -> classe no registro da ANVISA
@@ -98,7 +112,12 @@ export interface History {
 export interface InquiryDetail extends InquirySummary {
   principios_ativos_filtro: string[];
   conclusao: string | null;
+  // F4: como na resposta; consulta gravada antes de 2026-10-24 vem sem.
+  abertura?: string | null;
   resposta: string | null;
+  explicacao?: string | null;
+  marcas?: Mark[];
+  sugestoes?: string[];
   motivo: string | null;
   codigo_erro: ErrorCode | null;
   mensagem_erro: string | null;
@@ -121,7 +140,7 @@ export interface Health {
 }
 
 /** Etapa de verdade do agente, avisada pela API quando começa (F3d). */
-export type Stage = "buscando" | "escrevendo" | "conferindo" | "verificando";
+export type Stage = "buscando" | "escrevendo" | "conferindo" | "verificando" | "explicando";
 
 export interface Progress {
   etapa: Stage;

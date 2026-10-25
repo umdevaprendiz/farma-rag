@@ -19,6 +19,10 @@ cabeçalho do trecho):
 Regras 3 e 4 entraram em 2026-10-16, com a busca em todas as bulas (docs/DECISOES.md, seção 20);
 a 5, em 2026-10-18 (seção 28).
 
+Palavra do dia a dia (F4, seção 37): nas regras 2 e 3, as palavras de uma expressão do glossário
+("dor de cabeça", "pressão alta") contam como estando no trecho quando ele tem o termo técnico dela
+("cefaleia", "hipertensão"): services/glossary.py. A expressão inteira, nunca a palavra solta.
+
 É de propósito conservadora: paráfrase demais reprova, e a reprovação só custa outra rodada.
 
 `corrigir_citacoes` roda antes da checagem: a frase certa citando o trecho errado ganha o [n] do
@@ -34,6 +38,7 @@ import unicodedata
 from dataclasses import dataclass
 
 from app.schemas.dataset import Chunk
+from app.services import glossary
 from app.services.medicines import Catalog, detectar, formas_do_nome, normalizar
 
 _PALAVRAS_NUMERO = {
@@ -69,6 +74,9 @@ _COMUNS = {
     "sempre", "nunca", "deste", "desta", "neste", "nesta", "medicamento", "uso", "usar", "usado",
     "usada", "tomar", "tomado", "tomada", "paciente", "pacientes", "bula", "trecho", "informa",
     "recomenda", "recomendado", "recomendada", "segundo", "acordo", "conforme",
+    # F4: a resposta em linguagem de balcão ("serve para", "ajuda a", "o remédio") não traz
+    # informação da bula nessas palavras.
+    "serve", "servem", "ajuda", "ajudam", "ajudar", "remedio", "remedios",
 }
 
 
@@ -97,6 +105,7 @@ class Reference:
     prefixos_nome: set[str]  # só do medicamento e do princípio ativo (o cabeçalho do trecho)
     prefixos_texto: set[str]  # só do texto da bula
     palavras: set[str]  # palavras do nome e do texto, para os termos equivalentes
+    texto: str = ""  # o texto da bula preparado, para as expressões do glossário
 
     @classmethod
     def de_chunk(cls, chunk: Chunk) -> "Reference":
@@ -112,6 +121,7 @@ class Reference:
             prefixos_nome=prefixos_nome,
             prefixos_texto=prefixos_texto,
             palavras=set(_PALAVRA.findall(texto)),
+            texto=corpo,
         )
 
     def tem(self, termo: str, prefixos: set[str] | None = None) -> bool:
@@ -136,11 +146,13 @@ def problemas_da_afirmacao(texto: str, ref: Reference, min_termos: float) -> lis
 
     termos = {p for p in _PALAVRA.findall(afirmacao) if p not in _COMUNS}
     if termos:
-        faltam = sorted(t for t in termos if not ref.tem(t))
+        # "dor de cabeça" na resposta, "cefaleia" no trecho: as palavras da expressão valem.
+        do_glossario = glossary.cobertos(afirmacao, ref.texto)
+        faltam = sorted(t for t in termos if not ref.tem(t) and t not in do_glossario)
         if len(termos) - len(faltam) < max(1, math.floor(min_termos * len(termos))):
             problemas.append(f"termos fora do trecho: {', '.join(faltam)}")
         conteudo = [t for t in termos if t[:_PREFIXO] not in ref.prefixos_nome]
-        if not any(ref.tem(t, ref.prefixos_texto) for t in conteudo):
+        if not any(ref.tem(t, ref.prefixos_texto) or t in do_glossario for t in conteudo):
             problemas.append(SO_NOME)
     return problemas
 
@@ -309,17 +321,19 @@ def _itens_da_afirmacao(afirmacao: str, chunk: Chunk) -> list[tuple[str, str]]:
     return [("termo", t) for t in termos] + [("numero", n) for n in numeros]
 
 
-def _itens_cobertos(itens: list[tuple[str, str]], frase: str) -> set[tuple[str, str]]:
-    """Os itens da afirmação que a frase do trecho tem (termo pelo começo da palavra, ou equivalente)."""
+def _itens_cobertos(itens: list[tuple[str, str]], frase: str, afirmacao: str = "") -> set[tuple[str, str]]:
+    """Os itens da afirmação que a frase do trecho tem (termo pelo começo da palavra, equivalente ou
+    expressão do glossário). `afirmacao`: o texto dela já preparado, para o glossário."""
     texto = _com_numeros_por_extenso(_preparar(frase))
     palavras = set(_PALAVRA.findall(texto))
     prefixos = {p[:_PREFIXO] for p in palavras}
     numeros = {v for n in _NUMERO.findall(texto) for v in _variantes(n)}
+    do_glossario = glossary.cobertos(afirmacao, texto) if afirmacao else set()
 
     def cobre(tipo: str, valor: str) -> bool:
         if tipo == "numero":
             return bool(_variantes(valor) & numeros)
-        if valor[:_PREFIXO] in prefixos:
+        if valor[:_PREFIXO] in prefixos or valor in do_glossario:
             return True
         return any(valor.startswith(a) and any(p.startswith(b) for p in palavras) for a, b in _EQUIVALENTES)
 
@@ -339,7 +353,8 @@ def destaques_da_afirmacao(afirmacao: str, chunk: Chunk) -> list[tuple[int, int]
     if m := _literal(afirmacao, chunk):
         return [(i, f) for i, f in frases if i < m.end() and f > m.start()]
     faltam = _itens_da_afirmacao(afirmacao, chunk)
-    cobertura = {(i, f): _itens_cobertos(faltam, chunk.texto[i:f]) for i, f in frases}
+    preparada = _com_numeros_por_extenso(_preparar(afirmacao))
+    cobertura = {(i, f): _itens_cobertos(faltam, chunk.texto[i:f], preparada) for i, f in frases}
     escolhidas: list[tuple[int, int]] = []
     pendentes = set(faltam)
     while pendentes and len(escolhidas) < MAX_FRASES_POR_AFIRMACAO:

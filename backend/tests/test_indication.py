@@ -17,7 +17,8 @@ from ingestion.generate_chunks import gerar_chunks
 from ingestion.process_leaflet import montar_bula
 
 FIXTURES = Path(__file__).parent / "fixtures"
-S = Settings(_env_file=None, top_k=2)
+# A cópia das indicações, sem a explicação do modelo (F4, testada em test_explanation.py).
+S = Settings(_env_file=None, top_k=2, explicar_indicacao=False)
 
 # Textos reais da seção de indicações (data/processed/bulas, 18/10/2026), encurtados.
 PARACETAMOL = (

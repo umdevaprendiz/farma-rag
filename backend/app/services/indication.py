@@ -38,10 +38,12 @@ _GERAL = re.compile(
     r"|\bindicad[oa] (?:para|pra) (?:que|o que)\b"
     r"|\bo que (?:o |a )?[a-z]+ trata\b"
 )
-# Verbo de uso seguido de "para X": "serve para", "é pra", "é bom para", "tomei ... para".
+# Verbo de uso seguido de "para X": "serve para", "é pra", "é bom para", "tomei ... para". F4: também a
+# pergunta de opinião ("o que acha do ibuprofeno pra dor de cabeça?", consulta 12f61084: 98 s em 2 rodadas
+# pelo LLM), que é de para que serve: a resposta vem das indicações e a abertura diz que não opina.
 _VERBO = (
     r"(?:serve[m]?|e|eh|sao|seria|funciona|bom|boa|indicad[oa]s?|recomendad[oa]s?|tomar|tomei|tomo|tomou"
-    r"|tomando|tomaria|usar|usei|uso|usou|usando|dar|dei|pode|posso|ajuda|trata|cura|alivia)"
+    r"|tomando|tomaria|usar|usei|uso|usou|usando|dar|dei|pode|posso|ajuda|trata|cura|alivia|acha|achas|acham)"
 )
 _USO = re.compile(rf"\b{_VERBO}\b[^,.;?!]{{0,40}}?\b(?:para|pra|contra)\s+([^,.;?!]+)")
 # "E para dor de cabeça?" depois de uma pergunta de uso: o uso novo, do mesmo remédio.
@@ -184,6 +186,13 @@ def _termos(uso: str) -> tuple[list[tuple[str, ...]], bool]:
     dor?"): a dor é o específico."""
     especificos, dor = grupos(uso)
     return (especificos, dor) if especificos else (([_DOR] if dor else []), False)
+
+
+def grupos_do_uso(uso: str) -> list[tuple[str, ...]]:
+    """Os grupos que dizem o uso perguntado, como os que decidem "citado": os específicos ("dor no
+    ouvido" -> ouvido, otite...), ou a dor quando o uso é só dor. A F4 usa para o negrito na resposta e
+    para barrar, na explicação, o uso que a bula não indica."""
+    return _termos(uso)[0]
 
 
 def _cita(frase: str, especificos: list[tuple[str, ...]]) -> bool:

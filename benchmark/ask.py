@@ -15,9 +15,24 @@ from app.config import get_settings
 from app.schemas.api import AVISO_SAUDE
 from app.schemas.dataset import ROTULO_SECAO
 from app.services.corpus import Corpus, IncompleteCorpusError
+from app.services.presentation import Mark
 from app.services.rag import Result, responder
 
 MAX_TRECHO = 300
+
+
+def com_marcas(texto: str, marcas: list[Mark]) -> str:
+    """A resposta como a tela mostra, em texto: *negrito* no que foi perguntado e a palavra do dia a dia
+    entre parênteses depois do termo técnico (F4)."""
+    insercoes: list[tuple[int, int, str]] = []  # (posição, ordem, texto): fecha antes de abrir
+    for m in marcas:
+        if m.tipo == "foco":
+            insercoes += [(m.inicio, 1, "*"), (m.fim, 0, "*")]
+        else:
+            insercoes.append((m.fim, 0, f" ({m.explicacao})"))
+    for pos, _, extra in sorted(insercoes, reverse=True):
+        texto = texto[:pos] + extra + texto[pos:]
+    return texto
 
 
 def mostrar(r: Result) -> None:
@@ -27,7 +42,16 @@ def mostrar(r: Result) -> None:
         print(f"Sem bula indexada: {', '.join(r.medicamentos_nao_indexados)}")
 
     if r.status == "respondida":
-        print(f"\nRESPOSTA\n{r.resposta}\n\n{AVISO_SAUDE}")
+        print("\nRESPOSTA")
+        for linha in (r.abertura, r.conclusao):
+            if linha:
+                print(linha)
+        print(com_marcas(r.resposta, r.marcas))
+        if r.explicacao:
+            print(f"Em outras palavras: {r.explicacao}")
+        print(f"\n{AVISO_SAUDE}")
+        if r.sugestoes:
+            print(f"Quer saber mais? {' | '.join(r.sugestoes)}")
     elif r.status == "precisa_esclarecimento":
         print(f"\nPRECISO SABER: {r.esclarecimento.pergunta}")
         for i, opcao in enumerate(r.esclarecimento.opcoes, start=1):
@@ -50,12 +74,14 @@ def mostrar(r: Result) -> None:
         texto = c.texto if len(c.texto) <= MAX_TRECHO else c.texto[:MAX_TRECHO] + "..."
         print(f" {'*' if f.citado else ' '}[{f.posicao}] {c.medicamento} | {ROTULO_SECAO[c.secao]} | p. {c.pagina} "
               f"| bula de {f.data_versao:%d/%m/%Y} | semelhança {f.score:.2f}\n     {texto}")
-    if len(r.tentativas) > 1 or any(t.falha or t.correcoes for t in r.tentativas):
+    if len(r.tentativas) > 1 or any(t.falha or t.correcoes or t.explicacao_descartada for t in r.tentativas):
         print(f"\nRODADAS ({r.rodadas})")
         for t in r.tentativas:
             print(f"  {t.rodada}. {t.resultado}" + (f": {t.falha}" if t.falha else ""))
             if t.correcoes:
                 print(f"     citação corrigida no código: {'; '.join(t.correcoes)}")
+            if t.explicacao_descartada:
+                print(f"     explicação descartada: {'; '.join(t.explicacao_descartada)}")
     if r.tempos_s:
         tempos = ", ".join(f"{nome} {valor:.1f} s" for nome, valor in r.tempos_s.items())
         print(f"\nTempo: {tempos}" + (f" | prompt de {r.prompt_tokens} tokens" if r.prompt_tokens else ""))

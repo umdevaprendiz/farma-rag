@@ -79,6 +79,13 @@ class Inquiry(Base):
     resposta: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Pergunta de para que serve: o veredito montado no código pela seção de indicações.
     conclusao: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # F4 (DECISOES §37), só na respondida: a frase antes da resposta (código), a explicação em palavras
+    # simples do "para que serve" (modelo, conferida), as marcas na resposta ({inicio, fim, tipo,
+    # explicacao}) e as perguntas seguintes. Nulas nas consultas gravadas antes de 2026-10-24.
+    abertura: Mapped[str | None] = mapped_column(Text, nullable=True)
+    explicacao: Mapped[str | None] = mapped_column(Text, nullable=True)
+    marcas: Mapped[list[dict] | None] = mapped_column(JSONB, nullable=True)
+    sugestoes: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
     status: Mapped[str] = mapped_column(Text)  # respondida | nao_encontrada | precisa_esclarecimento | erro
     motivo: Mapped[str | None] = mapped_column(Text, nullable=True)
     codigo_erro: Mapped[str | None] = mapped_column(Text, nullable=True)

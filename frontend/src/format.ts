@@ -42,6 +42,8 @@ export function rotuloEtapa(p: Progress | null): string {
       return p.rodada > 1 ? `${rodada}conferindo com a bula` : "Conferindo se a resposta está na bula";
     case "verificando":
       return `${rodada}verificando afirmação por afirmação`;
+    case "explicando":
+      return "Explicando em palavras simples";
   }
 }
 

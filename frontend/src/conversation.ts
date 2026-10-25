@@ -1,14 +1,18 @@
 // O modelo da conversa na tela. A API não guarda conversa (cada pergunta é independente); a lista
 // de mensagens vive só aqui, e o histórico da barra lateral vem da API.
 
-import type { Answer, ApiError, Clarification, ErrorCode, InquiryDetail, Progress, QuestionIn, Source } from "./api";
+import type { Answer, ApiError, Clarification, ErrorCode, InquiryDetail, Mark, Progress, QuestionIn, Source } from "./api";
 
 /** O que a tela mostra de uma resposta, venha ela da pergunta de agora, do histórico ou de um erro. */
 export interface View {
   consultaId: string | null; // nulo quando a pergunta nem chegou à API
   status: "respondida" | "nao_encontrada" | "precisa_esclarecimento" | "erro";
   conclusao: string | null; // pergunta de para que serve: o veredito pelas indicações da bula
+  abertura: string | null; // F4: a frase antes da resposta
   texto: string | null;
+  explicacao: string | null; // F4: "para que serve" explicado em palavras simples, com [n]
+  marcas: Mark[]; // F4: negrito do que foi perguntado e termos técnicos explicados, em `texto`
+  sugestoes: string[]; // F4: perguntas seguintes
   motivo: string | null;
   fontes: Source[];
   semBula: string[]; // remédios citados na pergunta sem bula no acervo
@@ -36,7 +40,11 @@ export function daResposta(r: Answer): View {
     consultaId: r.consulta_id,
     status: r.status,
     conclusao: r.conclusao,
+    abertura: r.abertura,
     texto: r.resposta,
+    explicacao: r.explicacao,
+    marcas: r.marcas,
+    sugestoes: r.sugestoes,
     motivo: r.motivo,
     fontes: r.fontes,
     semBula: r.medicamentos_nao_indexados,
@@ -59,7 +67,11 @@ export function doHistorico(c: InquiryDetail): View {
     consultaId: c.id,
     status: c.status,
     conclusao: c.conclusao ?? null, // consulta antiga, de antes da coluna, vem sem
+    abertura: c.abertura ?? null,
     texto: c.resposta,
+    explicacao: c.explicacao ?? null,
+    marcas: c.marcas ?? [],
+    sugestoes: c.sugestoes ?? [],
     motivo: c.motivo,
     fontes: c.fontes,
     semBula: [],
@@ -83,7 +95,11 @@ export function doErro(e: ApiError): View {
     consultaId: e.consultaId, // a pergunta seguinte continua desta, mesmo depois do erro
     status: "erro",
     conclusao: null,
+    abertura: null,
     texto: null,
+    explicacao: null,
+    marcas: [],
+    sugestoes: [],
     motivo: null,
     fontes: [],
     semBula: [],

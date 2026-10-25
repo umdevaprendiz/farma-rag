@@ -1,10 +1,11 @@
-"""O agente como grafo do LangGraph: 6 nós, rodadas adaptativas (docs/DECISOES.md, seções 14, 16 e 20).
+"""O agente como grafo do LangGraph: 7 nós, rodadas adaptativas (docs/DECISOES.md, seções 14, 16, 20 e 37).
 
     entender ─┬─► (filtro desconhecido) ────────────────────┐
               └─► buscar ─► gerar ─► validar ─┬─ ok ───────►├─► finalizar ─► END
                      ▲                        │             │
                      └── falhou, cabe outra ──┘             │
-                         rodada 3 ok ─► verificar_llm ──────┘
+                         rodada 3 ok ─► verificar_llm ──────┤
+                         para que serve ok ─► explicar ─────┘
 
 `buscar` tem três caminhos: com medicamento indexado na pergunta (ou no filtro), nas bulas dele;
 sem, em todas as bulas, um trecho por princípio ativo (busca geral: "melhor remédio pra dor de
@@ -29,7 +30,12 @@ ajudou). Sem trecho novo, "não há outra explicação", sem chamar o LLM.
 Progresso (docs/DECISOES.md, seção 36): `avisar(etapa, rodada)` é chamado quando começa cada etapa de
 verdade (buscando, escrevendo, conferindo, verificando); a API o usa para mostrar na tela onde a pergunta está.
 
-Só `gerar` e `verificar_llm` chamam o LLM. As decisões ficam nas funções `depois_de_*`
+Resposta menos robótica (F4, docs/DECISOES.md, seção 37): o "para que serve" copiado da bula ganha, no nó
+`explicar`, uma explicação em palavras simples escrita pelo LLM e conferida frase a frase (reprovada, a
+resposta sai só com a cópia). No `finalizar`, o código monta a abertura, as marcas (negrito e glossário)
+e as perguntas seguintes (services/presentation.py).
+
+Só `gerar`, `verificar_llm` e `explicar` chamam o LLM. As decisões ficam nas funções `depois_de_*`
 (arestas condicionais), em código: com um modelo de 1,5B na CPU, cada chamada custa 30-45 s
 e o modelo não é confiável para escolher caminho.
 """
@@ -49,7 +55,7 @@ from app.db.vector_search import SearchHit
 from app.llm import ollama
 from app.schemas.api import MAX_MEDICAMENTOS_POR_PERGUNTA, ErrorCode
 from app.schemas.dataset import Chunk
-from app.services import grounding, indication, rerank
+from app.services import explanation, glossary, grounding, indication, presentation, rerank
 from app.services.citations import InvalidOutputError, validar_saida
 from app.services.corpus import Corpus
 from app.services.extract import INTERACAO, PERGUNTA_DE_DOSE, frase_da_alternativa, frases_de_dose, frases_sobre
@@ -67,6 +73,7 @@ from app.services.intent import (
 from app.services.medicines import Suggestion, detectar, formas_do_nome, normalizar, sugerir
 from app.services.rag import (
     SISTEMA,
+    SISTEMA_BALCAO,
     AnotherExplanation,
     Attempt,
     Clarification,
@@ -164,6 +171,9 @@ class State(TypedDict, total=False):
     alergia_a: str | None  # remédio da alergia: a busca traz alternativas a ele
     uso: str | None  # pergunta de para que serve: o uso perguntado ("" = geral); None = outra pergunta
     conclusao: str | None  # o veredito da pergunta de uso (services/indication.py)
+    situacao: indication.Situation | None  # o veredito da pergunta de uso: citado, ausente, geral...
+    caminho: presentation.Route  # por onde a última busca foi: decide a abertura da resposta
+    explicacao: str | None  # F4: a explicação em palavras simples do "para que serve" (nó explicar)
     # Rodadas
     rodada: int
     vetor: list[float]  # embedding da pergunta, calculado uma vez só
@@ -265,6 +275,7 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         inicial: State = {
             "texto": texto, "assunto": termos_do_assunto(texto), "secoes": inferir_secoes(texto),
             "continuacao": responde, "alergia_a": None, "vetor_uso": None, "rodada": 0, "uso": None, "conclusao": None,
+            "situacao": None, "caminho": "remedio", "explicacao": None,
             "usados": list(e["outra"].enviados) if e.get("outra") else [],
             "tentativas": [], "tempos_s": {}, "prompt_tokens": 0, "principios_ativos": [], "nao_indexados": [],
         }
@@ -373,18 +384,20 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
             return {"rodada": rodada} | _erro(erro.codigo, erro.detalhe)
         extrato: list[tuple[str, str]] = []  # (chunk_id, frase): só na primeira; depois, o LLM tenta
         conclusao: str | None = None
+        situacao: indication.Situation | None = None
+        caminho: presentation.Route = "remedio"
         if e.get("alergia_a"):
-            achados = _busca_alternativas(vetor, vetor_uso, e)
+            achados, caminho = _busca_alternativas(vetor, vetor_uso, e), "alternativas"
             if primeira:
                 extrato = [(a.chunk_id, frase_da_alternativa(acervo.chunks[a.chunk_id])) for a in achados]
         elif primeira and uso is not None and (indicacao := _frases_da_indicacao(vetor, e)):
-            achados, extrato, conclusao = indicacao
+            (achados, extrato, conclusao, situacao), caminho = indicacao, "indicacao"
         elif primeira and (interacao := _frases_da_interacao(vetor, e)):
-            achados, extrato = interacao
+            (achados, extrato), caminho = interacao, "interacao"
         elif primeira and (dose := _frases_da_dose(vetor, e)):
-            achados, extrato = dose
+            (achados, extrato), caminho = dose, "dose"
         elif not e["principios_ativos"]:
-            achados = _busca_geral(vetor, e)
+            achados, caminho = _busca_geral(vetor, e), "geral"
         elif primeira:
             achados = _primeira_busca(vetor, e)
         else:
@@ -402,7 +415,7 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
             "usados": e["usados"] + novos, "tempos_s": _somar_tempo(e, "busca", t),
             "extrato": [(posicao[c], frase) for c, frase in extrato if c in posicao],
             # Só vale com o extrato desta rodada; numa rodada seguinte, o LLM responde sem veredito.
-            "conclusao": conclusao,
+            "conclusao": conclusao, "situacao": situacao, "caminho": caminho,
         }
 
     def _vereditos_sem_bula(e: State) -> list[indication.Verdict]:
@@ -413,11 +426,12 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
 
     def _frases_da_indicacao(
         vetor: list[float], e: State
-    ) -> tuple[list[SearchHit], list[tuple[str, str]], str | None] | None:
+    ) -> tuple[list[SearchHit], list[tuple[str, str]], str | None, indication.Situation | None] | None:
         """"Paracetamol serve para ansiedade?": as frases da seção de indicações de cada remédio
-        (services/indication.py), no máximo 2 por bula e MAX_FRASES_INDICACAO no total, e a conclusão
-        (citado, geral, ausente). Frase repetida entre bulas do mesmo remédio entra uma vez. None =
-        nenhum remédio da pergunta tem a seção de indicações (segue o caminho normal)."""
+        (services/indication.py), no máximo 2 por bula e MAX_FRASES_INDICACAO no total, a conclusão
+        (citado, geral, ausente) e a situação (com um remédio só, a dele; a explicação da F4 depende dela).
+        Frase repetida entre bulas do mesmo remédio entra uma vez. None = nenhum remédio da pergunta tem
+        a seção de indicações (segue o caminho normal)."""
         uso = e["uso"]
         vereditos: list[indication.Verdict] = []
         escolhidas: list[tuple[Chunk, str]] = []
@@ -451,7 +465,8 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         semelhanca = {a.chunk_id: a.score for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos)}
         trechos = list(dict.fromkeys(c.chunk_id for c, _ in escolhidas))
         conclusao = indication.conclusao(vereditos + _vereditos_sem_bula(e))
-        return [SearchHit(c, semelhanca.get(c, 0.0)) for c in trechos], extrato, conclusao
+        situacao = vereditos[0].situacao if len(vereditos) == 1 else None
+        return [SearchHit(c, semelhanca.get(c, 0.0)) for c in trechos], extrato, conclusao, situacao
 
     def _frases_da_dose(vetor: list[float], e: State) -> tuple[list[SearchHit], list[tuple[str, str]]] | None:
         """"Qual a dose máxima de dipirona?": as frases da posologia com número e unidade, uma por
@@ -661,9 +676,11 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
                 f"{'eles' if len(e['nao_indexados']) > 1 else 'ele'} o que a bula de outro medicamento diz."
             ))
         anterior = e["anterior"].pergunta if e.get("continuacao") and e.get("anterior") else None
-        prompt = montar_prompt(e["pergunta"], e["fontes"], " ".join(avisos) or None, anterior)
+        # F4: em linguagem de balcão, o prompt traz as palavras do dia a dia dos termos que os trechos usam.
+        dicas = glossary.dicas(" ".join(f.chunk.texto for f in e["fontes"])) if s.linguagem_simples else []
+        prompt = montar_prompt(e["pergunta"], e["fontes"], " ".join(avisos) or None, anterior, dicas)
         try:
-            llm = ollama.chat(SISTEMA, prompt, formato(len(e["fontes"])), s)
+            llm = ollama.chat(SISTEMA_BALCAO if s.linguagem_simples else SISTEMA, prompt, formato(len(e["fontes"])), s)
         except ollama.OllamaError as erro:
             return _erro(erro.codigo, erro.detalhe)
         return {
@@ -792,6 +809,63 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
             "tentativas": anteriores + [replace(ultima, resultado="reprovada", falha=detalhe, verificacao_bruta=llm.texto)],
         }
 
+    def explicar(e: State) -> State:
+        """F4: o "para que serve" aprovado (frases copiadas das indicações) ganha uma explicação em
+        palavras simples, escrita pelo LLM e conferida frase a frase (services/explanation.py). É extra:
+        Ollama fora, tempo esgotado ou frase reprovada nunca viram erro; a resposta sai só com a cópia, e o
+        motivo fica na tentativa (histórico)."""
+        _avisar("explicando", e["rodada"])
+        t = time.perf_counter()
+        chunks = {f.posicao: f.chunk for f in e["fontes"] if f.posicao in e["citacoes"]}
+        frases = e["afirmacoes"]
+        # Conclusão "não está nas indicações" (ou "indica para dor em geral"): a explicação não pode
+        # falar do uso perguntado ("serve para ansiedade e dor de cabeça" passaria pela fração de termos).
+        proibidos = indication.grupos_do_uso(e["uso"]) if e.get("situacao") in ("ausente", "geral") else []
+        ultima = e["tentativas"][-1]
+        # Até 3 frases curtas: um limite de tokens menor que o da resposta segura o tempo.
+        curto = s.model_copy(update={"num_predict": min(s.num_predict, 160)})
+        try:
+            llm = ollama.chat(
+                explanation.SISTEMA, explanation.montar_prompt(frases, chunks), explanation.formato(sorted(chunks)), curto
+            )
+        except ollama.OllamaError as erro:
+            return {
+                "tempos_s": _somar_tempo(e, "explicacao", t),
+                "tentativas": e["tentativas"][:-1] + [replace(ultima, explicacao_descartada=[f"sem explicação: {erro.detalhe}"])],
+            }
+        aceitas, descartadas = explanation.conferir(
+            llm.texto, frases, chunks, s.explicacao_min_termos, acervo.catalogo, proibidos
+        )
+        return {
+            "explicacao": montar_resposta(aceitas)[0] if aceitas else None,
+            "prompt_tokens": e["prompt_tokens"] + llm.prompt_tokens,
+            "tempos_s": _somar_tempo(e, "explicacao", t),
+            "tentativas": e["tentativas"][:-1] + [
+                replace(ultima, explicacao_bruta=llm.texto, explicacao_descartada=descartadas)
+            ],
+        }
+
+    def _apresentar(r: Result, e: State) -> None:
+        """F4 (services/presentation.py): a abertura, as marcas na resposta e as perguntas seguintes,
+        montadas no código em volta da resposta aprovada."""
+        citadas = [f for f in r.fontes if f.citado]
+        medicamentos = list(dict.fromkeys(f.chunk.medicamento for f in citadas))
+        nomes = list(dict.fromkeys(indication.nome_curto(f.chunk.principio_ativo) for f in citadas))
+        da_pergunta = [indication.nome_curto(n) for n in e["principios_ativos"] + e["nao_indexados"]]
+        r.abertura = presentation.abertura(
+            e["caminho"], e["pergunta"], medicamentos, nomes, e.get("alergia_a"), da_pergunta,
+            sem_bula=bool(e["nao_indexados"]) and not e["principios_ativos"],
+        )
+        grupos = _grupos_da_pergunta(e)
+        if e.get("uso"):
+            # "Para que serve" com o uso: os sinônimos de como a bula escreve ("ouvido" -> otite).
+            grupos = indication.grupos_do_uso(e["uso"]) or grupos
+        r.marcas = presentation.marcas(r.resposta, grupos)
+        ativos = {normalizar(f.chunk.principio_ativo) for f in citadas}
+        if len(ativos) == 1 and not e.get("alergia_a") and e["principios_ativos"]:
+            secoes = set(e["secoes"]) | ({"indicacoes"} if e.get("uso") is not None else set())
+            r.sugestoes = presentation.sugestoes(nomes[0], secoes)
+
     def finalizar(e: State) -> State:
         r = Result(
             status="nao_encontrada",
@@ -822,6 +896,8 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         elif e.get("resposta"):
             r.status, r.resposta = "respondida", e["resposta"]
             r.fontes = [_citada(f, e["afirmacoes"]) if f.posicao in e["citacoes"] else f for f in r.fontes]
+            r.explicacao = e.get("explicacao")
+            _apresentar(r, e)
         elif e.get("outra"):
             # Nenhum trecho além dos citados, ou o modelo disse que os outros não respondem.
             r.motivo = "sem_outra_explicacao"
@@ -852,7 +928,19 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
             if e["rodada"] == 1 and _secao_nao_consultada(e) and _cabe_outra_rodada(e, s):
                 return "buscar"
             return "finalizar"
-        return "verificar_llm" if e["rodada"] >= RODADA_VERIFICACAO else "finalizar"
+        if e["rodada"] >= RODADA_VERIFICACAO:
+            return "verificar_llm"
+        return "explicar" if _explica(e) else "finalizar"
+
+    def _explica(e: State) -> bool:
+        """F4: o "para que serve" copiado das indicações ganha a explicação do modelo. Não na ressalva
+        (o "não é recomendado..." é o que importa, e a paráfrase pode perdê-lo), nem com o tempo da
+        pergunta já gasto."""
+        return (
+            s.explicar_indicacao and e.get("extrativa", False) and e.get("caminho") == "indicacao"
+            and e.get("situacao") not in (None, "ressalva")
+            and time.perf_counter() - e["inicio"] < s.orcamento_s
+        )
 
     def depois_de_verificar(e: State) -> str:
         if e.get("desfecho") != "erro" and e["falha"] and _cabe_outra_rodada(e, s):
@@ -862,15 +950,16 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
     g = StateGraph(State)
     for nome, no in [
         ("entender", entender), ("buscar", buscar), ("gerar", gerar), ("validar", validar),
-        ("verificar_llm", verificar_llm), ("finalizar", finalizar),
+        ("verificar_llm", verificar_llm), ("explicar", explicar), ("finalizar", finalizar),
     ]:
         g.add_node(nome, no)
     g.add_edge(START, "entender")
     g.add_conditional_edges("entender", depois_de_entender, ["buscar", "finalizar"])
     g.add_conditional_edges("buscar", depois_de_buscar, ["gerar", "finalizar"])
     g.add_conditional_edges("gerar", depois_de_gerar, ["validar", "finalizar"])
-    g.add_conditional_edges("validar", depois_de_validar, ["buscar", "verificar_llm", "finalizar"])
+    g.add_conditional_edges("validar", depois_de_validar, ["buscar", "verificar_llm", "explicar", "finalizar"])
     g.add_conditional_edges("verificar_llm", depois_de_verificar, ["buscar", "finalizar"])
+    g.add_edge("explicar", "finalizar")  # extra: nunca reprova a resposta nem abre outra rodada
     g.add_edge("finalizar", END)
     return g.compile()
 

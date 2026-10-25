@@ -98,6 +98,11 @@ export function App() {
     atualizarHistorico();
   }
 
+  function sugerir(pergunta: string, vista: View) {
+    // F4: a pergunta seguinte já diz o remédio ("Qual a dose de dipirona?") e continua desta resposta.
+    perguntar({ pergunta, principios_ativos: [], consulta_origem_id: vista.consultaId ?? undefined }, pergunta);
+  }
+
   function escolherOpcao(pergunta: QuestionIn, vista: View, opcao: Option) {
     // O reenvio leva o filtro escolhido: não há segundo esclarecimento para a mesma pergunta.
     perguntar(
@@ -172,6 +177,7 @@ export function App() {
           aoPerguntar={(texto) => perguntar({ pergunta: texto, principios_ativos: [] }, texto)}
           aoEscolherOpcao={escolherOpcao}
           aoNaoAjudou={naoAjudou}
+          aoSugerir={sugerir}
         />
       </main>
     </div>

@@ -28,6 +28,10 @@ _COLUNAS_NOVAS = (
     ("consulta_fontes", "destaques", "jsonb"),
     ("consultas", "conclusao", "text"),
     ("consultas", "outra_explicacao", "boolean NOT NULL DEFAULT false"),
+    ("consultas", "abertura", "text"),
+    ("consultas", "explicacao", "text"),
+    ("consultas", "marcas", "jsonb"),
+    ("consultas", "sugestoes", "text[]"),
 )
 
 

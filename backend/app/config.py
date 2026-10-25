@@ -64,6 +64,16 @@ class Settings(BaseSettings):
     # Fração mínima dos termos de cada afirmação que precisa aparecer no trecho citado.
     fundamentacao_min_termos: float = 0.6
 
+    # F4 (docs/DECISOES.md, seção 37): resposta menos robótica.
+    # Prompt de linguagem de balcão (frases simples, a primeira já respondendo, palavra do dia a dia no
+    # lugar do termo técnico). False = o prompt anterior, para comparar no benchmark completo.
+    linguagem_simples: bool = True
+    # "Para que serve": depois das frases copiadas das indicações, o modelo explica em palavras simples
+    # (uma chamada a mais ao LLM). A explicação é extra: reprovada, a resposta sai só com a cópia.
+    explicar_indicacao: bool = True
+    # A explicação é um extra, então a régua é mais alta que a da resposta.
+    explicacao_min_termos: float = 0.8
+
     cors_origens: str = "http://localhost:5173"
     medicamentos_conhecidos: str = "data/medicamentos_conhecidos.txt"
     catalogo_anvisa: str = "data/processed/catalogo_anvisa.jsonl"

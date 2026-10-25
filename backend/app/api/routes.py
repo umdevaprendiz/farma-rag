@@ -28,6 +28,7 @@ from app.schemas.api import (
     InquiryDetail,
     InquirySummary,
     LeafletSummary,
+    MarkOut,
     MedicineOut,
     QuestionIn,
     SourceOut,
@@ -199,7 +200,10 @@ def _responder(
     inicio = time.perf_counter()
     r = responder(entrada.pergunta, acervo, entrada.principios_ativos, sv.s, anterior, outra, avisar)
     latencia_ms = round((time.perf_counter() - inicio) * 1000)
-    modelo = "frases da bula (sem LLM)" if r.extrativa else sv.s.llm_modelo
+    modelo = sv.s.llm_modelo
+    if r.extrativa:
+        # A tela reconhece a resposta copiada pelo começo ("frases da bula"), também no histórico.
+        modelo = f"frases da bula + explicação ({sv.s.llm_modelo})" if r.explicacao else "frases da bula (sem LLM)"
     consulta = history.gravar(sv.engine, entrada, r, acervo, modelo, latencia_ms)
     if r.status == "erro":
         raise ApiError(r.codigo_erro, r.detalhe_erro, consulta.id)
@@ -212,7 +216,11 @@ def _responder(
         rodadas=r.rodadas,
         motivo=r.motivo,
         conclusao=r.conclusao,
+        abertura=r.abertura,
         resposta=r.resposta,
+        explicacao=r.explicacao,
+        marcas=[MarkOut.model_validate(m, from_attributes=True) for m in r.marcas],
+        sugestoes=r.sugestoes,
         # As mesmas fontes que o histórico vai mostrar: as do snapshot gravado.
         fontes=[SourceOut.model_validate(f, from_attributes=True) for f in consulta.fontes],
         medicamentos_nao_indexados=r.medicamentos_nao_indexados,

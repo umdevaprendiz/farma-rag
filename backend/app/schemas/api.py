@@ -111,6 +111,17 @@ class SourceOut(BaseModel):
         return ROTULO_SECAO.get(self.secao, self.secao)
 
 
+class MarkOut(BaseModel):
+    """F4 (docs/DECISOES.md, seção 37): uma marca em `resposta`, em posições como os destaques da fonte
+    (caracteres, como o Python conta). A frase não muda: quem mostra monta o negrito e o parêntese."""
+
+    inicio: int = Field(ge=0)
+    fim: int = Field(ge=0)  # exclusivo
+    # foco: o que foi perguntado (negrito); termo: termo técnico, com a palavra do dia a dia depois dele.
+    tipo: Literal["foco", "termo"]
+    explicacao: str | None = None  # só no termo: o que vai entre parênteses
+
+
 class OptionOut(BaseModel):
     rotulo: str
     principios_ativos: list[str]
@@ -138,7 +149,16 @@ class AnswerOut(BaseModel):
     # Pergunta de para que serve ("paracetamol serve para ansiedade?"): o veredito montado no código
     # pela seção de indicações, antes das frases da bula. Não é afirmação do modelo.
     conclusao: str | None = None
+    # F4: a frase antes da resposta, montada no código pelo caminho da pergunta ("Pela bula de X:"). Nula
+    # na de para que serve (a conclusão abre) e fora da respondida.
+    abertura: str | None = None
     resposta: str | None
+    # F4: no "para que serve", depois das frases copiadas da bula, a explicação em palavras simples escrita
+    # pelo modelo, com [n] e conferida com os trechos. Nula se o modelo não explicou ou se reprovou.
+    explicacao: str | None = None
+    marcas: list[MarkOut] = Field(default_factory=list)
+    # F4: perguntas seguintes sobre o mesmo remédio, para a tela oferecer como botões.
+    sugestoes: list[str] = Field(default_factory=list)
     fontes: list[SourceOut]
     # Medicamentos citados na pergunta que não têm bula indexada (o frontend avisa).
     medicamentos_nao_indexados: list[str] = Field(default_factory=list)
@@ -197,7 +217,12 @@ class InquiryDetail(InquirySummary):
 
     principios_ativos_filtro: list[str]
     conclusao: str | None = None
+    # F4: como na resposta (AnswerOut). Nulos/vazios nas consultas gravadas antes de 2026-10-24.
+    abertura: str | None = None
     resposta: str | None
+    explicacao: str | None = None
+    marcas: list[MarkOut] = Field(default_factory=list)
+    sugestoes: list[str] = Field(default_factory=list)
     motivo: str | None
     codigo_erro: ErrorCode | None
     mensagem_erro: str | None
@@ -206,6 +231,11 @@ class InquiryDetail(InquirySummary):
     latencia_ms: int
     consulta_origem_id: UUID | None
     fontes: list[SourceOut]
+
+    @field_validator("marcas", "sugestoes", mode="before")
+    @classmethod
+    def _nulo_vira_vazio(cls, v: list | None) -> list:
+        return v or []
 
     @computed_field
     @property

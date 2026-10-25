@@ -20,9 +20,10 @@ interface Props {
   aoPerguntar: (texto: string) => void;
   aoEscolherOpcao: (pergunta: QuestionIn, vista: View, opcao: Option) => void;
   aoNaoAjudou: (pergunta: QuestionIn, vista: View) => void;
+  aoSugerir: (pergunta: string, vista: View) => void;
 }
 
-export function Conversation({ mensagens, ocupado, bulas, aoPerguntar, aoEscolherOpcao, aoNaoAjudou }: Props) {
+export function Conversation({ mensagens, ocupado, bulas, aoPerguntar, aoEscolherOpcao, aoNaoAjudou, aoSugerir }: Props) {
   const fim = useRef<HTMLDivElement>(null);
   const ultima = mensagens[mensagens.length - 1];
   // O sistema perguntou algo de volta sem opções ("a alergia é a qual remédio?"): a caixa pede a resposta.
@@ -64,6 +65,7 @@ export function Conversation({ mensagens, ocupado, bulas, aoPerguntar, aoEscolhe
                 aoEscolherOpcao={aoEscolherOpcao}
                 // "Não ajudou" só na última resposta: a outra explicação aparece logo embaixo dela.
                 aoNaoAjudou={m === ultima ? aoNaoAjudou : undefined}
+                aoSugerir={m === ultima ? aoSugerir : undefined}
                 ocupado={ocupado}
               />
             ))}

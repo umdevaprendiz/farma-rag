@@ -14,9 +14,11 @@ from app.config import Settings
 from app.schemas.api import ErrorCode
 from app.schemas.dataset import ROTULO_SECAO, Chunk
 from app.services.corpus import Corpus
+from app.services.presentation import Mark
 
 # F3d (docs/DECISOES.md, seção 36): o agente avisa cada etapa de verdade que começa, para a tela mostrar
-# onde a pergunta está. (etapa, rodada): etapa é "buscando", "escrevendo", "conferindo" ou "verificando".
+# onde a pergunta está. (etapa, rodada): etapa é "buscando", "escrevendo", "conferindo", "verificando"
+# ou "explicando" (F4: a explicação em palavras simples do "para que serve").
 Progress = Callable[[str, int], None]
 
 SISTEMA = (
@@ -39,6 +41,27 @@ SISTEMA = (
 # 2026-10-16 (pedido do usuário: responder qualquer pergunta sobre remédio, com base nas bulas): saiu
 # "não recomende dose nem conduta para um paciente específico", e a recusa ficou só para trechos sem
 # relação nenhuma com a pergunta.
+
+# F4 (2026-10-24, docs/DECISOES.md, seção 37): o mesmo prompt em linguagem de balcão (LINGUAGEM_SIMPLES,
+# padrão). A primeira frase já responde; a palavra do dia a dia pode substituir o termo técnico (a
+# fundamentação aceita as do glossário, e o prompt traz as que os trechos usam); sem conselho que o
+# trecho não traz ("procure um médico": o aviso fixo da F2 já cobre). O resto é igual ao SISTEMA, que
+# fica para comparar no benchmark completo.
+SISTEMA_BALCAO = (
+    "Você ajuda o balconista de farmácia a responder perguntas sobre medicamentos consultando bulas. "
+    "Use SOMENTE os trechos numerados enviados; não use conhecimento próprio. "
+    "Responda em português simples, como quem explica no balcão: até 4 frases curtas e diretas, a "
+    "primeira já respondendo ao que foi perguntado, sempre dizendo de qual medicamento é cada informação. "
+    "Pode trocar o termo técnico do trecho pela palavra do dia a dia, sem mudar o sentido. Cada frase diz "
+    "o que o trecho diz, nunca só o nome do medicamento; não acrescente conselho que o trecho não traz. "
+    "Responda toda pergunta com o que os trechos dizem: se ela pede o melhor remédio "
+    "para um sintoma, diga quais medicamentos dos trechos são indicados para ele (os trechos não "
+    "dizem qual é o melhor); se fala de alergia a um remédio, diga o que os trechos dizem sobre "
+    "hipersensibilidade e quais medicamentos dos trechos servem para o mesmo uso. Devolva só JSON: "
+    '{"status": "respondida" ou "nao_encontrada", "afirmacoes": [{"texto": uma frase da resposta, '
+    '"trecho": número do trecho de onde ela saiu}]}. '
+    'Só devolva "status": "nao_encontrada" e "afirmacoes": [] se nenhum trecho tiver relação com a pergunta.'
+)
 
 
 def formato(n_trechos: int) -> dict:
@@ -86,6 +109,10 @@ class Attempt:
     verificacao_bruta: str | None = None  # saída do verificar_llm, só na rodada 3
     # Citações trocadas e afirmações repetidas que o código corrigiu (grounding.corrigir_citacoes).
     correcoes: list[str] = field(default_factory=list)
+    # F4: a explicação em palavras simples do "para que serve" (nó explicar), como o modelo devolveu, e
+    # por que cada frase dela saiu (services/explanation.py).
+    explicacao_bruta: str | None = None
+    explicacao_descartada: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -138,6 +165,13 @@ class Result:
     # de indicações ("Não. Ansiedade não está entre as indicações da bula de paracetamol...").
     conclusao: str | None = None
     outra_explicacao: bool = False  # refez uma resposta que não ajudou, sem os trechos dela
+    # F4 (services/presentation.py e explanation.py), só na respondida: a frase antes da resposta, a
+    # explicação em palavras simples do "para que serve" (com [n], conferida), as marcas na resposta
+    # (negrito do que foi perguntado e termo técnico explicado) e as perguntas seguintes.
+    abertura: str | None = None
+    explicacao: str | None = None
+    marcas: list[Mark] = field(default_factory=list)
+    sugestoes: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -149,16 +183,22 @@ class AnotherExplanation:
 
 
 def montar_prompt(
-    pergunta: str, fontes: list[Source], observacao: str | None = None, anterior: str | None = None
+    pergunta: str,
+    fontes: list[Source],
+    observacao: str | None = None,
+    anterior: str | None = None,
+    dicas: list[tuple[str, str]] = (),
 ) -> str:
-    """`anterior`: a pergunta anterior da conversa, quando esta continua dela ("e para criança?")."""
+    """`anterior`: a pergunta anterior da conversa, quando esta continua dela ("e para criança?").
+    `dicas`: (termo técnico dos trechos, palavra do dia a dia), do glossário (F4)."""
     trechos = "\n\n".join(
         f"[{f.posicao}] {f.chunk.medicamento} | {ROTULO_SECAO[f.chunk.secao]} | página {f.chunk.pagina}\n{f.chunk.texto}"
         for f in fontes
     )
+    palavras = "\n\nPALAVRAS DO DIA A DIA: " + "; ".join(f"{t} = {e}" for t, e in dicas) if dicas else ""
     extra = f"\n\nOBSERVAÇÃO: {observacao}" if observacao else ""
     antes = f"\n\nPERGUNTA ANTERIOR: {anterior}" if anterior else ""
-    return f"TRECHOS:\n{trechos}{extra}{antes}\n\nPERGUNTA: {pergunta}"
+    return f"TRECHOS:\n{trechos}{palavras}{extra}{antes}\n\nPERGUNTA: {pergunta}"
 
 
 def responder(
