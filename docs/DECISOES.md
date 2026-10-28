@@ -1068,3 +1068,74 @@ API passaria a construir a tela, e a especificação separa os blocos). Versões
 mensagem nova. **Não verificado (quinta, com permissão para baixar as imagens):** `docker compose build`, o
 `nginx.conf` dentro do container (`nginx -t`), a tela em http://127.0.0.1:8080, as etapas chegando pelo nginx
 durante a espera, e o Ollama do Windows visto de dentro do container (`host.docker.internal`).
+
+## 39. Cache de embeddings no Git: um clone novo carrega o banco sem recalcular (2026-10-28)
+**Problema:** `data/cache/` estava no `.gitignore`. Quem clonasse o projeto tinha as bulas em JSON e o
+`chunks.jsonl`, mas não os embeddings: antes do `load_database`, precisava rodar o `generate_chunks` com o
+Ollama, ~2,5 s por trecho na CPU, perto de 1 h para os 1.384 trechos.
+
+**Decisão (do Sérgio, entre três opções):** versionar o próprio cache, `data/cache/embeddings.sqlite`
+(6,2 MB). Descartadas: exportar para um arquivo novo em `data/processed/` (mais código para manter, e o
+cache continuaria fora) e só avisar no README do tempo de espera. Com o cache no Git, a ordem num clone
+novo é `docker compose up -d db` e `python -m ingestion.load_database`: a carga lê os três arquivos e não
+chama o Ollama nem precisa dos PDFs.
+- `.gitignore`: `data/cache/*` + `!data/cache/embeddings.sqlite` (com `data/cache/` a pasta inteira fica
+  ignorada e a exceção não vale). O demo e as cópias continuam fora.
+- `.gitattributes`: o arquivo é `binary` (sem diff nem conversão de fim de linha).
+- Cada versão do cache que entra no Git pesa ~6 MB no histórico: commitar só quando o acervo mudar.
+
+**Dados sensíveis:** cada linha guarda só o SHA-256 de (modelo, texto) e o vetor, nunca o texto. Só a
+ingestão grava nele, e só trechos de bula (texto público); as perguntas da API e do benchmark vão direto ao
+Ollama e não passam pelo cache. Mesmo assim havia **10 linhas que não eram de nenhum trecho atual**
+(provavelmente versões antigas, de antes da tabela do Omenax e do lote 3) e, pelo hash, não dá para provar
+o que eram. Por isso o cache vai **podado**: só os embeddings dos trechos atuais.
+- `EmbeddingCache.sobras` (conta) e `EmbeddingCache.podar` (apaga e roda `VACUUM`, que reescreve o arquivo:
+  nada apagado fica nas páginas livres).
+- `python -m ingestion.generate_chunks --podar`: gera os trechos, completa os embeddings e poda. Sem a
+  opção, o fim da ingestão avisa quantas linhas sobram ("Antes de commitar o cache: --podar"). A poda não é
+  automática porque o cache serve também para experimentos (outro `CHUNK_TOKENS`, outro modelo de
+  embeddings): voltar à configuração anterior custaria recalcular tudo.
+- Podado em 2026-10-28: 1.394 → 1.384 linhas, 0 sobrando, 0 páginas livres; `chunks.jsonl` idêntico ao
+  do commit. A cópia de antes ficou em `data/cache/embeddings.antes-da-poda-2026-10-28.sqlite` (fora do Git).
+
+**Verificado:** 4 testes em `test_embedding_cache.py`: poda por texto e por modelo, `--podar` com tudo no
+cache sem chamar o Ollama, `--podar --sem-embeddings` recusado, e o cache versionado cobrindo todos os
+trechos do `chunks.jsonl` com o modelo padrão (se alguém mudar os trechos e esquecer o cache, a suíte
+falha). Num clone simulado (só os arquivos que o Git levaria, sem `.env`), com o Ollama apontado para uma
+porta fechada: 37 bulas, 1.384 trechos e a matriz (1.384, 1.024) carregados. Suíte: 392 passam, 40 de
+banco pulados (PostgreSQL desligado). **Não verificado (quinta):** o `load_database` gravando no banco a
+partir de um clone novo.
+
+## 40. README do zero e a carga do acervo pelo Docker (2026-10-28)
+**Problema:** a etapa 7 da especificação pergunta se alguém consegue rodar o projeto só seguindo o README.
+Não conseguia: o "Como rodar" mandava rodar `process_batch`, que precisa dos PDFs (`data/raw/` fica fora do
+Git), e só carregava o banco com Python instalado no Windows. Com o acervo inteiro no Git (§39), a carga
+só copia arquivos e pode rodar em qualquer lugar.
+
+**Decisão:**
+- **Serviço `carga` no compose**, no perfil `carga` (o `docker compose up` não o sobe): a mesma imagem do
+  backend, com `data/` e `ingestion/` montados só leitura, roda `python -m ingestion.load_database` contra o
+  serviço `db`. Uso: `docker compose run --rm carga`. O caminho pelo Docker passa a pedir só Git, Docker
+  Desktop e Ollama. A §7 continua valendo para a ingestão de verdade (PDF → trechos → embeddings), que roda
+  no Windows: a carga é só a cópia para o banco.
+- **O cache é aberto só para leitura na carga** (`EmbeddingCache(..., somente_leitura=True)` em
+  `corpus.carregar_dataset`, via URI `mode=ro`): quem só lê nunca cria nem altera o arquivo versionado, e a
+  montagem `:ro` do container não depende de o SQLite cair sozinho para leitura. Sem o arquivo, a carga
+  explica ("Sem o cache de embeddings... ele vem no Git") em vez de criar um cache vazio e dizer que faltam
+  1.384 embeddings.
+- **README, "Como rodar" em três partes:** do zero pelo Docker (clone, modelos, `.env`, `db`, `carga`,
+  `up --build`, tabela de comandos do dia a dia), desenvolvimento (venv, uvicorn, Vite, testes) e adicionar
+  bulas (ingestão com `--podar` e o que commitar junto). Avisos que custaram tempo no desenvolvimento ficaram
+  no texto: `127.0.0.1` em vez de `localhost`, `npm.cmd` no PowerShell, `--reload` que não recarrega, API
+  subida da raiz.
+
+**Dados sensíveis:** o `.env` é criado na máquina a partir do `.env.example` e está no `.gitignore`; o README
+avisa que `docker compose config` sem `--quiet` imprime a senha e que `down -v` apaga o histórico de
+consultas. A carga e a API recebem a senha só em tempo de execução (`env_file`).
+
+**Verificado em 2026-10-28:** `docker compose config --quiet` e a lista de serviços com e sem o perfil
+`carga`; 3 testes novos em `test_embedding_cache.py` (o modo só leitura recusa gravar; a carga lê um cache
+protegido contra escrita sem mudar um byte; sem o cache, a mensagem certa e nenhum arquivo criado); suíte com
+395 passando e 40 de banco pulados. **Não verificado (quinta, com permissão para baixar as imagens):** o
+passo a passo inteiro num clone novo de verdade (`git clone` → `carga` → `up --build` → pergunta pela tela em
+:8080), incluindo o Ollama do Windows visto de dentro do container.

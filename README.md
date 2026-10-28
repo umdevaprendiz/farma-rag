@@ -64,7 +64,7 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 | Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citations.py` |
 | Agente em grafo (LangGraph, 6 nós, rodadas 1 a 3) | ✅ pronto, testado com LLM falso e com o LLM real nas 24 bulas | `app/services/graph.py` |
 | Teste manual pelo terminal | ✅ pronto | `python -m benchmark.ask` |
-| Testes automáticos | ✅ 390 testes (350 sem o PostgreSQL; os 40 de banco rodam num schema temporário e são pulados sem ele) | `backend/tests/` |
+| Testes automáticos | ✅ 435 testes (395 sem o PostgreSQL; os 40 de banco rodam num schema temporário e são pulados sem ele) | `backend/tests/` |
 | Bulas reais: 31 PDFs → 37 bulas, 1.384 trechos com embedding, no banco; tabela de interações lida como tabela | ✅ 28 de 40 medicamentos do MVP, mais zolpidem, sertralina e isotretinoína | `data/bulas_manifesto.json`, `data/processed/bulas/`, `ingestion/extract_pdf.py` |
 | Checagem de fundamentação (números, doses, termos, "só o nome" não vale, remédio certo), citação trocada corrigida no código e de assunto (a resposta responde à pergunta e fala do remédio perguntado) | ✅ pronto | `app/services/grounding.py`, `app/services/intent.py` |
 | Pergunta sem remédio ou com remédio sem bula: busca híbrida em todas as bulas, um trecho por medicamento | ✅ pronto, testado com o LLM real | `app/services/graph.py`, `app/services/intent.py` |
@@ -81,7 +81,8 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 | Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metrics.py` |
 | API FastAPI: 6 endpoints, histórico de toda consulta | ✅ pronta, testada com LLM falso e no servidor (perguntas sem LLM) | `app/main.py`, `app/api/`, `app/services/history.py` |
 | Frontend React (Vite + TypeScript) em formato de chat: conversa, citações clicáveis, fontes em chips, histórico na lateral | ✅ pronto, conferido no navegador com o LLM real e com o simulado | `frontend/` |
-| Tela no Docker Compose: nginx entrega o build e repassa `/api` para o backend (mesma origem, portas só em 127.0.0.1) | 🟡 escrito e com a sintaxe conferida; construir as imagens e testar na quinta | `frontend/Dockerfile`, `frontend/nginx.conf`, `docker-compose.yml` |
+| Docker Compose completo: banco, carga do acervo a partir do Git (sem Python nem Ollama), API e tela no nginx (mesma origem, portas só em 127.0.0.1) | 🟡 escrito e com a sintaxe conferida; construir as imagens e testar na quinta | `docker-compose.yml`, `frontend/Dockerfile`, `frontend/nginx.conf` |
+| Acervo completo no Git, embeddings inclusive: um clone novo carrega o banco sem recalcular nada | ✅ pronto, conferido num clone simulado sem Ollama | `data/cache/embeddings.sqlite`, `ingestion/generate_chunks.py` (`--podar`) |
 
 ## Arquitetura
 
@@ -144,7 +145,7 @@ A busca fica atrás do `Protocol` `VectorSearch`. `InMemoryIndex` (numpy) e `Pgv
 | Separar seções | `ingestion/split_sections.py` | Regex sobre os títulos padronizados pela ANVISA, com as variações das bulas reais (singular, erro de digitação, rodapé colado no título). Remissão "(veja o item 8. POSOLOGIA...)" não abre seção; referências bibliográficas são puladas; hífen de palavra composta no fim da linha é mantido. Guarda `\f` onde a página vira |
 | Montar as bulas | `ingestion/process_batch.py` | Lê `data/bulas_manifesto.json` e, antes de gravar, confere SHA-256 (o mesmo do `FONTES.md`), quantas bulas há no PDF e o registro impresso em cada uma. Gera `data/processed/bulas/<id>.json` pelo contrato `Leaflet`, com registro, forma farmacêutica e versão. `process_leaflet.py` faz o mesmo para uma bula avulsa |
 | Dividir em trechos | `ingestion/generate_chunks.py` | ~300 tokens com sobreposição de 50, sem misturar seções; cada trecho guarda a página em que começa. Tokens estimados em 3,3 caracteres por token |
-| Embeddings | `app/llm/embeddings.py` + cache | `bge-m3` (1024 dimensões). O texto embutido leva medicamento e seção na frente. Cache SQLite com chave `hash(modelo + texto)`, gravado a cada lote de 8: interromper e retomar não refaz nada |
+| Embeddings | `app/llm/embeddings.py` + cache | `bge-m3` (1024 dimensões). O texto embutido leva medicamento e seção na frente. Cache SQLite com chave `hash(modelo + texto)` (sem o texto), gravado a cada lote de 8: interromper e retomar não refaz nada. Vai no Git, só com os trechos atuais (`--podar`) |
 | Carregar o banco | `ingestion/load_database.py` | `CREATE EXTENSION vector`, `create_all` e troca de `bulas` e `chunks` com `TRUNCATE` numa transação só; `consultas` não é tocada |
 
 ### 2. Consulta: o agente em grafo (LangGraph)
@@ -242,7 +243,7 @@ FastAPI em `app/main.py`, rotas em `app/api/routes.py`, documentação interativ
 
 ### 6. Frontend
 
-React 19 + TypeScript, servido pelo Vite (`frontend/`), em `http://127.0.0.1:5173`. Formato de chat, como Claude e ChatGPT, e nenhuma biblioteca além do React:
+React 19 + TypeScript (`frontend/`): no Docker, servido pelo nginx em `http://127.0.0.1:8080`; em desenvolvimento, pelo Vite em `http://127.0.0.1:5173`. Formato de chat, como Claude e ChatGPT, e nenhuma biblioteca além do React:
 
 - **Conversa**: a pergunta em balão, a resposta ao lado do ícone, com cada `[n]` clicável. Embaixo, as fontes em chips (medicamento e seção); o clique abre o trecho inteiro da bula com fabricante, nº de registro, página, data e se foi usado na resposta. Caixa de mensagem que cresce com o texto (Enter envia, Shift+Enter quebra a linha) e tela inicial com sugestões de pergunta. Sem filtro de medicamento: o sistema acha o remédio na pergunta ou busca em todas as bulas.
 - **Estados** dentro da conversa: pensando (a etapa real que a API avisa, como "Buscando nos trechos das bulas" ou "Rodada 2 de 3: buscando outros trechos", mais uma frase leve e os segundos contando: na CPU leva de 10 a 45 s), não encontrada (com os trechos consultados), aviso de remédio sem bula no acervo, esclarecimento (botões, para a ambiguidade de forma farmacêutica) e erro com título claro. No 502, cada rodada que falhou vira um item da lista.
@@ -366,7 +367,7 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 - **Modelo pequeno não cita de forma confiável dentro do texto.** Pedindo `[1]` no meio da frase, o qwen2.5:1.5b citou só na lista e 5 de 5 respostas certas foram recusadas. Pedindo afirmações separadas e montando o `[n]` no código, 7 de 7 passaram.
 - **Nenhum exemplo de resposta no prompt.** O modelo copiou o exemplo ("Deve ser tomado em jejum [2]") numa pergunta sobre armazenamento, e a validação de citações deixou passar.
 - **Outra explicação vem de outros trechos, não de outro prompt.** Pelo mesmo motivo, o "não ajudou" não manda a resposta anterior nem "explique de outro jeito" ao modelo: tira os trechos que ela citou e deixa o prompt igual.
-- **O dataset em arquivo é a fonte da verdade.** Bulas e trechos em JSON versionado; banco e cache são derivados.
+- **O dataset em arquivo é a fonte da verdade.** Bulas e trechos em JSON versionado; banco e cache são derivados. O cache vai no Git mesmo assim, podado, para um clone novo não gastar ~1 h de CPU recalculando embeddings.
 - **Gabarito por âncora.** `chunk_id` muda com `CHUNK_TOKENS`; uma frase copiada da bula, não.
 - **Bulas baixadas à mão.** O Bulário da ANVISA usa Cloudflare Turnstile; o projeto não automatiza nem contorna isso, e cada PDF tem procedência e SHA-256 registrados.
 
@@ -399,54 +400,99 @@ flowchart LR
 
 ### 4. Entrega
 
-- **Docker Compose completo:** o serviço `frontend` está escrito (DECISOES §38): o nginx entrega a tela e repassa `/api` para o backend. Falta construir as imagens e testar (quinta).
+- **Docker Compose completo:** escrito (DECISOES §38 e §40): banco, `carga` do acervo pelo Git, API e tela no nginx, com o passo a passo em [Como rodar](#como-rodar). Falta construir as imagens e seguir o passo a passo de verdade num clone novo (quinta).
 - Resultados do benchmark publicados aqui e um vídeo curto de demonstração.
 
 ## Como rodar
 
-Requisitos: Python 3.12, [Ollama](https://ollama.com), Docker (só para o banco) e Node 24 (só para o frontend).
+O acervo vem pronto no Git: 37 bulas em JSON, 1.384 trechos e os embeddings deles (`data/cache/embeddings.sqlite`, [`docs/DECISOES.md`](docs/DECISOES.md) §39). Para usar o FarmaRAG não precisa dos PDFs, nem de rodar a ingestão, nem de esperar ~1 h de embeddings: a carga do banco só copia esses arquivos.
+
+### Do zero, pelo Docker
+
+Requisitos: Git, [Docker Desktop](https://www.docker.com/products/docker-desktop/) e [Ollama](https://ollama.com) (nativo no Windows, fora do Docker). Python e Node não precisam estar instalados.
 
 ```powershell
-# Modelos
+# 1. Código
+git clone https://github.com/umdevaprendiz/farma-rag.git
+cd farma-rag
+
+# 2. Modelos no Ollama: embeddings (1,2 GB) e geração (986 MB)
 ollama pull bge-m3
 ollama pull qwen2.5:1.5b
 
+# 3. Configuração: o .env fica só na sua máquina (está no .gitignore)
+copy .env.example .env
+notepad .env    # troque DB_PASSWORD; se já houver um PostgreSQL na porta 5432, use DB_PORT=5433
+
+# 4. Banco e carga do acervo (lê os arquivos do Git; não usa o Ollama). A primeira vez constrói a imagem da API
+docker compose up -d db
+docker compose run --rm carga
+
+# 5. API e tela (a primeira vez baixa as imagens e as dependências da tela e constrói)
+docker compose up -d --build
+```
+
+Abra **http://127.0.0.1:8080**. O rodapé da barra lateral mostra se API, banco e Ollama estão no ar; o detalhe está em http://127.0.0.1:8000/api/v1/saude, e a documentação da API em http://127.0.0.1:8000/docs. Todas as portas ficam só em `127.0.0.1`: ninguém da rede acessa.
+
+| Para | Comando |
+|---|---|
+| Ver o log da API | `docker compose logs -f backend` |
+| Parar tudo (o banco e o histórico ficam no volume `pgdata`) | `docker compose down` |
+| Depois de um `git pull` | `docker compose run --rm carga` (se o acervo mudou) e `docker compose up -d --build` |
+| Recarregar o acervo com a API de pé | `docker compose run --rm carga` e `docker compose restart backend` (a API lê o acervo ao subir) |
+| Conferir o `docker-compose.yml` | `docker compose config --quiet` (sem o `--quiet`, ele imprime o `.env` resolvido, **com a senha**) |
+| Apagar o banco, **inclusive o histórico de consultas** | `docker compose down -v` |
+
+### Desenvolvimento (API e tela fora do Docker)
+
+Requisitos: Python 3.12, Node 24, Docker Desktop (só para o banco) e Ollama, com os modelos do passo 2 acima.
+
+```powershell
 # Ambiente Python (da raiz do repositório)
 py -3.12 -m venv .venv
 .venv\Scripts\activate
 pip install -r backend/requirements-dev.txt
 pip install -e backend
-copy .env.example .env   # ajuste DB_PASSWORD; use DB_HOST=127.0.0.1
+copy .env.example .env   # troque DB_PASSWORD; DB_HOST=127.0.0.1
 
-# Ingestão das bulas do manifesto (PDFs em data/raw/bulas/, procedência em data/FONTES.md)
-python -m ingestion.process_batch
-# ou uma bula avulsa:
-# python -m ingestion.process_leaflet data/raw/<bula>.pdf --medicamento "..." --principio-ativo "..." --fabricante "..." --data-versao AAAA-MM-DD --registro 1.2345.6789 --forma "comprimido"
-python -m ingestion.generate_chunks
-
-# Perguntar pelo terminal (usa os arquivos, sem banco)
-python -m benchmark.ask "Losartana pode ser usada com ibuprofeno?"
-
-# Banco e API
+# Banco e carga do acervo (a mesma carga do serviço "carga", rodada no Windows)
 docker compose up -d db
 python -m ingestion.load_database
-uvicorn app.main:app --app-dir backend --reload   # http://127.0.0.1:8000/docs
 
-# Frontend (outro terminal; npm ci instala exatamente o package-lock.json, sem scripts)
+# API, sempre da raiz (o .env é lido da pasta atual)
+uvicorn app.main:app --app-dir backend   # http://127.0.0.1:8000/docs
+
+# Tela (outro terminal; npm ci instala exatamente o package-lock.json, sem scripts)
 cd frontend
 npm.cmd ci
-npm.cmd run dev    # http://127.0.0.1:5173 (no PowerShell, npm.cmd: ver DECISOES §19)
+npm.cmd run dev    # http://127.0.0.1:5173
 
-# Ou banco, API e tela pelo Docker (o Ollama continua no Windows; banco carregado como acima)
-docker compose up -d --build   # tela em http://127.0.0.1:8080 (FRONTEND_PORT)
-docker compose config --quiet  # confere o compose sem imprimir a senha do .env
+# Perguntar pelo terminal (lê os arquivos, sem banco; usa o Ollama)
+python -m benchmark.ask "Losartana pode ser usada com ibuprofeno?"
 
 # Testes
-pytest
+pytest                           # sem o PostgreSQL de pé, os testes de banco são pulados
+python -m benchmark.run          # benchmark no modo busca (sem LLM; usa o Ollama só nos embeddings das perguntas)
 cd frontend; npm.cmd run build   # confere os tipos (tsc) e gera o build
 ```
 
-> No Windows, use `DB_HOST=127.0.0.1`, não `localhost`: o `localhost` tenta o IPv6 primeiro e cada conexão espera ~130 s. Se já houver um PostgreSQL nativo na 5432, publique o container em outra porta (`DB_PORT=5433`).
+> - No Windows, use `DB_HOST=127.0.0.1`, não `localhost`: o `localhost` tenta o IPv6 primeiro e cada conexão espera ~130 s.
+> - No PowerShell, `npm.cmd` em vez de `npm` (a política de scripts bloqueia o `npm.ps1`; DECISOES §19).
+> - No Windows, o `uvicorn --reload` pode não perceber as mudanças de código (aconteceu no desenvolvimento): depois de mudar o backend, pare e suba a API de novo.
+
+### Adicionar ou atualizar bulas (ingestão)
+
+Os PDFs não vão para o Git (`data/raw/`): cada um é baixado à mão de site oficial, com a procedência e o SHA-256 registrados em [`data/FONTES.md`](data/FONTES.md) e a entrada no `data/bulas_manifesto.json`.
+
+```powershell
+python -m ingestion.process_batch            # PDFs do manifesto -> data/processed/bulas/<id>.json
+# ou uma bula avulsa:
+# python -m ingestion.process_leaflet data/raw/<bula>.pdf --medicamento "..." --principio-ativo "..." --fabricante "..." --data-versao AAAA-MM-DD --registro 1.2345.6789 --forma "comprimido"
+python -m ingestion.generate_chunks --podar  # trechos + embeddings (~2,5 s por trecho novo na CPU) e poda do cache
+python -m ingestion.load_database            # ou: docker compose run --rm carga; depois, reinicie a API
+```
+
+Para o próximo clone já vir com a bula nova, commite juntos os JSON de `data/processed/bulas/`, o `data/processed/chunks.jsonl` e o `data/cache/embeddings.sqlite`. O `--podar` deixa no cache só os trechos atuais (sem ele, o fim do `generate_chunks` avisa quantas linhas sobram), e um teste da suíte falha se faltar o embedding de algum trecho.
 
 ## Estrutura do repositório
 
@@ -468,7 +514,7 @@ farma-rag/
 │   ├── raw/                   # PDFs e CSV de origem (procedência em FONTES.md)
 │   ├── bulas_manifesto.json   # entrada do lote: PDF, hash, registro, uma "parte" por bula do PDF
 │   ├── processed/             # bulas JSON, chunks.jsonl, catálogo ANVISA (versionados)
-│   ├── cache/                 # embeddings em SQLite (fora do Git)
+│   ├── cache/                 # embeddings.sqlite do acervo (no Git, podado: §39); o resto da pasta fica fora
 │   └── benchmark/             # perguntas e resultados
 ├── frontend/                  # React + TypeScript (Vite): tela de chat
 │   ├── src/                   # api.ts (cliente e tipos), conversation.ts (modelo da conversa), App.tsx, components/, styles.css

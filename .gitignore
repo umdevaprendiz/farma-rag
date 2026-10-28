@@ -3,8 +3,11 @@
 
 # Dados que não vão para o Git (PDFs originais; o dataset processado vai)
 data/raw/
-# Cache de embeddings e acervo de demonstração: recriáveis
-data/cache/
+# Cache de embeddings: só o do acervo vai para o Git (docs/DECISOES.md §39), para um clone novo carregar
+# o banco sem recalcular ~1 h de embeddings. Demo, cópias e o resto da pasta continuam fora.
+# "data/cache/*" e não "data/cache/": com a pasta inteira ignorada, a exceção abaixo não valeria.
+data/cache/*
+!data/cache/embeddings.sqlite
 
 # Python
 __pycache__/

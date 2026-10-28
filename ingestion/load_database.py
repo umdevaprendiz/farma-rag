@@ -1,8 +1,9 @@
 """Copia o dataset em arquivo para o PostgreSQL: bulas, trechos e embeddings.
 
 Uso (da raiz):  python -m ingestion.load_database
-Entrada: data/processed/bulas/*.json, data/processed/chunks.jsonl e o cache de embeddings
-         (rode antes processar_bula e gerar_chunks)
+Entrada: data/processed/bulas/*.json, data/processed/chunks.jsonl e data/cache/embeddings.sqlite.
+         Os três vêm no Git (§39): num clone novo, esta carga não precisa do Ollama nem dos PDFs.
+         Bula nova ou trecho mudado: rode antes process_batch e generate_chunks.
 Destino: o banco de DB_HOST/DB_PORT/DB_NAME do .env (docker compose up -d db)
 
 O arquivo é a fonte da verdade (docs/DECISOES.md, seção 15): `bulas` e `chunks` são apagadas e

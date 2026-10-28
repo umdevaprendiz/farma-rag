@@ -2,6 +2,8 @@
 
 Na CPU cada trecho leva ~3 s (docs/DECISOES.md, seção 1), então indexar tudo são horas.
 O cache grava a cada lote: dá para interromper e continuar, e reindexar só refaz o que mudou.
+Cada linha guarda só o SHA-256 de (modelo, texto) e o vetor, nunca o texto. O arquivo do acervo vai no
+Git (§39): um clone novo carrega o banco sem recalcular nada.
 """
 
 import hashlib
@@ -23,7 +25,12 @@ def _chave(modelo: str, texto: str) -> str:
 
 
 class EmbeddingCache:
-    def __init__(self, caminho: str | Path):
+    def __init__(self, caminho: str | Path, somente_leitura: bool = False):
+        if somente_leitura:
+            # Para quem só lê (carga do banco, acervo em memória): nunca cria nem altera o arquivo, que vai
+            # no Git e, no container da carga, está montado só leitura. Arquivo ausente: sqlite3.OperationalError.
+            self._db = sqlite3.connect(f"{Path(caminho).absolute().as_uri()}?mode=ro", uri=True)
+            return
         Path(caminho).parent.mkdir(parents=True, exist_ok=True)
         self._db = sqlite3.connect(caminho)
         self._db.execute("CREATE TABLE IF NOT EXISTS embeddings (chave TEXT PRIMARY KEY, vetor BLOB NOT NULL)")
@@ -43,6 +50,25 @@ class EmbeddingCache:
             [(_chave(modelo, t), vetor_para_bytes(v)) for t, v in zip(textos, vetores)],
         )
         self._db.commit()
+
+    def _fora_de(self, modelo: str, textos: Sequence[str]) -> list[str]:
+        manter = {_chave(modelo, t) for t in textos}
+        return [k for (k,) in self._db.execute("SELECT chave FROM embeddings").fetchall() if k not in manter]
+
+    def sobras(self, modelo: str, textos: Sequence[str]) -> int:
+        """Quantas linhas não são embedding de `textos` com `modelo` (trecho antigo, outro modelo)."""
+        return len(self._fora_de(modelo, textos))
+
+    def podar(self, modelo: str, textos: Sequence[str]) -> int:
+        """Deixa só os embeddings de `textos` com `modelo` e compacta o arquivo. Devolve quantas saíram.
+
+        O VACUUM reescreve o arquivo: nada das linhas apagadas fica nas páginas livres (o arquivo vai no Git).
+        """
+        fora = self._fora_de(modelo, textos)
+        self._db.executemany("DELETE FROM embeddings WHERE chave = ?", [(k,) for k in fora])
+        self._db.commit()
+        self._db.execute("VACUUM")
+        return len(fora)
 
     def fechar(self) -> None:
         self._db.close()

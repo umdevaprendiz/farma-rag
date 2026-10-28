@@ -38,6 +38,24 @@ services:
       db:
         condition: service_healthy
 
+  # Carga do acervo no banco (docs/DECISOES.md §40): lê do Git as bulas em JSON, o chunks.jsonl e o cache
+  # de embeddings (§39) e grava no "db". Não usa o Ollama nem os PDFs, e dispensa Python no Windows.
+  # Só roda quando chamada: docker compose run --rm carga (depois, reinicie o backend se ele já estava de pé).
+  carga:
+    build: ./backend
+    profiles: ["carga"]
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+    volumes:
+      - ./data:/srv/data:ro
+      - ./ingestion:/srv/ingestion:ro
+    command: ["python", "-m", "ingestion.load_database"]
+    depends_on:
+      db:
+        condition: service_healthy
+
   # Tela: o nginx entrega o build do React e repassa /api para o backend (mesma origem, sem CORS).
   # http://127.0.0.1:8080. Só no 127.0.0.1, como as outras portas: ninguém da rede acessa.
   frontend:

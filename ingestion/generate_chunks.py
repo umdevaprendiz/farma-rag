@@ -1,11 +1,15 @@
 """Divide as bulas processadas em trechos e calcula os embeddings.
 
-Uso (da raiz):  python -m ingestion.generate_chunks [--sem-embeddings]
+Uso (da raiz):  python -m ingestion.generate_chunks [--sem-embeddings | --podar]
 Entrada: data/processed/bulas/*.json
-Saída:   data/processed/chunks.jsonl  e o cache de embeddings (data/cache/, fora do Git)
+Saída:   data/processed/chunks.jsonl  e o cache de embeddings (data/cache/embeddings.sqlite)
 
 O tamanho do trecho vem de CHUNK_TOKENS e CHUNK_SOBREPOSICAO no .env. Embeddings já calculados
 ficam no cache: rodar de novo só calcula o que mudou.
+
+O cache vai no Git junto com o chunks.jsonl (docs/DECISOES.md §39). Ele acumula trechos antigos e
+de experimentos (outro CHUNK_TOKENS, outro modelo); `--podar` deixa só os trechos atuais. Rode-o antes
+de commitar o cache.
 """
 
 import math
@@ -97,8 +101,10 @@ def gerar_chunks(bula: Leaflet, chunk_tokens: int, sobreposicao: int) -> list[Ch
     return chunks
 
 
-def main(s: Settings | None = None, com_embeddings: bool = True) -> None:
+def main(s: Settings | None = None, com_embeddings: bool = True, podar: bool = False) -> None:
     s = s or get_settings()
+    if podar and not com_embeddings:
+        sys.exit("--podar precisa dos embeddings de todos os trechos: rode sem --sem-embeddings.")
     bulas = carregar_bulas(s.bulas_dir)
     if not bulas:
         sys.exit(f"Nenhuma bula em {s.bulas_dir}. Rode antes: python -m ingestion.process_leaflet --help")
@@ -121,10 +127,15 @@ def main(s: Settings | None = None, com_embeddings: bool = True) -> None:
         print(f"  embeddings: {feitos}/{total} ({decorrido:.0f} s, faltam ~{decorrido / feitos * (total - feitos):.0f} s)", flush=True)
 
     cache = EmbeddingCache(s.cache_embeddings)
-    embutir([texto_para_embedding(c) for c in chunks], cache, s, progresso)
+    textos = [texto_para_embedding(c) for c in chunks]
+    embutir(textos, cache, s, progresso)
+    if podar:
+        print(f"Poda: {cache.podar(s.embed_modelo, textos)} linha(s) que não são dos trechos atuais saíram do cache")
+    elif sobras := cache.sobras(s.embed_modelo, textos):
+        print(f"Aviso: {sobras} linha(s) do cache não são dos trechos atuais. Antes de commitar o cache: --podar")
     cache.fechar()
     print(f"Embeddings prontos ({s.embed_modelo}) em {s.cache_embeddings}")
 
 
 if __name__ == "__main__":
-    main(com_embeddings="--sem-embeddings" not in sys.argv)
+    main(com_embeddings="--sem-embeddings" not in sys.argv, podar="--podar" in sys.argv)

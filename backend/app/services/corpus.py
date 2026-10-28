@@ -71,7 +71,12 @@ def carregar_dataset(s: Settings) -> tuple[list[Leaflet], list[Chunk], np.ndarra
             f"Sem bulas em {s.bulas_dir} ou sem trechos em {s.chunks_arquivo}. "
             "Rode: python -m ingestion.process_leaflet ... e depois python -m ingestion.generate_chunks"
         )
-    cache = EmbeddingCache(s.cache_embeddings)
+    if not Path(s.cache_embeddings).is_file():
+        raise IncompleteCorpusError(
+            f"Sem o cache de embeddings em {s.cache_embeddings} (ele vem no Git, docs/DECISOES.md §39). "
+            "Rode: python -m ingestion.generate_chunks"
+        )
+    cache = EmbeddingCache(s.cache_embeddings, somente_leitura=True)  # só lê: o arquivo vai no Git
     vetores = cache.buscar(s.embed_modelo, [texto_para_embedding(c) for c in chunks])
     cache.fechar()
     faltam = sum(v is None for v in vetores)
