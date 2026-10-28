@@ -1,0 +1,7 @@
+# O que fica fora do contexto do build da API: nem chega ao Docker. A imagem só leva requirements.txt e
+# app/ (Dockerfile); isto também barra um .env que apareça nesta pasta por engano.
+tests/
+**/__pycache__/
+*.egg-info/
+.pytest_cache/
+**/.env*

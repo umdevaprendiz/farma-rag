@@ -176,13 +176,14 @@ export class ApiError extends Error {
 }
 
 const FORA_DO_AR =
-  "A API não respondeu. Ela está rodando? Na raiz: uvicorn app.main:app --app-dir backend";
+  "A API não respondeu. Ela está rodando? Pelo Docker: docker compose up -d. " +
+  "Sem Docker, na raiz: uvicorn app.main:app --app-dir backend";
 
 const INTERROMPIDA = "A resposta foi interrompida antes do fim. Veja o log da API.";
 
 /** O erro de uma resposta HTTP que não é 2xx. */
 function erroHttp(status: number, corpo: { erro?: { codigo: ErrorCode; mensagem: string }; consulta_id?: string } | null) {
-  // Sem corpo de ErrorOut: quem respondeu foi o proxy do Vite, com a API desligada.
+  // Sem corpo de ErrorOut: quem respondeu foi o proxy (Vite ou nginx), com a API desligada.
   if (!corpo?.erro) return new ApiError("API_FORA_DO_AR", FORA_DO_AR, status);
   return new ApiError(corpo.erro.codigo, corpo.erro.mensagem, status, corpo.consulta_id ?? null);
 }

@@ -38,5 +38,14 @@ services:
       db:
         condition: service_healthy
 
+  # Tela: o nginx entrega o build do React e repassa /api para o backend (mesma origem, sem CORS).
+  # http://127.0.0.1:8080. Só no 127.0.0.1, como as outras portas: ninguém da rede acessa.
+  frontend:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      - backend
+
 volumes:
   pgdata:

@@ -1,2 +1,5 @@
 data/processed/*.jsonl text eol=lf
 data/processed/*.json text eol=lf
+# Lidos dentro de containers Linux: sempre LF, mesmo com checkout no Windows
+**/Dockerfile text eol=lf
+frontend/nginx.conf text eol=lf

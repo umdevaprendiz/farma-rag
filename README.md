@@ -81,6 +81,7 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 | Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metrics.py` |
 | API FastAPI: 6 endpoints, histórico de toda consulta | ✅ pronta, testada com LLM falso e no servidor (perguntas sem LLM) | `app/main.py`, `app/api/`, `app/services/history.py` |
 | Frontend React (Vite + TypeScript) em formato de chat: conversa, citações clicáveis, fontes em chips, histórico na lateral | ✅ pronto, conferido no navegador com o LLM real e com o simulado | `frontend/` |
+| Tela no Docker Compose: nginx entrega o build e repassa `/api` para o backend (mesma origem, portas só em 127.0.0.1) | 🟡 escrito e com a sintaxe conferida; construir as imagens e testar na quinta | `frontend/Dockerfile`, `frontend/nginx.conf`, `docker-compose.yml` |
 
 ## Arquitetura
 
@@ -121,7 +122,7 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-  UI["Frontend React<br/>(Vite)"] -- "HTTP /api/v1" --> API["FastAPI<br/>container backend"]
+  UI["Frontend React<br/>nginx, container frontend"] -- "HTTP /api/v1<br/>(mesma origem)" --> API["FastAPI<br/>container backend"]
   API --> RAG["rag.responder<br/>grafo LangGraph, rodadas 0 a 3"]
   RAG --> BV["PgvectorSearch"]
   BV --> PG[("PostgreSQL + pgvector<br/>bulas, chunks, consultas")]
@@ -398,7 +399,8 @@ flowchart LR
 
 ### 4. Entrega
 
-Docker Compose completo (serviço do frontend), resultados do benchmark publicados aqui e um vídeo curto de demonstração.
+- **Docker Compose completo:** o serviço `frontend` está escrito (DECISOES §38): o nginx entrega a tela e repassa `/api` para o backend. Falta construir as imagens e testar (quinta).
+- Resultados do benchmark publicados aqui e um vídeo curto de demonstração.
 
 ## Como rodar
 
@@ -435,6 +437,10 @@ cd frontend
 npm.cmd ci
 npm.cmd run dev    # http://127.0.0.1:5173 (no PowerShell, npm.cmd: ver DECISOES §19)
 
+# Ou banco, API e tela pelo Docker (o Ollama continua no Windows; banco carregado como acima)
+docker compose up -d --build   # tela em http://127.0.0.1:8080 (FRONTEND_PORT)
+docker compose config --quiet  # confere o compose sem imprimir a senha do .env
+
 # Testes
 pytest
 cd frontend; npm.cmd run build   # confere os tipos (tsc) e gera o build
@@ -465,9 +471,11 @@ farma-rag/
 │   ├── cache/                 # embeddings em SQLite (fora do Git)
 │   └── benchmark/             # perguntas e resultados
 ├── frontend/                  # React + TypeScript (Vite): tela de chat
-│   └── src/                   # api.ts (cliente e tipos), conversation.ts (modelo da conversa), App.tsx, components/, styles.css
+│   ├── src/                   # api.ts (cliente e tipos), conversation.ts (modelo da conversa), App.tsx, components/, styles.css
+│   ├── Dockerfile             # Node constrói, nginx serve (imagem final sem Node)
+│   └── nginx.conf             # entrega a tela e repassa /api para o backend
 ├── docs/DECISOES.md           # correções à especificação, com motivo
-├── docker-compose.yml         # pgvector/pgvector:pg17 + backend
+├── docker-compose.yml         # pgvector/pgvector:pg17 + backend + frontend (nginx)
 └── FarmaRAG.pdf               # especificação original
 ```
 

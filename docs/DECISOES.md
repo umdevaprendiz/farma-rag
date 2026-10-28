@@ -1022,3 +1022,49 @@ enquanto a resposta só em 1221 ms (o fluxo é incremental de verdade), e erro n
 erro HTTP antes do fluxo e API fora do ar viram `ApiError` certo. **Não verificado:** os 4 testes novos
 de `test_api.py` (precisam do PostgreSQL, ficaram pulados), o Vite repassando o fluxo (o proxy do Vite
 não costuma guardar a resposta, mas não foi aberto no navegador) e o visual da espera.
+
+## 38. Tela no Docker Compose: nginx na frente do backend (2026-10-28)
+(A §37 é da F4, resposta menos robótica: o código já a cita, o texto ainda falta.)
+
+**Problema:** o compose subia só o banco e a API. A tela chama `/api/v1/...` no próprio endereço
+(`api.ts`), e quem repassava para a API era o proxy do Vite, que só existe no `npm run dev`. Para a entrega
+(etapa 7 do `FarmaRAG.pdf`), a tela tem de subir com `docker compose up`, sem Node rodando.
+
+**Decisão:** serviço `frontend` com duas etapas no `frontend/Dockerfile`: o Node (`node:24.22.1-alpine3.24`)
+roda `npm ci` + `npm run build` e fica para trás; a imagem final é o nginx (`nginx:1.30.6-alpine3.24`, versão
+estável) com a `dist/` e o `frontend/nginx.conf`. O nginx entrega a tela e repassa `/api/` para
+`backend:8000`: mesma origem, como no Vite, então o CORS não entra em jogo (`CORS_ORIGENS` fica só para o
+desenvolvimento). Alternativa descartada: o FastAPI servir a `dist/` (um container a menos, mas a imagem da
+API passaria a construir a tela, e a especificação separa os blocos). Versões exatas das imagens, como no
+`package.json`: atualizar é uma decisão.
+
+**Detalhes do `nginx.conf`:**
+- `proxy_buffering off` em `/api/`: as etapas do progresso (F3d, §36) saem na hora, não no fim. A API já
+  manda `X-Accel-Buffering: no` no fluxo; o nginx respeita os dois.
+- `proxy_read_timeout 300s`: as rotas sem progresso esperam a pergunta inteira (`ORCAMENTO_S=150` mais a
+  última rodada); a com progresso manda um batimento a cada 15 s.
+- `resolver 127.0.0.11` + `proxy_pass` com variável: o nome `backend` é resolvido de novo a cada 10 s, então o
+  nginx sobe mesmo antes da API e acha o container novo depois de um restart.
+- `assets/` (nome com hash) com cache longo; `index.html` com `no-cache`, para um build novo chegar ao navegador.
+- O erro do nginx com a API fora (502, HTML) cai no caminho que a tela já tinha para o proxy do Vite:
+  "A API não respondeu", agora com o comando do Docker e o do uvicorn.
+
+**Dados sensíveis (pedido do Sérgio):**
+- portas só em `127.0.0.1` (`FRONTEND_PORT`, padrão 8080), como as do banco e da API: ninguém da rede acessa;
+- `.dockerignore` no `frontend/` e no `backend/`: `node_modules`, testes, caches e qualquer `.env` ficam fora do
+  contexto do build (o `.env` da raiz nunca esteve no contexto: cada build só vê a própria pasta);
+- a tela não lê variável de ambiente nenhuma (sem `import.meta.env`) e o build não gera `.map`: o navegador
+  recebe só o JS minificado; conferido no `dist/` que não há senha, porta do banco ou nome de variável `DB_`;
+- `server_tokens off` (sem versão do nginx), `X-Content-Type-Options`, `X-Frame-Options: DENY`,
+  `Referrer-Policy: no-referrer`; arquivo com nome começando por ponto devolve 404; corpo acima de 16 KB é
+  recusado (a pergunta tem no máximo 500 caracteres);
+- o log de acesso do nginx guarda o caminho (`/api/v1/historico/<id>`), nunca o corpo: a pergunta vai no
+  corpo do POST e não aparece no log;
+- a senha do banco continua só no `.env`, passada à API em tempo de execução (`env_file`), nunca dentro de imagem.
+- Para conferir o compose sem imprimir a senha: `docker compose config --quiet` (sem `--quiet` ele mostra o
+  `.env` resolvido).
+
+**Verificado em 2026-10-28:** `docker compose config --quiet` (sintaxe) e `npm run build` (tipos e build) com a
+mensagem nova. **Não verificado (quinta, com permissão para baixar as imagens):** `docker compose build`, o
+`nginx.conf` dentro do container (`nginx -t`), a tela em http://127.0.0.1:8080, as etapas chegando pelo nginx
+durante a espera, e o Ollama do Windows visto de dentro do container (`host.docker.internal`).
