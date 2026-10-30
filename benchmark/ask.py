@@ -16,7 +16,7 @@ from app.schemas.api import AVISO_SAUDE
 from app.schemas.dataset import ROTULO_SECAO
 from app.services.corpus import Corpus, IncompleteCorpusError
 from app.services.presentation import Mark
-from app.services.rag import Result, responder
+from app.services.rag import PreviousQuestion, Result, responder
 
 MAX_TRECHO = 300
 
@@ -112,8 +112,10 @@ def main() -> None:
             # Como o frontend vai fazer: reenvia a mesma pergunta com o filtro escolhido.
             escolha = input("\nNúmero da opção (vazio pula): ").strip()
             if escolha.isdigit() and 1 <= int(escolha) <= len(r.esclarecimento.opcoes):
-                filtro = r.esclarecimento.opcoes[int(escolha) - 1].principios_ativos
-                mostrar(responder(pergunta, acervo, filtro, s=s))
+                opcao = r.esclarecimento.opcoes[int(escolha) - 1]
+                # Na pergunta de apresentação (DECISOES §41), a opção é uma bula.
+                anterior = PreviousQuestion(pergunta, r.principios_ativos, pediu_esclarecimento=True)
+                mostrar(responder(pergunta, acervo, opcao.principios_ativos, s, anterior, bula_id=opcao.bula_id))
 
 
 if __name__ == "__main__":

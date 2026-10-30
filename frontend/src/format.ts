@@ -50,6 +50,8 @@ export function rotuloEtapa(p: Progress | null): string {
 export const ROTULO_MOTIVO: Record<string, string> = {
   medicamento_nao_indexado: "A bula desse medicamento não está no acervo, e nenhuma outra bula fala disso.",
   sem_contexto: "Nenhuma das bulas consultadas fala disso.",
+  fora_do_escopo: "Preço, onde comprar e uso em animais não são assunto de bula: aqui só respondo o que está nas bulas de medicamentos para pessoas.",
+  fora_da_bula: "As bulas desse medicamento não citam esse chá, erva ou suco. Na dúvida, pergunte ao farmacêutico.",
 };
 
 /** Grupo da barra lateral, como nos chats: "Hoje", "Ontem", "Últimos 7 dias", "Anteriores". */

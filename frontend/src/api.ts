@@ -2,6 +2,7 @@
 
 export type ErrorCode =
   | "MEDICAMENTO_NAO_ENCONTRADO"
+  | "BULA_NAO_ENCONTRADA"
   | "CONSULTA_NAO_ENCONTRADA"
   | "ENTRADA_INVALIDA"
   | "SAIDA_INVALIDA"
@@ -9,7 +10,8 @@ export type ErrorCode =
   | "RESPOSTA_NAO_VERIFICADA"
   | "OLLAMA_INDISPONIVEL"
   | "BANCO_INDISPONIVEL"
-  | "TEMPO_ESGOTADO";
+  | "TEMPO_ESGOTADO"
+  | "SERVIDOR_OCUPADO";
 
 export interface Source {
   posicao: number; // o [n] da resposta
@@ -41,11 +43,13 @@ export interface Mark {
 export interface Option {
   rotulo: string;
   principios_ativos: string[];
+  // Pergunta de apresentação (DECISOES §41): a bula da opção, reenviada como bula_id.
+  bula_id?: string | null;
 }
 
 export interface Clarification {
-  // opcoes vazio (remedio_da_alergia): a pessoa responde no chat.
-  motivo: "medicamento_nao_reconhecido" | "remedio_da_alergia";
+  // opcoes vazio (remedio_da_alergia): a pessoa responde no chat. apresentacao: um botão por bula.
+  motivo: "medicamento_nao_reconhecido" | "remedio_da_alergia" | "apresentacao";
   pergunta: string;
   opcoes: Option[];
 }
@@ -56,7 +60,13 @@ export interface Answer {
   esclarecimento: Clarification | null;
   rodadas: number;
   // sem_outra_explicacao: o "não ajudou" não achou outro trecho além dos já citados.
-  motivo: "sem_contexto" | "medicamento_nao_indexado" | "sem_outra_explicacao" | null;
+  motivo:
+    | "sem_contexto"
+    | "medicamento_nao_indexado"
+    | "sem_outra_explicacao"
+    | "fora_do_escopo"
+    | "fora_da_bula"
+    | null;
   // Pergunta de para que serve: o veredito montado pelo sistema a partir das indicações da bula.
   conclusao: string | null;
   abertura: string | null; // F4: a frase antes da resposta, montada pelo sistema
@@ -111,6 +121,7 @@ export interface History {
 
 export interface InquiryDetail extends InquirySummary {
   principios_ativos_filtro: string[];
+  bula_id_filtro?: string | null; // a bula escolhida no botão da pergunta de apresentação (§41)
   conclusao: string | null;
   // F4: como na resposta; consulta gravada antes de 2026-10-24 vem sem.
   abertura?: string | null;
@@ -159,6 +170,7 @@ export interface QuestionIn {
   pergunta: string;
   principios_ativos: string[];
   consulta_origem_id?: string;
+  bula_id?: string; // uma bula só: a apresentação escolhida no botão (§41)
 }
 
 /** Erro no formato ErrorOut da API, ou a API fora do ar (codigo "API_FORA_DO_AR", status 0). */

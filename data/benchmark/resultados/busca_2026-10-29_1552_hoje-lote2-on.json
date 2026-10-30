@@ -1,0 +1,1031 @@
+{
+ "resumo": {
+  "acerto_rodada1": "30/35",
+  "por_categoria": {
+   "advertencia": "3/4",
+   "composicao": "1/1",
+   "conservacao": "1/1",
+   "contraindicacao": "5/5",
+   "indicacao": "2/2",
+   "interacao": "6/7",
+   "posologia": "10/13",
+   "reacao_adversa": "1/1",
+   "superdose": "1/1"
+  },
+  "por_caminho": {
+   "copiada": "4/5",
+   "indicacao": "1/1",
+   "semelhanca": "25/29"
+  },
+  "semelhanca_ancora_nos_10_candidatos": "27/29",
+  "semelhanca_ancora_nos_3_primeiros_candidatos": "22/29",
+  "segundos_mediana": 2.27
+ },
+ "config": {
+  "top_k": 3,
+  "rerank_candidatos": 10,
+  "llm": "qwen2.5:1.5b",
+  "llm_semente": null
+ },
+ "perguntas": [
+  {
+   "id": "l2-pos01",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Acetilcisteína xarope adulto 40 mg/mL: quanto o adulto toma e quantas vezes por dia?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 4.92,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "acetilcisteina-20-mg-ml-e-40-mg-ml-xarope-geolab__posologia__001"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "acetilcisteina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "600 mg (15 mL) uma vez ao dia, de preferência à noite."
+  },
+  {
+   "id": "l2-pos02",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Folonin 5 mg para quem quer engravidar: quando começar e até quando tomar?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.56,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "folonin-5-mg-geolab__posologia__000",
+    "folonin-5-mg-geolab__advertencias__000",
+    "folonin-5-mg-geolab__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "acido folico"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "1 comprimido por dia, de 90 dias antes da concepção até a 12ª semana de gestação."
+  },
+  {
+   "id": "l2-pos03",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Precisa ficar em jejum ou tomar purgante para usar albendazol?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.36,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "albendazol-400-mg-mastigavel-geolab__posologia__000",
+    "albendazol-400-mg-mastigavel-geolab__posologia__003",
+    "albendazol-400-mg-mastigavel-geolab__posologia__002"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "albendazol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: nenhum procedimento especial, como jejum ou purgante, é necessário; pode mastigar ou tomar com água."
+  },
+  {
+   "id": "l2-pos04",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Xarope de ambroxol pediátrico para criança de 3 anos: quanto dar e quantas vezes ao dia?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.28,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-ambroxol-6-mg-ml-e-3-mg-ml-xarope-geolab__posologia__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "cloridrato de ambroxol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "2,5 mL, 3 vezes ao dia."
+  },
+  {
+   "id": "l2-pos05",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Mãe com fissura no bico do peito vai usar Pantodex. Quando passar a pomada?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.28,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "pantodex-50-mg-g-pomada-geolab__posologia__000",
+    "pantodex-50-mg-g-pomada-geolab__indicacoes__000",
+    "pantodex-50-mg-g-pomada-geolab__advertencias__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "dexpantenol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Depois de amamentar, aplicar uma camada da pomada."
+  },
+  {
+   "id": "l2-pos06",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Omeprazol 20 mg: toma antes ou depois de comer?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.26,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "omenax-20-mg-geolab__posologia__000",
+    "omenax-20-mg-geolab__posologia__001",
+    "omenax-20-mg-geolab__advertencias__019"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "omeprazol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Antes das refeições, com a cápsula inteira e água."
+  },
+  {
+   "id": "l2-pos07",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Idoso não consegue engolir a cápsula de omeprazol. Pode abrir?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.28,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "omenax-20-mg-geolab__advertencias__024",
+    "omenax-20-mg-geolab__advertencias__000",
+    "omenax-20-mg-geolab__advertencias__025"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "omeprazol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: a cápsula pode ser aberta e os microgrânulos misturados com purê de maçã, sem mastigar."
+  },
+  {
+   "id": "l2-pos08",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Por quanto tempo no máximo dá para usar zolpidem?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.24,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "hemitartarato-de-zolpidem-10-mg-geolab__posologia__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "hemitartarato de zolpidem"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "O tratamento deve ser o mais curto possível e não passar de quatro semanas."
+  },
+  {
+   "id": "l2-pos09",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Cliente tomou Pozato Uni e vomitou duas horas depois. Precisa tomar de novo?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.24,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "pozato-uni-1-5-mg-libbs__advertencias__004",
+    "pozato-uni-1-5-mg-libbs__posologia__000",
+    "pozato-uni-1-5-mg-libbs__advertencias__003"
+   ],
+   "posicao_nos_candidatos": 2,
+   "principios_ativos": [
+    "levonorgestrel"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: vômito dentro de 3 a 4 horas depois do comprimido pede repetir a dose."
+  },
+  {
+   "id": "l2-pos10",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Clotrimazol creme vaginal: por quantos dias usar?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.23,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "clotrimazol-10-mg-g-creme-vaginal-ems__posologia__000",
+    "clotrimazol-10-mg-g-creme-vaginal-ems__posologia__002",
+    "clotrimazol-10-mg-g-creme-vaginal-ems__posologia__001"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "clotrimazol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Um aplicador (cerca de 5 g) por dia, à noite, por 6 dias seguidos."
+  },
+  {
+   "id": "l2-pos11",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Nitazoxanida pode ser tomada em jejum?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.22,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "nitazoxanida-500-mg-e-20-mg-ml-ems__posologia__004",
+    "nitazoxanida-500-mg-e-20-mg-ml-ems__posologia__001",
+    "nitazoxanida-500-mg-e-20-mg-ml-ems__advertencias__003"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "nitazoxanida"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: deve ser tomada com alimentos, o que garante a absorção."
+  },
+  {
+   "id": "l2-pos12",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Delumi 50.000 UI: de quanto em quanto tempo toma, para quem está com a vitamina D acima de 30?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.27,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "delumi-7-000-e-50-000-ui-geolab__posologia__000"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "colecalciferol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "1 comprimido por mês, durante 4 meses ou até atingir o valor desejado."
+  },
+  {
+   "id": "l2-pos13",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Kaodine loção cremosa para sarna: onde e como aplicar?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.24,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "kaodine-50-mg-ml-locao-cremosa-geolab__posologia__000",
+    "kaodine-50-mg-ml-locao-cremosa-geolab__indicacoes__000",
+    "kaodine-50-mg-ml-locao-cremosa-geolab__posologia__002"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "permetrina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Na pele limpa, seca e fria, massageando da cabeça à sola dos pés, com atenção entre os dedos, sob as unhas, axilas e nádegas."
+  },
+  {
+   "id": "l2-con01",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Mulher grávida pode tomar albendazol para verme?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.27,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "albendazol-400-mg-mastigavel-geolab__advertencias__000",
+    "albendazol-400-mg-mastigavel-geolab__advertencias__002",
+    "albendazol-400-mg-mastigavel-geolab__contraindicacoes__000"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "albendazol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: não deve ser usado na gravidez nem por quem planeja engravidar."
+  },
+  {
+   "id": "l2-con02",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Paciente com intolerância hereditária à frutose pode tomar xarope de ambroxol?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.28,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-ambroxol-6-mg-ml-e-3-mg-ml-xarope-geolab__contraindicacoes__000",
+    "cloridrato-de-ambroxol-6-mg-ml-e-3-mg-ml-xarope-geolab__advertencias__001",
+    "cloridrato-de-ambroxol-6-mg-ml-e-3-mg-ml-xarope-geolab__advertencias__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "cloridrato de ambroxol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: o xarope é contraindicado na intolerância hereditária à frutose."
+  },
+  {
+   "id": "l2-con03",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Criança de 8 anos com nariz entupido pode usar nafazolina?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.21,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-nafazolina-0-5-mg-ml-ems__advertencias__002",
+    "cloridrato-de-nafazolina-0-5-mg-ml-ems__contraindicacoes__000",
+    "cloridrato-de-nafazolina-0-5-mg-ml-ems__advertencias__001"
+   ],
+   "posicao_nos_candidatos": 2,
+   "principios_ativos": [
+    "cloridrato de nafazolina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: é contraindicado para menores de 12 anos."
+  },
+  {
+   "id": "l2-con04",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Paciente vai trocar enalapril por sacubitril com valsartana. Pode tomar os dois no mesmo dia?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 2,
+   "segundos": 2.27,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "renitec-5-mg-10-mg-e-20-mg-organon__contraindicacoes__000"
+   ],
+   "posicao_nos_candidatos": 8,
+   "principios_ativos": [
+    "maleato de enalapril"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: o enalapril não pode ser dado nas 36 horas antes ou depois do sacubitril/valsartana."
+  },
+  {
+   "id": "l2-con05",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Nisoflan com suspeita de dengue, pode?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.45,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "nisoflan-50-mg-ml-gotas-geolab__contraindicacoes__000",
+    "nisoflan-50-mg-ml-gotas-geolab__advertencias__000",
+    "nisoflan-50-mg-ml-gotas-geolab__advertencias__006"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "nimesulida"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: é contraindicado na suspeita de dengue, pelo risco de sangramento."
+  },
+  {
+   "id": "l2-adv01",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Motorista de aplicativo pode tomar Hystin e dirigir?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.2,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "hystin-2-mg-geolab__advertencias__001",
+    "hystin-2-mg-geolab__advertencias__000",
+    "hystin-2-mg-geolab__advertencias__002"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "maleato de dexclorfeniramina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não deve: pode dar sonolência e tontura, e durante o tratamento não deve dirigir nem operar máquinas."
+  },
+  {
+   "id": "l2-adv02",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Hipertenso pode usar nafazolina no nariz?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 2,
+   "segundos": 2.67,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-nafazolina-0-5-mg-ml-ems__contraindicacoes__000",
+    "cloridrato-de-nafazolina-0-5-mg-ml-ems__advertencias__000",
+    "cloridrato-de-nafazolina-0-5-mg-ml-ems__advertencias__002"
+   ],
+   "posicao_nos_candidatos": 4,
+   "principios_ativos": [
+    "cloridrato de nafazolina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Com cautela: a bula pede cautela em hipertensão e doenças cardiovasculares."
+  },
+  {
+   "id": "l2-adv03",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Desalex dá sono? Dá para dirigir?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.5,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "desalex-5-mg-e-0-5-mg-ml-organon__advertencias__000",
+    "desalex-5-mg-e-0-5-mg-ml-organon__advertencias__001",
+    "desalex-5-mg-e-0-5-mg-ml-organon__advertencias__002"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "desloratadina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Tem pouca ou nenhuma influência sobre dirigir, e a maioria não sente sono; ainda assim, esperar conhecer a própria resposta."
+  },
+  {
+   "id": "l2-adv04",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Diabético que toma metformina vai ficar muito tempo em jejum. A bula alerta algo?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.72,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "cloridrato-de-metformina-850-mg-geolab__posologia__002",
+    "cloridrato-de-metformina-850-mg-geolab__advertencias__010",
+    "cloridrato-de-metformina-850-mg-geolab__advertencias__006"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "cloridrato de metformina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: jejum prolongado é fator de risco de acidose láctica."
+  },
+  {
+   "id": "l2-int01",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Pode dar acetilcisteína junto com xarope para tosse seca?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.4,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "acetilcisteina-20-mg-ml-e-40-mg-ml-xarope-geolab__indicacoes__000",
+    "acetilcisteina-20-mg-ml-e-40-mg-ml-xarope-geolab__interacoes__000",
+    "acetilcisteina-20-mg-ml-e-40-mg-ml-xarope-geolab__contraindicacoes__000"
+   ],
+   "posicao_nos_candidatos": 10,
+   "principios_ativos": [
+    "acetilcisteina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: com antitussígeno, a tosse diminui e a secreção pode se acumular nos brônquios."
+  },
+  {
+   "id": "l2-int02",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Paciente toma antibiótico e acetilcisteína. Precisa de intervalo entre eles?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.27,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "acetilcisteina-20-mg-ml-e-40-mg-ml-xarope-geolab__posologia__000",
+    "acetilcisteina-20-mg-ml-e-40-mg-ml-xarope-geolab__interacoes__000",
+    "acetilcisteina-20-mg-ml-e-40-mg-ml-xarope-geolab__posologia__001"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "acetilcisteina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: a acetilcisteína 2 horas antes ou depois do antibiótico oral."
+  },
+  {
+   "id": "l2-int03",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Cliente vai fazer teste de alergia na pele e toma Hystin. Precisa parar?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.27,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "hystin-2-mg-geolab__indicacoes__000",
+    "hystin-2-mg-geolab__contraindicacoes__000",
+    "hystin-2-mg-geolab__interacoes__000"
+   ],
+   "posicao_nos_candidatos": 5,
+   "principios_ativos": [
+    "maleato de dexclorfeniramina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: suspender dois dias antes, porque o remédio afeta o resultado do teste."
+  },
+  {
+   "id": "l2-int04",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Fexofenadina com antiácido de hidróxido de alumínio e magnésio: qual intervalo?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.29,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-fexofenadina-6-mg-ml-suspensao-oral-vitamedic__interacoes__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "cloridrato de fexofenadina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Esperar 2 horas entre os dois: o antiácido reduz a absorção da fexofenadina."
+  },
+  {
+   "id": "l2-int05",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Paciente cardíaco que toma digoxina pode usar diclofenaco?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.22,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "diclofenaco-sodico-50-mg-geolab__advertencias__003",
+    "diclofenaco-sodico-50-mg-geolab__advertencias__004",
+    "diclofenaco-sodico-50-mg-geolab__interacoes__001"
+   ],
+   "posicao_nos_candidatos": 8,
+   "principios_ativos": [
+    "diclofenaco sodico"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "O diclofenaco pode aumentar a digoxina no sangue; a bula recomenda monitorar o nível dela."
+  },
+  {
+   "id": "l2-int06",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Quem toma alopurinol pode usar amoxicilina?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.2,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "amoxicilina-500-mg-capsula-dura-ems__interacoes__000",
+    "amoxicilina-500-mg-capsula-dura-ems__interacoes__001",
+    "amoxicilina-500-mg-capsula-dura-ems__advertencias__006"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "amoxicilina tri hidratada"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "O uso junto aumenta a chance de alergia de pele."
+  },
+  {
+   "id": "l2-int07",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Sertralina com pimozida, pode?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.22,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__interacoes__000",
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__contraindicacoes__000",
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__advertencias__003"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "cloridrato de sertralina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: a sertralina aumenta os níveis de pimozida, e o uso junto é contraindicado."
+  },
+  {
+   "id": "l2-rea01",
+   "categoria": "reacao_adversa",
+   "respondivel": true,
+   "pergunta": "Loratadina dá sono?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.16,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "loratadina-10-mg-geolab__reacoes_adversas__000",
+    "loratadina-10-mg-geolab__superdose__000",
+    "loratadina-10-mg-geolab__armazenamento__000"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "loratadina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Na dose de 10 mg ao dia não tem efeito sedativo importante, embora sonolência esteja entre as reações relatadas."
+  },
+  {
+   "id": "l2-ind01",
+   "categoria": "indicacao",
+   "respondivel": true,
+   "pergunta": "Folonin serve para anemia?",
+   "caminho": "indicacao",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.27,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "folonin-5-mg-geolab__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "acido folico"
+   ],
+   "conclusao": "Sim. Pela bula de ácido fólico, é indicado para isso:",
+   "resposta": null,
+   "resposta_esperada": "Sim, para a anemia megaloblástica (e para prevenir defeito do tubo neural)."
+  },
+  {
+   "id": "l2-ind02",
+   "categoria": "indicacao",
+   "respondivel": true,
+   "pergunta": "Quem fez cirurgia bariátrica pode precisar do Vitaum?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.23,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "vitaum-300-mg-geolab__indicacoes__000",
+    "vitaum-300-mg-geolab__advertencias__000",
+    "vitaum-300-mg-geolab__contraindicacoes__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "cloridrato de tiamina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: é indicado quando a absorção de vitamina B1 pode estar reduzida, como depois de cirurgia bariátrica."
+  },
+  {
+   "id": "l2-cons01",
+   "categoria": "conservacao",
+   "respondivel": true,
+   "pergunta": "Cozaar pode ficar perto da janela, no sol?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.19,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cozaar-50-mg-e-100-mg-organon__advertencias__013",
+    "cozaar-50-mg-e-100-mg-organon__advertencias__012",
+    "cozaar-50-mg-e-100-mg-organon__armazenamento__000"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "losartana potassica"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: guardar em temperatura ambiente (15 a 30 °C) e protegido da luz."
+  },
+  {
+   "id": "l2-sup01",
+   "categoria": "superdose",
+   "respondivel": true,
+   "pergunta": "Criança engoliu vários comprimidos de Hystin. O que a bula diz da superdose?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.28,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "hystin-2-mg-geolab__superdose__000",
+    "hystin-2-mg-geolab__posologia__000",
+    "hystin-2-mg-geolab__superdose__001"
+   ],
+   "posicao_nos_candidatos": 2,
+   "principios_ativos": [
+    "maleato de dexclorfeniramina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Tratamento de emergência imediato; pode haver sedação, convulsões e, em crianças, excitação."
+  },
+  {
+   "id": "l2-comp01",
+   "categoria": "composicao",
+   "respondivel": true,
+   "pergunta": "Xarope de ambroxol tem álcool?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.23,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-ambroxol-6-mg-ml-e-3-mg-ml-xarope-geolab__composicao__000",
+    "cloridrato-de-ambroxol-6-mg-ml-e-3-mg-ml-xarope-geolab__interacoes__000",
+    "cloridrato-de-ambroxol-6-mg-ml-e-3-mg-ml-xarope-geolab__outras__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "cloridrato de ambroxol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: os dois xaropes têm álcool etílico entre os excipientes."
+  },
+  {
+   "id": "l2-fora01",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Quanto custa o Cozaar 50 mg com 30 comprimidos?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.21,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "cozaar-50-mg-e-100-mg-organon__posologia__001"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "losartana potassica"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "l2-fora02",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Losartana é melhor tomar de manhã ou à noite?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.21,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "cozaar-50-mg-e-100-mg-organon__posologia__001",
+    "cozaar-50-mg-e-100-mg-organon__advertencias__012",
+    "cozaar-50-mg-e-100-mg-organon__caracteristicas_farmacologicas__009"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "losartana potassica"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "l2-fora03",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Qual a dose de amoxicilina para um cachorro de 10 kg?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.3,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "amoxicilina-500-mg-capsula-dura-ems__posologia__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "amoxicilina tri hidratada"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "l2-fora04",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Omeprazol pode ser tomado junto com chá de boldo?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.22,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "omenax-20-mg-geolab__interacoes__007",
+    "omenax-20-mg-geolab__interacoes__001",
+    "omenax-20-mg-geolab__interacoes__003"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "omeprazol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "l2-fora05",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Qual o melhor remédio para calvície?",
+   "caminho": "sem_trechos",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.24,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "l2-fora06",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Atenolol 25 mg pode ser partido ao meio?",
+   "caminho": "busca_geral",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.37,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "cozaar-50-mg-e-100-mg-organon__resultados_eficacia__003",
+    "nisoflan-50-mg-ml-gotas-geolab__interacoes__004",
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__interacoes__006"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  }
+ ]
+}

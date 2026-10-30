@@ -3,12 +3,17 @@ services:
   # No Windows nativo o pgvector precisa ser compilado com Visual Studio; o container evita isso.
   db:
     image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    # Nenhum processo do container ganha privilégio novo (o PostgreSQL troca de usuário por setuid na entrada,
+    # que isto não impede). Mais que isso (cap_drop, read_only) exige ajustes finos na imagem do banco.
+    security_opt:
+      - no-new-privileges:true
     environment:
       POSTGRES_DB: ${DB_NAME:-farmarag}
       POSTGRES_USER: ${DB_USER:-farmarag}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?defina DB_PASSWORD no .env}
     ports:
-      # Exposta no host para a ingestão e o benchmark (que rodam fora do Docker).
+      # Exposta no host para a ingestão e o benchmark (que rodam fora do Docker). Só no 127.0.0.1.
       - "127.0.0.1:${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -18,14 +23,22 @@ services:
       timeout: 3s
       retries: 20
 
+  # Containers da API e da tela (docs/DECISOES.md §44): sem root, raiz do sistema de arquivos somente leitura
+  # (só /tmp, em memória, é gravável), sem nenhuma capability do Linux, sem ganhar privilégio e com teto de
+  # memória e de processos. O que a aplicação precisa gravar está no PostgreSQL, não no disco do container.
   backend:
     build: ./backend
+    restart: unless-stopped
     env_file: .env
     environment:
       # Dentro do Compose o banco é o serviço "db" e o Ollama está no host.
       DB_HOST: db
       DB_PORT: "5432"
       OLLAMA_URL: http://host.docker.internal:11434
+      # O LangGraph vem do ecossistema LangChain, que sabe enviar rastros ao serviço LangSmith (nuvem) se
+      # estas variáveis ligarem. Desligadas de propósito: nada da pergunta sai da máquina (docs/SEGURANCA.md).
+      LANGSMITH_TRACING: "false"
+      LANGCHAIN_TRACING_V2: "false"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
@@ -34,6 +47,15 @@ services:
       - ./data:/srv/data:ro
     ports:
       - "127.0.0.1:8000:8000"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 200
+    mem_limit: 1g
     depends_on:
       db:
         condition: service_healthy
@@ -52,18 +74,38 @@ services:
       - ./data:/srv/data:ro
       - ./ingestion:/srv/ingestion:ro
     command: ["python", "-m", "ingestion.load_database"]
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 100
+    mem_limit: 1g
     depends_on:
       db:
         condition: service_healthy
 
-  # Tela: o nginx entrega o build do React e repassa /api para o backend (mesma origem, sem CORS).
-  # http://127.0.0.1:8080. Só no 127.0.0.1, como as outras portas: ninguém da rede acessa.
+  # Tela: o nginx (sem privilégios, porta 8080 por dentro) entrega o build do React e repassa /api para o
+  # backend (mesma origem, sem CORS). http://127.0.0.1:8080. Só no 127.0.0.1, como as outras portas.
   frontend:
     build: ./frontend
+    restart: unless-stopped
     ports:
-      - "127.0.0.1:${FRONTEND_PORT:-8080}:80"
+      - "127.0.0.1:${FRONTEND_PORT:-8080}:8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    pids_limit: 100
+    mem_limit: 256m
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   pgdata:

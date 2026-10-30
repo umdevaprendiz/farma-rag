@@ -76,6 +76,10 @@ class Inquiry(Base):
     # Os usados na busca (detectados, herdados da anterior ou do filtro): a pergunta seguinte da
     # conversa herda daqui ("e para criança?"). Nulo nas consultas gravadas antes da coluna.
     principios_ativos: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
+    # Apresentação (DECISOES §41): a bula escolhida no botão (entrada) e as bulas a que a busca ficou
+    # restrita (escolhidas pelo botão, pela pergunta ou herdadas da anterior; a seguinte herda daqui).
+    bula_id_filtro: Mapped[str | None] = mapped_column(Text, nullable=True)
+    bulas: Mapped[list[str] | None] = mapped_column(ARRAY(Text), nullable=True)
     resposta: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Pergunta de para que serve: o veredito montado no código pela seção de indicações.
     conclusao: Mapped[str | None] = mapped_column(Text, nullable=True)

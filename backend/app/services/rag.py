@@ -119,6 +119,8 @@ class Attempt:
 class Option:
     rotulo: str
     principios_ativos: list[str]
+    # Uma bula só (pergunta de apresentação, §41): o botão reenvia a pergunta com ela.
+    bula_id: str | None = None
 
 
 @dataclass(frozen=True)
@@ -126,7 +128,7 @@ class Clarification:
     """`opcoes` vazio = resposta livre: a pessoa responde no chat, e a resposta volta com a
     pergunta anterior (ver PreviousQuestion)."""
 
-    motivo: Literal["medicamento_nao_reconhecido", "remedio_da_alergia"]
+    motivo: Literal["medicamento_nao_reconhecido", "remedio_da_alergia", "apresentacao"]
     pergunta: str
     opcoes: list[Option]
 
@@ -139,16 +141,22 @@ class PreviousQuestion:
     pergunta: str
     principios_ativos: list[str]  # os usados na busca dela (detectados, herdados ou do filtro)
     pediu_esclarecimento: bool  # terminou perguntando algo de volta: a nova é a resposta
+    # As bulas a que a busca dela ficou restrita (apresentação escolhida, §41): "e para criança?" depois de
+    # "Tylalgin gotas, qual a dose?" continua nas gotas. Vazio = todas as bulas do remédio.
+    bulas: list[str] = field(default_factory=list)
 
 
 @dataclass
 class Result:
     status: Literal["respondida", "nao_encontrada", "precisa_esclarecimento", "erro"]
     # sem_outra_explicacao: "não ajudou" sem outro trecho que responda, além dos já citados.
-    motivo: Literal["sem_contexto", "medicamento_nao_indexado", "sem_outra_explicacao"] | None = None
+    motivo: Literal[
+        "sem_contexto", "medicamento_nao_indexado", "sem_outra_explicacao", "fora_do_escopo", "fora_da_bula"
+    ] | None = None
     resposta: str | None = None
     fontes: list[Source] = field(default_factory=list)
     principios_ativos: list[str] = field(default_factory=list)  # filtro usado na busca
+    bulas: list[str] = field(default_factory=list)  # as bulas a que a busca ficou restrita (§41); vazio = todas
     medicamentos_nao_indexados: list[str] = field(default_factory=list)
     esclarecimento: Clarification | None = None
     codigo_erro: ErrorCode | None = None
@@ -209,14 +217,16 @@ def responder(
     anterior: PreviousQuestion | None = None,
     outra: AnotherExplanation | None = None,
     avisar: Progress | None = None,
+    bula_id: str | None = None,
 ) -> Result:
     """`principios_ativos` vazio = detectar o medicamento na própria pergunta.
+    `bula_id`: uma bula só (a apresentação escolhida no botão, §41); vale mais que `principios_ativos`.
     `anterior`: a pergunta anterior da conversa, se a tela mandou.
     `outra`: refazer uma resposta que não ajudou, sem os trechos que ela citou.
     `avisar`: chamado a cada etapa que começa (F3d); nunca altera o resultado."""
     from app.services.graph import executar  # o grafo importa as peças deste módulo
 
-    return executar(pergunta, acervo, principios_ativos, s, anterior, outra, avisar)
+    return executar(pergunta, acervo, principios_ativos, s, anterior, outra, avisar, bula_id)
 
 
 def afirmacoes(bruto: str) -> list[tuple[str, int]]:

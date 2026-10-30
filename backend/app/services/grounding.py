@@ -27,6 +27,9 @@ Palavra do dia a dia (F4, seção 37): nas regras 2 e 3, as palavras de uma expr
 
 `corrigir_citacoes` roda antes da checagem: a frase certa citando o trecho errado ganha o [n] do
 trecho que a sustenta, em vez de custar uma rodada do LLM (docs/DECISOES.md, seção 31).
+`sem_conselho` roda antes dela: o conselho que o trecho citado não traz ("consulte um médico") sai da
+afirmação, porque o aviso fixo da F2 já diz isso (seção 42). E "médico" só vale inteiro: pelo começo da
+palavra, casava com "medicamento" em quase todo trecho (caso "rocutan", seção 28).
 
 `destaques` usa a mesma comparação para o caminho inverso: as frases inteiras do trecho que
 sustentam a afirmação, para a tela destacar na fonte (docs/DECISOES.md, seção 26).
@@ -58,13 +61,40 @@ _PREFIXO = 5
 # Termos que a bula escreve de outro jeito: "alergia" na resposta, "hipersensibilidade" na bula.
 # (começo do termo na afirmação, começo da palavra que vale no trecho)
 _EQUIVALENTES = (("alerg", "hipersensib"), ("hipersensib", "alerg"))
+# "médico" e "medicamento" começam igual ("medic"): estas palavras só valem inteiras (seção 42).
+_SO_INTEIRAS = {"medico", "medica", "medicos", "medicas"}
 # Mensagens das regras 3 e 5 (o grafo reconhece por elas e manda um aviso específico na próxima rodada).
 SO_NOME = "não diz nada do texto do trecho, só o nome do medicamento"
 NEGA = "nega o que o trecho não nega"
+AFIRMA = "afirma o que o trecho proíbe"
 # Regra 5. Na afirmação, só a negação explícita; no trecho, também as formas da bula de proibir
 # ("Não use na gravidez" diz o mesmo que "contraindicado na gravidez").
 _NEGA_NA_AFIRMACAO = re.compile(r"\b(?:nao|nunca|jamais|nem|nenhum|nenhuma)\b")
 _NEGA_NO_TRECHO = re.compile(r"\b(?:nao|nunca|jamais|nem|nenhum|nenhuma|contra-?indic\w*|evit\w*|proib\w*)\b")
+# Regra 6 (o caminho inverso da 5: docs/DECISOES.md, seção 45). Estreita de propósito: "pode" sozinho aparece em
+# quase toda frase de bula ("pode causar", "pode reduzir"), então a resposta só conta como PERMISSÃO quando diz
+# que o remédio pode ser usado/tomado, ou que é permitido, liberado ou seguro; e a frase da bula só conta como
+# PROIBIÇÃO quando proíbe de forma explícita.
+_PERMITE_NA_AFIRMACAO = re.compile(
+    r"\b(?:podem?(?: ser)? (?:usad|utiliz|tomad|administrad)\w*|podem? (?:usar|utilizar|tomar|administrar)"
+    r"|permitid\w*|liberad\w*|segur[oa]s?|e (?:um )?(?:uso )?recomendad\w*)\b"
+)
+# Seção 47: "usar com cautela em história de úlcera" não autoriza "pode ser usado na úlcera". A cautela da bula só vale
+# como restrição quando a afirmação não a repete.
+_CAUTELA_NO_TRECHO = re.compile(r"\b(?:cautela|cuidado)\b")
+_RESSALVA_NA_AFIRMACAO = re.compile(r"\b(?:cautela|cuidado|precaucao|orientacao|medic[oa]|acompanhamento|avaliacao)\b")
+# "Sim" respondendo "pode?" tem de dizer que pode (ou que é permitido, indicado, seguro...).
+_PERGUNTA_DE_PERMISSAO = re.compile(r"\b(?:pode|podem|posso|possivel|permitido|liberado|seguro)\b")
+_ABRE_COM_SIM = re.compile(r"^\s*sim\b[\s,.:;-]*", re.I)
+_DIZ_QUE_PODE = re.compile(r"\b(?:pode|podem|permitid\w*|liberad\w*|segur[oa]s?|indicad\w*|compativel|possivel)\b")
+# "evita" (3ª pessoa: "evita a agregação plaquetária") descreve o remédio; "evite", "evitar", "evitado" proíbem.
+_PROIBE_NO_TRECHO = re.compile(
+    r"\b(?:contra-?indic\w*|proib\w*|evit(?:e|em|ar|ado|ada|ados|adas|ando)"
+    r"|nao (?:deve|devem|use|usar|utilize|utilizar|administre|administrar|tome|tomar|pode|podem|recomend\w*)"
+    r"|nao e (?:recomendad|permitid|indicad)\w*)\b"
+)
+# "não é contraindicado", "não há contraindicação": a palavra está lá, mas a frase libera.
+_LIBERA_NO_TRECHO = re.compile(r"\bnao (?:e|sao|foi|foram|ha|existe\w*)\b(?: \w+){0,2} (?:contra-?indic\w*|proib\w*)")
 # Palavras de 4+ letras que não carregam informação da bula.
 _COMUNS = {
     "para", "como", "pode", "podem", "deve", "devem", "mais", "menos", "pelo", "pela", "pelos",
@@ -126,6 +156,8 @@ class Reference:
 
     def tem(self, termo: str, prefixos: set[str] | None = None) -> bool:
         """O termo (ou um equivalente, como alergia/hipersensibilidade) está no trecho?"""
+        if termo in _SO_INTEIRAS:
+            return bool(_SO_INTEIRAS & self.palavras)
         if termo[:_PREFIXO] in (self.prefixos if prefixos is None else prefixos):
             return True
         return any(termo.startswith(a) and any(p.startswith(b) for p in self.palavras) for a, b in _EQUIVALENTES)
@@ -197,6 +229,8 @@ def _problemas(
     achados = problemas_da_afirmacao(texto, ref, min_termos)
     if nega_sem_o_trecho(texto, chunk):
         achados.append(NEGA)
+    if afirma_o_que_o_trecho_proibe(texto, chunk):
+        achados.append(AFIRMA)
     if catalogo is not None:
         achados += [
             f"fala de {nome}, mas o trecho é da bula de {chunk.medicamento}"
@@ -273,6 +307,70 @@ def _pode_citar(texto: str, citado: Chunk, outro: Chunk, catalogo: Catalog | Non
         for nome in deteccao.indexados + deteccao.nao_indexados
         for forma in formas_do_nome(nome)
     )
+
+
+# ---- Conselho que o trecho não traz (seção 42) ----------------------------------------------
+
+# Quem o conselho manda procurar.
+_PROFISSIONAL = r"(?:medic[oa]s?|farmaceutic[oa]s?|dentistas?|profissiona(?:l|is) de saude)"
+# O verbo ou o substantivo do conselho, e depois (na mesma parte da frase) quem procurar: "consulte um médico",
+# "procure orientação médica", "fale com o farmacêutico", "é recomendado consultar o médico".
+_CONSELHO = re.compile(
+    r"\b(?:consult\w*|procur\w*|fal(?:e|ar)\s+com|convers\w*\s+com|busqu\w*|buscar|pergunt\w*|inform\w*|"
+    r"avis\w*|comuniqu\w*|orientac\w*|acompanhament\w*|avaliac\w*|supervis\w*|prescric\w*)\b"
+    rf"[^.;,!?]*?\b{_PROFISSIONAL}\b"
+)
+_SO_DUVIDA = re.compile(r"^\W*(?:e\s+)?em caso de duvidas?\W*$")
+# O cabeçalho "Bula para o profissional de saúde" que vem no texto de alguns trechos não é conselho da bula.
+_CABECALHO = re.compile(r"bula (?:do|para o|para) profissiona(?:l|is) de saude")
+_FIM = re.compile(r"[.!?;]\s*$")
+
+
+def traz_conselho(chunk: Chunk) -> bool:
+    """O trecho fala de médico, farmacêutico ou profissional de saúde: o conselho dele pode ir na resposta."""
+    return bool(re.search(rf"\b{_PROFISSIONAL}\b", _CABECALHO.sub(" ", _preparar(chunk.texto))))
+
+
+def tirar_conselho(texto: str) -> str | None:
+    """O texto sem as frases e partes de frase de conselho ("consulte um médico", "em caso de dúvida, procure
+    o farmacêutico"). None se não sobra nada."""
+    frases = []
+    for frase in re.split(r"(?<=[.!?;])\s+", texto.strip()):
+        partes = [p for p in re.split(r",\s+", frase) if p.strip()]
+        ficam = [p for p in partes if not _CONSELHO.search(_preparar(p)) and not _SO_DUVIDA.match(_preparar(p))]
+        if len(ficam) == len(partes):
+            frases.append(frase)
+        elif ficam:
+            junta = ", ".join(ficam).rstrip(" ,")
+            fim = _FIM.search(frase)
+            frases.append(junta if _FIM.search(junta) or not fim else junta + fim.group().strip())
+    limpo = " ".join(frases)
+    if limpo and texto.strip()[:1].isupper():
+        limpo = limpo[0].upper() + limpo[1:]  # "Informe seu médico...; a bula diz X" -> "A bula diz X"
+    return limpo or None
+
+
+def sem_conselho(
+    afirmacoes: list[tuple[str, int]], chunks_por_posicao: dict[int, Chunk]
+) -> tuple[list[tuple[str, int]], list[str]]:
+    """As afirmações sem o conselho que o trecho citado não traz (seção 42), e o que mudou, para o histórico.
+
+    O prompt já pede "não acrescente conselho que o trecho não traz" (F4), mas o modelo pequeno escreve
+    "consulte um médico" mesmo assim, e a fundamentação deixava passar ("médico" casava com "medicamento").
+    O aviso fixo da F2 já manda procurar o farmacêutico ou o médico, então o conselho que a bula não dá sai em
+    silêncio: a parte da frase, a frase, ou a afirmação inteira. Se o trecho citado fala de médico ou
+    farmacêutico ("em caso de superdose, procure atendimento médico"), o conselho é da bula e fica."""
+    saida: list[tuple[str, int]] = []
+    mudancas: list[str] = []
+    for i, (texto, trecho) in enumerate(afirmacoes, start=1):
+        if traz_conselho(chunks_por_posicao[trecho]) or (limpo := tirar_conselho(texto)) == texto:
+            saida.append((texto, trecho))
+        elif limpo is None:
+            mudancas.append(f"afirmação {i}: conselho que o trecho [{trecho}] não traz, saiu")
+        else:
+            mudancas.append(f"afirmação {i}: conselho que o trecho [{trecho}] não traz, cortado")
+            saida.append((limpo, trecho))
+    return saida, mudancas
 
 
 # ---- Destaque das frases que sustentam a resposta ------------------------------------------
@@ -387,3 +485,46 @@ def nega_sem_o_trecho(afirmacao: str, chunk: Chunk) -> bool:
         if not any(_NEGA_NO_TRECHO.search(_preparar(t)) for t in apoio):
             return True
     return False
+
+
+def afirma_o_que_o_trecho_proibe(afirmacao: str, chunk: Chunk) -> bool:
+    """Regra 6: uma frase da afirmação diz que o remédio PODE ser usado ("pode ser usado na gravidez"), e todas as
+    frases do trecho que a sustentam proíbem ("é contraindicado na gravidez"). É o caminho inverso da regra 5,
+    que pega a negação inventada; esta pega a permissão inventada.
+
+    Só vale com apoio conhecido (as frases do destaque): sem nenhuma, não há como saber de qual frase da bula a
+    afirmação saiu, e a regra não decide. E só para frase que é permissão pura: se ela também nega, evita ou
+    proíbe ("pode, mas evite"), não é uma permissão sem ressalva."""
+    for i, f in frases_com_posicao(afirmacao):
+        frase = afirmacao[i:f]
+        preparada = _preparar(frase)
+        if not _PERMITE_NA_AFIRMACAO.search(preparada) or _NEGA_NO_TRECHO.search(preparada):
+            continue
+        apoio = [chunk.texto[a:b] for a, b in destaques_da_afirmacao(frase, chunk)]
+        if not apoio:
+            # Pouco em comum com o trecho ("É seguro na gravidez"): não dá para saber de qual frase saiu, então só
+            # decide se o trecho INTEIRO é feito de proibições (contraindicações, advertências de "não use").
+            apoio = [chunk.texto[a:b] for a, b in frases_com_posicao(chunk.texto)]
+        if apoio and all(_proibe(t) for t in apoio):
+            return True
+        if (
+            apoio
+            and not _RESSALVA_NA_AFIRMACAO.search(preparada)
+            and all(_proibe(t) or _CAUTELA_NO_TRECHO.search(_preparar(t)) for t in apoio)
+        ):
+            return True
+    return False
+
+
+def sim_sem_permissao(pergunta: str, afirmacao: str) -> bool:
+    """Seção 47: a afirmação abre com "Sim" respondendo a um "pode?", mas o resto dela não diz que pode. "Pode usar
+    metformina com insuficiência renal grave?" -> "Sim, é recomendado verificar a função renal" é um "sim" que o trecho
+    não deu. O resto da frase é conferido pelas outras regras; aqui só o "sim"."""
+    if not _PERGUNTA_DE_PERMISSAO.search(normalizar(pergunta)) or (m := _ABRE_COM_SIM.match(afirmacao)) is None:
+        return False
+    return not _DIZ_QUE_PODE.search(normalizar(afirmacao[m.end():]))
+
+
+def _proibe(frase_da_bula: str) -> bool:
+    preparada = _preparar(frase_da_bula)
+    return bool(_PROIBE_NO_TRECHO.search(preparada)) and not _LIBERA_NO_TRECHO.search(preparada)

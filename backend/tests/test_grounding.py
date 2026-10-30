@@ -2,7 +2,9 @@ import pytest
 
 from app.schemas.dataset import Chunk
 from app.services.grounding import (
+    AFIRMA,
     NEGA,
+    afirma_o_que_o_trecho_proibe,
     Reference,
     checar,
     corrigir_citacoes,
@@ -11,6 +13,7 @@ from app.services.grounding import (
     frases_com_posicao,
     nega_sem_o_trecho,
     problemas_da_afirmacao,
+    sim_sem_permissao,
 )
 from app.services.intent import inferir_secoes, termos_do_assunto
 from app.services.medicines import Catalog
@@ -275,3 +278,146 @@ def test_troca_para_a_bula_do_remedio_que_a_frase_nomeia():
     frase = "A dipirona é indicada como analgésico e antitérmico"
     chunks = {1: EFICACIA, 2: _dipirona("A dipirona é indicada como analgésico e antitérmico.")}
     assert corrigir_citacoes([(frase, 1)], chunks, 0.6, catalogo) == ([(frase, 2)], ["afirmação 1: trecho [1] -> [2]"])
+
+
+# ---- Conselho que o trecho não traz (DECISOES §42) --------------------------------------------
+
+from app.services.grounding import sem_conselho, tirar_conselho, traz_conselho  # noqa: E402
+
+
+@pytest.mark.parametrize(("texto", "limpo"), [
+    ("Consulte um médico.", None),
+    ("Em caso de dúvida, procure o farmacêutico.", None),
+    ("Procure orientação médica antes de usar.", None),
+    ("O ibuprofeno é contraindicado na dengue, consulte um médico.", "O ibuprofeno é contraindicado na dengue."),
+    (
+        "Não, o Roacutan não é indicado para dor no ouvido. É recomendado consultar um médico.",
+        "Não, o Roacutan não é indicado para dor no ouvido.",
+    ),
+    ("Informe seu médico se estiver grávida; a bula contraindica na gravidez.", "A bula contraindica na gravidez."),
+    # Sem verbo de conselho, o médico é só assunto: a fundamentação decide.
+    ("O médico deve avaliar a função renal.", "O médico deve avaliar a função renal."),
+    ("A dose inicial usual é de 50 mg uma vez ao dia.", "A dose inicial usual é de 50 mg uma vez ao dia."),
+])
+def test_tirar_conselho(texto, limpo):
+    assert tirar_conselho(texto) == limpo
+
+
+def test_conselho_que_o_trecho_traz_fica():
+    sem_medico = _chunk("A dose máxima é de 100 mg.")
+    com_medico = _chunk("Em caso de superdose, procure imediatamente atendimento médico.")
+    cabecalho = _chunk("Bula para o profissional de saúde. A dose máxima é de 100 mg.")
+    assert (traz_conselho(sem_medico), traz_conselho(com_medico), traz_conselho(cabecalho)) == (False, True, False)
+    chunks = {1: sem_medico, 2: com_medico}
+    afirmacoes = [("A dose máxima é de 100 mg.", 1), ("Procure um médico.", 1), ("Procure atendimento médico.", 2)]
+    assert sem_conselho(afirmacoes, chunks) == (
+        [("A dose máxima é de 100 mg.", 1), ("Procure atendimento médico.", 2)],
+        ["afirmação 2: conselho que o trecho [1] não traz, saiu"],
+    )
+
+
+def test_medico_nao_casa_com_medicamento():
+    # Caso "rocutan" (§28): "médico" passava pelo começo da palavra em qualquer trecho com "medicamento".
+    ref = Reference.de_chunk(_chunk("Este medicamento é contraindicado durante a gravidez."))
+    assert problemas_da_afirmacao("Consulte um médico", ref, 0.6)
+    ref = Reference.de_chunk(_chunk("Em caso de superdose, procure atendimento médico."))
+    assert not problemas_da_afirmacao("Procure atendimento médico", ref, 0.6)
+
+
+# --- Regra 6: afirma o que o trecho proíbe (o caminho inverso da regra 5; docs/DECISOES.md, seção 45) -----
+
+GRAVIDEZ = _chunk("Este medicamento é contraindicado durante a gravidez e a amamentação.")
+
+
+@pytest.mark.parametrize("afirmacao", [
+    "O medicamento pode ser usado na gravidez",
+    "Pode ser utilizado durante a amamentação",
+    "O uso na gravidez é permitido",
+    "É seguro na gravidez",
+    "Gestantes podem tomar o medicamento na gravidez",
+])
+def test_permissao_que_a_bula_proibe_e_pega(afirmacao):
+    assert afirma_o_que_o_trecho_proibe(afirmacao, GRAVIDEZ)
+    assert checar([(afirmacao, 1)], {1: GRAVIDEZ}, 0.6) == [f"afirmação 1, trecho [1]: {AFIRMA}"]
+
+
+@pytest.mark.parametrize("afirmacao, trecho", [
+    # A resposta também proíbe: é o que a bula diz.
+    ("O medicamento é contraindicado na gravidez", "Este medicamento é contraindicado durante a gravidez."),
+    ("Não pode ser usado na gravidez", "Este medicamento é contraindicado durante a gravidez."),
+    # "Pode" como possibilidade ("pode causar") não é permissão.
+    ("O medicamento pode causar sono", "Evite dirigir veículos. O medicamento pode causar sono."),
+    ("Pode reduzir o efeito anti-hipertensivo", "A combinação deve ser evitada: pode reduzir o efeito anti-hipertensivo."),
+    # A frase que sustenta a permissão é outra que não proíbe: o apoio é ela, não a vizinha.
+    ("O comprimido pode ser usado com alimentos", "Evite usar com álcool. O comprimido pode ser usado com alimentos."),
+    # Permissão com ressalva não é permissão pura.
+    ("Pode ser usado na gravidez, mas evite no primeiro trimestre", "Evite o uso no primeiro trimestre da gravidez."),
+    # A bula também permite.
+    ("O medicamento pode ser usado na gravidez", "Este medicamento pode ser usado na gravidez, sob orientação médica."),
+    # Sem nada em comum com o trecho e o trecho não é só proibição: a regra não decide.
+    ("O gelo pode ser usado no tornozelo", "Dose inicial de 50 mg. Este medicamento é contraindicado na gravidez."),
+    # A frase da bula usa a palavra, mas libera ("não é contraindicado").
+    ("Os idosos podem usar o medicamento", "O medicamento não é contraindicado para idosos."),
+    ("O medicamento pode ser usado em idosos", "Não há contraindicação para o uso em idosos."),
+    # "evita" descreve o remédio; só "evite", "evitar" proíbem.
+    ("O remédio pode ser usado para evitar coágulos", "Este medicamento evita a formação de coágulos no sangue."),
+])
+def test_nao_reprova_o_que_nao_e_permissao_contra_a_bula(afirmacao, trecho):
+    assert not afirma_o_que_o_trecho_proibe(afirmacao, _chunk(trecho))
+
+
+def test_a_regra_6_reprova_junto_das_outras_e_tem_aviso_proprio_no_grafo():
+    from app.services import graph
+
+    problemas = checar([("O medicamento pode ser usado na gravidez", 1)], {1: GRAVIDEZ}, 0.6)
+    assert problemas and all(p.endswith(AFIRMA) for p in problemas)
+    assert "proíbe" in graph.DICA_AFIRMACAO and graph.DICA_AFIRMACAO != graph.DICA_NEGACAO
+
+
+# --- Seção 47: cautela, "é recomendado" e o "sim" sem permissão ---------------------------------------------
+
+CAUTELA = _chunk(
+    "O ácido acetilsalicílico deve ser utilizado com cautela em pacientes com história de úlceras gastrintestinais."
+)
+LACTACAO = _chunk(
+    "O uso em lactantes não é recomendado a menos que, na avaliação do médico, os benefícios superarem os riscos."
+)
+
+
+@pytest.mark.parametrize("afirmacao, trecho", [
+    ("O ácido acetilsalicílico pode ser usado na úlcera", CAUTELA),
+    ("A amamentação é um uso recomendado durante o tratamento", LACTACAO),
+])
+def test_permissao_onde_a_bula_manda_ter_cautela_ou_nao_recomenda_e_pega(afirmacao, trecho):
+    assert afirma_o_que_o_trecho_proibe(afirmacao, trecho)
+
+
+@pytest.mark.parametrize("afirmacao, trecho", [
+    # A afirmação repete a cautela da bula.
+    ("O ácido acetilsalicílico pode ser usado com cautela na úlcera", CAUTELA),
+    ("O ácido acetilsalicílico pode ser usado na úlcera, sob orientação médica", CAUTELA),
+    # "É recomendado" que não é permissão contra proibição: a bula recomenda.
+    ("É recomendado tomar o comprimido com água", _chunk("Recomenda-se tomar o comprimido com um copo de água.")),
+])
+def test_nao_reprova_a_permissao_que_repete_a_cautela_da_bula(afirmacao, trecho):
+    assert not afirma_o_que_o_trecho_proibe(afirmacao, trecho)
+
+
+@pytest.mark.parametrize("pergunta, afirmacao", [
+    ("Pode usar metformina com insuficiência renal grave?", "Sim, é recomendado verificar a função renal antes do uso"),
+    ("Mãe que amamenta pode tomar sertralina?", "Sim, a amamentação é um uso recomendado"),
+    ("Posso dar o remédio para criança?", "Sim. O medicamento é eficaz em crianças"),
+])
+def test_sim_que_nao_diz_que_pode_e_pego(pergunta, afirmacao):
+    assert sim_sem_permissao(pergunta, afirmacao)
+
+
+@pytest.mark.parametrize("pergunta, afirmacao", [
+    ("Pode usar com álcool?", "Sim, pode ser usado com álcool"),
+    ("Pode tomar com álcool?", "Sim, o uso é permitido"),
+    ("Pode tomar com álcool?", "Não é recomendado o uso com álcool"),  # não abre com "sim"
+    ("Ela precisa parar de amamentar?", "Sim, ela precisa parar de amamentar temporariamente"),  # não é "pode?"
+    ("Tylalgin sachet tem açúcar?", "Sim, contém açúcar"),
+])
+def test_sim_com_permissao_ou_fora_de_pergunta_de_permissao_passa(pergunta, afirmacao):
+    assert not sim_sem_permissao(pergunta, afirmacao)

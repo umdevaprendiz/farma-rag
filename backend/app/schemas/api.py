@@ -10,6 +10,9 @@ from pydantic import BaseModel, ConfigDict, Field, computed_field, field_validat
 from app.schemas.dataset import ROTULO_SECAO
 
 MAX_MEDICAMENTOS_POR_PERGUNTA = 3
+# Nome de remédio no filtro: o maior nome do catálogo tem bem menos que isto. Sem o limite, cada item podia
+# ter o tamanho do corpo inteiro e ir para a busca de nomes.
+MAX_NOME_NO_FILTRO = 200
 
 # Aviso fixo de toda resposta `respondida` (docs/DECISOES.md, seção 33). Montado aqui, nunca pelo
 # LLM: não passa pela fundamentação, não entra em `resposta` nem no histórico gravado e não custa
@@ -21,6 +24,8 @@ AVISO_SAUDE = (
 
 class ErrorCode(str, Enum):
     MEDICAMENTO_NAO_ENCONTRADO = "MEDICAMENTO_NAO_ENCONTRADO"
+    # bula_id que não está no acervo (o botão de uma pergunta de apresentação antiga, §41).
+    BULA_NAO_ENCONTRADA = "BULA_NAO_ENCONTRADA"
     CONSULTA_NAO_ENCONTRADA = "CONSULTA_NAO_ENCONTRADA"
     ENTRADA_INVALIDA = "ENTRADA_INVALIDA"
     SAIDA_INVALIDA = "SAIDA_INVALIDA"
@@ -30,10 +35,13 @@ class ErrorCode(str, Enum):
     OLLAMA_INDISPONIVEL = "OLLAMA_INDISPONIVEL"
     BANCO_INDISPONIVEL = "BANCO_INDISPONIVEL"
     TEMPO_ESGOTADO = "TEMPO_ESGOTADO"
+    # Já há perguntas demais em andamento (PERGUNTAS_SIMULTANEAS): esperar e tentar de novo.
+    SERVIDOR_OCUPADO = "SERVIDOR_OCUPADO"
 
 
 HTTP_POR_CODIGO: dict[ErrorCode, int] = {
     ErrorCode.MEDICAMENTO_NAO_ENCONTRADO: 404,
+    ErrorCode.BULA_NAO_ENCONTRADA: 404,
     ErrorCode.CONSULTA_NAO_ENCONTRADA: 404,
     ErrorCode.ENTRADA_INVALIDA: 422,
     ErrorCode.SAIDA_INVALIDA: 502,
@@ -42,6 +50,7 @@ HTTP_POR_CODIGO: dict[ErrorCode, int] = {
     ErrorCode.OLLAMA_INDISPONIVEL: 503,
     ErrorCode.BANCO_INDISPONIVEL: 503,
     ErrorCode.TEMPO_ESGOTADO: 504,
+    ErrorCode.SERVIDOR_OCUPADO: 429,
 }
 
 
@@ -70,6 +79,9 @@ class QuestionIn(BaseModel):
     # continuar dela ("e para criança?") ou responder a um esclarecimento ("dipirona", depois de "a
     # alergia é a qual remédio?"). A API continua sem estado: busca a anterior no histórico.
     consulta_origem_id: UUID | None = None
+    # Uma bula só: a apresentação escolhida no botão da pergunta de volta (§41). Vale mais que
+    # principios_ativos (o remédio é o da bula). Precisa existir no acervo: senão, 404 BULA_NAO_ENCONTRADA.
+    bula_id: str | None = Field(default=None, min_length=1, max_length=200)
 
     @field_validator("principios_ativos")
     @classmethod
@@ -77,6 +89,8 @@ class QuestionIn(BaseModel):
         limpos = [p.strip() for p in v]
         if any(not p for p in limpos):
             raise ValueError("principio_ativo vazio")
+        if any(len(p) > MAX_NOME_NO_FILTRO for p in limpos):
+            raise ValueError(f"principio_ativo longo demais (no máximo {MAX_NOME_NO_FILTRO} caracteres)")
         return limpos
 
 
@@ -125,6 +139,8 @@ class MarkOut(BaseModel):
 class OptionOut(BaseModel):
     rotulo: str
     principios_ativos: list[str]
+    # Na pergunta de apresentação (§41): a bula da opção, que a tela reenvia como bula_id.
+    bula_id: str | None = None
 
 
 class ClarificationOut(BaseModel):
@@ -132,7 +148,8 @@ class ClarificationOut(BaseModel):
 
     # opcoes vazio (remedio_da_alergia): a pessoa responde no chat, e a resposta vem com
     # consulta_origem_id desta consulta.
-    motivo: Literal["medicamento_nao_reconhecido", "remedio_da_alergia"]
+    # apresentacao (§41): o remédio tem mais de uma bula e a resposta muda de uma para outra.
+    motivo: Literal["medicamento_nao_reconhecido", "remedio_da_alergia", "apresentacao"]
     pergunta: str
     opcoes: list[OptionOut]
 
@@ -144,8 +161,11 @@ class AnswerOut(BaseModel):
     esclarecimento: ClarificationOut | None = None
     rodadas: int = 0
     # Só preenchido quando status = nao_encontrada. sem_outra_explicacao: o "não ajudou" não achou
-    # outro trecho que fale disso além dos já citados.
-    motivo: Literal["sem_contexto", "medicamento_nao_indexado", "sem_outra_explicacao"] | None = None
+    # outro trecho que fale disso além dos já citados. fora_do_escopo: preço ou animal (DECISOES §47); fora_da_bula:
+    # chá, erva ou suco que as bulas do remédio não citam.
+    motivo: Literal[
+        "sem_contexto", "medicamento_nao_indexado", "sem_outra_explicacao", "fora_do_escopo", "fora_da_bula"
+    ] | None = None
     # Pergunta de para que serve ("paracetamol serve para ansiedade?"): o veredito montado no código
     # pela seção de indicações, antes das frases da bula. Não é afirmação do modelo.
     conclusao: str | None = None
@@ -216,6 +236,7 @@ class InquiryDetail(InquirySummary):
     """Uma consulta como foi respondida, com as fontes guardadas no momento (snapshot)."""
 
     principios_ativos_filtro: list[str]
+    bula_id_filtro: str | None = None  # a bula escolhida no botão (§41), para refazer a pergunta igual
     conclusao: str | None = None
     # F4: como na resposta (AnswerOut). Nulos/vazios nas consultas gravadas antes de 2026-10-24.
     abertura: str | None = None

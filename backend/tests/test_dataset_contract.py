@@ -91,3 +91,36 @@ def test_bulas_processadas_seguem_o_contrato_com_registro_e_forma():
     bulas = [Leaflet.model_validate_json(p.read_text(encoding="utf-8")) for p in pasta.glob("*.json")]
     for b in bulas:
         assert b.numero_registro and b.forma_farmaceutica and b.versao, b.id
+
+
+# ---- Gabarito do benchmark (DECISOES §2, §30 e §43) -----------------------------------------
+
+GABARITOS = ("perguntas.jsonl", "perguntas_lote2.jsonl")
+
+
+def _gabarito(arquivo: str) -> list[BenchmarkQuestion]:
+    caminho = RAIZ / "data/benchmark" / arquivo
+    if not caminho.exists():
+        pytest.skip(f"sem {arquivo}")
+    return [BenchmarkQuestion.model_validate_json(l) for l in caminho.read_text(encoding="utf-8").splitlines() if l.strip()]
+
+
+@pytest.mark.parametrize("arquivo", GABARITOS)
+def test_toda_ancora_do_gabarito_esta_num_trecho_do_acervo(arquivo):
+    """Se uma bula muda (ou o corte dos trechos), a pergunta cuja frase sumiu aparece aqui, antes do benchmark."""
+    from benchmark.metrics import chunk_cobre_ancora
+
+    perguntas = _gabarito(arquivo)
+    arquivo_chunks = RAIZ / "data/processed/chunks.jsonl"
+    if not arquivo_chunks.exists():
+        pytest.skip("sem chunks.jsonl")
+    chunks = [Chunk.model_validate_json(l) for l in arquivo_chunks.read_text(encoding="utf-8").splitlines() if l.strip()]
+    sem_trecho = [
+        f"{p.id} ({a.secao}: {a.frase})" for p in perguntas for a in p.ancoras if not any(chunk_cobre_ancora(c, a) for c in chunks)
+    ]
+    assert not sem_trecho, f"âncoras sem trecho: {sem_trecho}"
+
+
+def test_ids_do_gabarito_nao_se_repetem_entre_os_lotes():
+    ids = [p.id for arquivo in GABARITOS for p in _gabarito(arquivo)]
+    assert len(ids) == len(set(ids))

@@ -48,3 +48,18 @@ def test_casos_vazios():
     assert InMemoryIndex.de_linhas([]).buscar([1.0, 0.0], k=3) == []
     assert _indice().buscar([0.0, 0.0], k=3) == []
     assert _indice().buscar([1.0, 0.0], k=3, principios_ativos=["inexistente"]) == []
+
+
+def test_bula_escolhida_so_restringe_o_remedio_dela():
+    """Apresentação escolhida (DECISOES §41): o paracetamol fica só no comprimido; o ibuprofeno continua."""
+    indice = InMemoryIndex.de_linhas([
+        ("gotas__posologia__000", "paracetamol", vetor_para_bytes([1.0, 0.0])),
+        ("cp__posologia__000", "paracetamol", vetor_para_bytes([0.9, 0.1])),
+        ("ibu__posologia__000", "ibuprofeno", vetor_para_bytes([0.8, 0.2])),
+    ])
+    r = indice.buscar([1.0, 0.0], k=4, principios_ativos=["paracetamol", "ibuprofeno"], bulas=["cp"])
+    assert {x.chunk_id for x in r} == {"cp__posologia__000", "ibu__posologia__000"}
+    # A bula de outro remédio não restringe o paracetamol; sem princípio ativo, o filtro não vale.
+    r = indice.buscar([1.0, 0.0], k=4, principios_ativos=["paracetamol"], bulas=["ibu"])
+    assert {x.chunk_id for x in r} == {"gotas__posologia__000", "cp__posologia__000"}
+    assert len(indice.buscar([1.0, 0.0], k=4, bulas=["cp"])) == 3

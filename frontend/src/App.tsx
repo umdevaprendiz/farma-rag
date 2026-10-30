@@ -106,7 +106,13 @@ export function App() {
   function escolherOpcao(pergunta: QuestionIn, vista: View, opcao: Option) {
     // O reenvio leva o filtro escolhido: não há segundo esclarecimento para a mesma pergunta.
     perguntar(
-      { pergunta: pergunta.pergunta, principios_ativos: opcao.principios_ativos, consulta_origem_id: vista.consultaId ?? undefined },
+      {
+        pergunta: pergunta.pergunta,
+        principios_ativos: opcao.principios_ativos,
+        consulta_origem_id: vista.consultaId ?? undefined,
+        // Pergunta de apresentação (§41): a opção é uma bula, não só o remédio.
+        bula_id: opcao.bula_id ?? undefined,
+      },
       opcao.rotulo,
     );
   }
@@ -124,7 +130,7 @@ export function App() {
     let pergunta: QuestionIn = { pergunta: "", principios_ativos: [] };
     try {
       const c = await api.consulta(id);
-      pergunta = { pergunta: c.pergunta, principios_ativos: c.principios_ativos_filtro };
+      pergunta = { pergunta: c.pergunta, principios_ativos: c.principios_ativos_filtro, bula_id: c.bula_id_filtro ?? undefined };
       vista = doHistorico(c);
     } catch (e) {
       vista = doErro(comoErroApi(e));

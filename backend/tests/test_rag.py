@@ -437,3 +437,69 @@ def test_quem_ouve_o_aviso_nunca_muda_a_resposta(acervo, modelo):
 
     r = rag.responder("Como tomar o Exemplol?", acervo, s=S, avisar=quebrado)
     assert (r.status, r.resposta) == ("respondida", "A dose máxima é de 100 mg uma vez ao dia [1].")
+
+
+def test_conselho_que_o_trecho_nao_traz_sai_da_resposta(acervo, modelo):
+    """DECISOES §42: "consulte um médico" que a bula não diz sai; o aviso fixo da F2 já diz isso."""
+    modelo("interacoes", _resposta(
+        ("Pode reduzir o efeito anti-hipertensivo, consulte um médico.", 1), ("Converse com seu médico antes de usar", 1),
+    ))
+    r = rag.responder("Exemplol tem interações?", acervo, s=S)
+    assert (r.status, r.rodadas) == ("respondida", 1)
+    assert r.resposta == "Pode reduzir o efeito anti-hipertensivo [1]."
+    assert r.tentativas[0].correcoes == [
+        "afirmação 1: conselho que o trecho [1] não traz, cortado",
+        "afirmação 2: conselho que o trecho [1] não traz, saiu",
+    ]
+
+
+def test_resposta_que_e_so_conselho_reprova(acervo, modelo):
+    chamadas = modelo(
+        "interacoes", _resposta(("Consulte um médico", 1)), _resposta(("Pode reduzir o efeito anti-hipertensivo", 1)),
+    )
+    r = rag.responder("Exemplol tem interações?", acervo, s=S)
+    assert (r.status, r.rodadas) == ("respondida", 2)
+    assert r.tentativas[0].falha == "a resposta só traz conselho que os trechos não trazem"
+    assert graph.DICA_ASSUNTO in chamadas[1]
+
+
+# --- Seção 47: escopo, substância que a bula não cita e "sim" sem permissão ---------------------------------
+
+
+@pytest.mark.parametrize("pergunta", [
+    "Quanto custa o Exemplol 50 mg com 30 comprimidos?",
+    "Qual a dose do Exemplol para um cachorro de 10 kg?",
+    "Onde comprar o Exemplol mais barato?",
+])
+def test_pergunta_de_preco_ou_animal_nao_busca_nem_chama_o_modelo(acervo, modelo, pergunta):
+    chamadas = modelo("posologia", _resposta(("A dose inicial usual é de 50 mg uma vez ao dia", 1)))
+    r = rag.responder(pergunta, acervo, s=S)
+    assert (r.status, r.motivo, r.fontes, r.rodadas, chamadas) == ("nao_encontrada", "fora_do_escopo", [], 0, [])
+
+
+def test_cha_que_nenhuma_bula_do_remedio_cita_nao_chama_o_modelo(acervo, modelo):
+    chamadas = modelo("interacoes", _resposta(("O uso com anti-inflamatórios pode piorar a função renal", 1)))
+    r = rag.responder("Exemplol pode ser tomado junto com chá de boldo?", acervo, s=S)
+    assert (r.status, r.motivo, r.fontes, chamadas) == ("nao_encontrada", "fora_da_bula", [], [])
+
+
+def test_cha_que_a_bula_cita_segue_para_a_resposta(acervo, modelo):
+    # "alimentos" não é chá, erva nem suco: a guarda não olha; e "suco de" só barra o que nenhuma bula do remédio cita.
+    modelo("posologia", _resposta(("Os comprimidos podem ser tomados com ou sem alimentos", 1)))
+    r = rag.responder("Exemplol pode ser tomado com suco de laranja?", acervo, s=S)
+    assert r.motivo == "fora_da_bula"
+    modelo("posologia", _resposta(("Os comprimidos podem ser tomados com ou sem alimentos", 1)))
+    r = rag.responder("Exemplol pode ser tomado com alimentos?", acervo, s=S)
+    assert r.status == "respondida"
+
+
+def test_sim_sem_dizer_que_pode_reprova_e_a_proxima_rodada_recebe_o_aviso(acervo, modelo):
+    chamadas = modelo(
+        "advertencias",
+        _resposta(("Sim, é recomendado monitorar a creatinina e o potássio no sangue", 1)),
+        _resposta(("Em pacientes com insuficiência renal, recomenda-se monitorar a creatinina e o potássio", 1)),
+    )
+    r = rag.responder("Exemplol pode ser usado em pacientes com insuficiência renal?", acervo, s=S)
+    assert r.status == "respondida" and r.rodadas == 2
+    assert r.tentativas[0].resultado == "reprovada" and "sim" in r.tentativas[0].falha
+    assert graph.DICA_SIM in chamadas[1]

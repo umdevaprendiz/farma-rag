@@ -72,7 +72,7 @@ export function MessageInput({ ocupado, aoEnviar, dica }: Props) {
           ? "Escreva um pouco mais."
           : tamanho > MAX - 50
             ? `${tamanho}/${MAX} caracteres.`
-            : "Responde com o que está nas bulas do acervo e pode errar: confira a fonte. Não substitui o farmacêutico."}
+            : "Responde com o que está nas bulas do acervo e pode errar: confira a fonte. Não substitui o farmacêutico. Não escreva nome nem dado de paciente."}
       </p>
     </div>
   );

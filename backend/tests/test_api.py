@@ -19,7 +19,7 @@ from app.db.models import EMBED_DIM
 from app.llm import ollama
 from app.main import criar_app
 from app.schemas.api import AVISO_SAUDE, ErrorCode
-from app.services import graph
+from app.services import explanation, graph
 from ingestion.generate_chunks import gerar_chunks
 from ingestion.load_database import gravar
 from ingestion.process_leaflet import montar_bula
@@ -74,6 +74,10 @@ def modelo(monkeypatch, dados):
 
         def chat(sistema, usuario, formato, s=None, modelo=None):
             assert sistema != graph.SISTEMA_VERIFICACAO, "nenhum teste daqui chega à rodada 3 aprovado"
+            if sistema == explanation.SISTEMA:
+                # F4: a explicação opcional do "para que serve" também chama o LLM. Aqui ela é descartada e
+                # não gasta uma das saídas combinadas (senão as rodadas seguintes recebem a saída errada).
+                return ollama.LLMResponse("{}", 10, 1, 1.0, 1.0)
             chamadas.append(usuario)
             return ollama.LLMResponse(json.dumps(saidas[min(len(chamadas), len(saidas)) - 1]), 400, 40, 8.0, 4.0)
 
@@ -108,6 +112,14 @@ def test_saude(cliente, monkeypatch):
     corpo = cliente.get("/api/v1/saude").json()
     assert (corpo["status"], corpo["banco"], corpo["ollama"]) == ("degradado", True, False)
     assert corpo["problemas"] == ["Ollama fora do ar em http://localhost:11434"]
+
+    # Estourou o tempo da sondagem = o Ollama está no ar, ocupado gerando uma resposta (CPU): não é problema.
+    def ocupado(s=None):
+        raise ollama.OllamaError(ErrorCode.TEMPO_ESGOTADO, "Ollama não respondeu em 3 s")
+
+    monkeypatch.setattr(ollama, "modelos", ocupado)
+    corpo = cliente.get("/api/v1/saude").json()
+    assert (corpo["status"], corpo["ollama"], corpo["problemas"]) == ("ok", True, [])
 
 
 def test_medicamentos(cliente):
@@ -202,12 +214,30 @@ def test_filtro_desconhecido_da_404(cliente):
     assert _erro(r) == (404, "MEDICAMENTO_NAO_ENCONTRADO")
 
 
+def test_bula_desconhecida_da_404_antes_do_agente(cliente):
+    # DECISOES §41: o botão da pergunta de apresentação manda bula_id; uma que não está no acervo é 404,
+    # também na rota com progresso (antes do fluxo, como erro HTTP comum).
+    corpo = {"pergunta": "Como tomar o Exemplol?", "bula_id": "bula-que-nao-existe"}
+    assert _erro(cliente.post("/api/v1/perguntas", json=corpo)) == (404, "BULA_NAO_ENCONTRADA")
+    assert _erro(cliente.post("/api/v1/perguntas/com-progresso", json=corpo)) == (404, "BULA_NAO_ENCONTRADA")
+
+
+def test_bula_escolhida_fica_no_historico(cliente, modelo):
+    modelo("interacoes", _resposta(("Pode reduzir o efeito anti-hipertensivo", 1)))
+    bula = "exemplol-50-mg-laboratorio-teste"
+    r = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol tem interação medicamentosa?", "bula_id": bula})
+    assert r.status_code == 200 and r.json()["principios_ativos"] == ["maleato de exemplina"]
+    detalhe = cliente.get(f"/api/v1/historico/{r.json()['consulta_id']}").json()
+    assert detalhe["bula_id_filtro"] == bula
+
+
 def test_nome_parecido_pergunta_qual_e_e_a_opcao_traz_a_classe_da_anvisa(cliente, modelo):
     # Caso real (consulta b14b2d1a, 18/10; seção 28), com o catálogo real de data/.
     pergunta = "Tomei rocutan para dor no ouvido, fiz certo?"
     corpo = cliente.post("/api/v1/perguntas", json={"pergunta": pergunta}).json()
     assert (corpo["status"], corpo["esclarecimento"]["opcoes"]) == (
-        "precisa_esclarecimento", [{"rotulo": "Roacutan (isotretinoína)", "principios_ativos": ["isotretinoína"]}],
+        "precisa_esclarecimento",
+        [{"rotulo": "Roacutan (isotretinoína)", "principios_ativos": ["isotretinoína"], "bula_id": None}],
     )
 
     # O botão: a mesma pergunta, com o princípio ativo da opção (sem bula: antes era 404).
@@ -227,9 +257,19 @@ def test_nome_parecido_pergunta_qual_e_e_a_opcao_traz_a_classe_da_anvisa(cliente
 
 def test_pergunta_de_uso_traz_a_conclusao_e_o_historico_guarda(cliente, monkeypatch, modelo):
     modelo("indicacoes", RECUSA)
-    monkeypatch.setattr(ollama, "chat", lambda *a, **k: pytest.fail("a resposta vem das indicações, sem o LLM"))
+    # F4: a resposta é a cópia das indicações (sem LLM), mas depois o LLM é chamado UMA vez para a explicação
+    # em palavras simples (opcional). Aqui ele devolve lixo: a explicação é descartada e a resposta sai igual.
+    # Não usar pytest.fail aqui: ele roda na thread da API, mata o portal do TestClient e derruba o módulo todo.
+    chamadas = []
+
+    def llm_com_defeito(sistema, usuario, *a, **k):
+        chamadas.append(sistema)
+        return ollama.LLMResponse("isto não é json", 10, 1, 1.0, 1.0)
+
+    monkeypatch.setattr(ollama, "chat", llm_com_defeito)
     corpo = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol serve para ansiedade?"}).json()
     assert (corpo["status"], corpo["extrativa"]) == ("respondida", True)
+    assert len(chamadas) == 1 and corpo["explicacao"] is None  # só a explicação opcional chamou o LLM
     assert corpo["conclusao"].startswith("Não. Ansiedade não está entre as indicações da bula de exemplina")
     assert corpo["fontes"][0]["rotulo_secao"] == "Indicações"
     detalhe = cliente.get(f"/api/v1/historico/{corpo['consulta_id']}").json()
@@ -320,7 +360,8 @@ def test_remedio_sem_bula_vem_com_a_classe_terapeutica_da_anvisa(cliente, modelo
 
 def test_interacao_vem_da_frase_da_bula_sem_llm(cliente, monkeypatch, modelo):
     modelo("interacoes", RECUSA)
-    monkeypatch.setattr(ollama, "chat", lambda *a, **k: pytest.fail("a frase vem da bula, sem o LLM"))
+    chamadas = []  # sem pytest.fail aqui: ele roda na thread da API e derruba o módulo (ver o teste do "para que serve")
+    monkeypatch.setattr(ollama, "chat", lambda *a, **k: chamadas.append(a) or ollama.LLMResponse("{}", 0, 0, 0.0, 0.0))
     corpo = cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol pode ser usado com ibuprofeno?"}).json()
     assert (corpo["status"], corpo["extrativa"], corpo["modelo"]) == ("respondida", True, "frases da bula (sem LLM)")
     assert corpo["aviso"] == AVISO_SAUDE  # também na resposta copiada da bula
@@ -328,6 +369,7 @@ def test_interacao_vem_da_frase_da_bula_sem_llm(cliente, monkeypatch, modelo):
         "O uso com anti-inflamatórios não esteroidais, como o ibuprofeno, pode reduzir o efeito "
         "anti-hipertensivo da exemplina e piorar a função renal [1]."
     )
+    assert chamadas == []  # a interação é cópia da bula: o modelo não foi chamado
 
 
 def test_erro_traz_o_id_da_consulta_para_a_conversa_continuar(cliente, monkeypatch):
@@ -345,6 +387,13 @@ def test_erro_traz_o_id_da_consulta_para_a_conversa_continuar(cliente, monkeypat
 INDICACAO = "Exemplol é indicado para o tratamento da hipertensão arterial em adultos"
 CONTRAINDICACAO = "Exemplol é contraindicado para pacientes com hipersensibilidade à exemplina"
 CONSERVAR = "Conservar em temperatura ambiente, entre 15 °C e 30 °C"
+POSOLOGIA = "A dose inicial usual é de 50 mg uma vez ao dia"
+# Ordem de semelhança de "O que é o Exemplol?" nos testes do "não ajudou". "Características farmacológicas" fica por
+# último de propósito: desde a F3b (docs/DECISOES.md, seção 34) ela é rebaixada na rodada 1 quando a pergunta não a pede,
+# então não é um dos dois primeiros trechos. Os testes de 20/10 a esperavam em segundo e só voltaram a rodar com o banco.
+ORDEM_NAO_AJUDOU = [
+    "indicacoes", "contraindicacoes", "armazenamento", "advertencias", "posologia", "caracteristicas_farmacologicas",
+]
 
 
 def _destacado(fonte: dict) -> list[str]:
@@ -360,21 +409,20 @@ def _secoes(corpo: dict) -> list[str]:
 
 
 def test_nao_ajudou_refaz_sem_os_trechos_citados_e_fica_ligado(cliente, modelo):
-    # "O que é o Exemplol?" não indica seção: vale a semelhança, nesta ordem.
-    ordem = ["indicacoes", "caracteristicas_farmacologicas", "contraindicacoes", "advertencias", "armazenamento", "posologia"]
-    chamadas = modelo(ordem, [_resposta((INDICACAO, 1)), _resposta((CONTRAINDICACAO, 1)), _resposta((CONSERVAR, 1))])
+    # "O que é o Exemplol?" não indica seção: vale a semelhança, na ordem de ORDEM_NAO_AJUDOU.
+    chamadas = modelo(ORDEM_NAO_AJUDOU, [_resposta((INDICACAO, 1)), _resposta((CONSERVAR, 1)), _resposta((POSOLOGIA, 1))])
     primeira = cliente.post("/api/v1/perguntas", json={"pergunta": "O que é o Exemplol?"}).json()
     assert (primeira["status"], primeira["outra_explicacao"]) == ("respondida", False)
-    assert _secoes(primeira) == ["indicacoes", "caracteristicas_farmacologicas"]
+    assert _secoes(primeira) == ["indicacoes", "contraindicacoes"]
     # A fonte citada vem com a frase que sustenta a resposta; a não citada, sem destaque.
     assert _destacado(primeira["fontes"][0]) == [f"{INDICACAO}."] and primeira["fontes"][1]["destaques"] == []
 
-    # Sem o trecho citado, e o só enviado (características) depois dos nunca enviados.
+    # Sem o trecho citado (indicações). A contraindicação, enviada e não citada, fica depois dos nunca enviados.
     segunda = _outra(cliente, primeira["consulta_id"])
     assert segunda.status_code == 200
     segunda = segunda.json()
-    assert (segunda["status"], segunda["outra_explicacao"], segunda["resposta"]) == ("respondida", True, f"{CONTRAINDICACAO} [1].")
-    assert _secoes(segunda) == ["contraindicacoes", "advertencias"]
+    assert (segunda["status"], segunda["outra_explicacao"], segunda["resposta"]) == ("respondida", True, f"{CONSERVAR} [1].")
+    assert _secoes(segunda) == ["armazenamento", "advertencias"]
     assert segunda["consulta_id"] != primeira["consulta_id"] and len(chamadas) == 2
 
     # O histórico liga a outra explicação à que não ajudou, com a mesma pergunta e os destaques.
@@ -386,9 +434,11 @@ def test_nao_ajudou_refaz_sem_os_trechos_citados_e_fica_ligado(cliente, modelo):
     itens = cliente.get("/api/v1/historico").json()["itens"]
     assert [i["outra_explicacao"] for i in itens] == [True, False]
 
-    # De novo: sem os citados nas duas respostas anteriores.
+    # De novo: sem os citados nas duas respostas anteriores; sobram os nunca enviados.
     terceira = _outra(cliente, segunda["consulta_id"]).json()
-    assert (terceira["status"], _secoes(terceira)) == ("respondida", ["armazenamento", "posologia"])
+    assert (terceira["status"], _secoes(terceira), terceira["resposta"]) == (
+        "respondida", ["posologia", "caracteristicas_farmacologicas"], f"{POSOLOGIA} [1].",
+    )
 
 
 def test_nao_ajudou_sem_outro_trecho_da_secao_nao_chama_o_modelo(cliente, modelo):
@@ -479,14 +529,58 @@ def test_entrada_invalida_e_http_comum_e_erro_do_agente_vai_no_fluxo(cliente):
 
 
 def test_nao_ajudou_com_progresso_manda_as_etapas_e_a_resposta_nova(cliente, modelo):
-    ordem = ["indicacoes", "caracteristicas_farmacologicas", "contraindicacoes", "advertencias", "armazenamento", "posologia"]
-    modelo(ordem, [_resposta((INDICACAO, 1)), _resposta((CONTRAINDICACAO, 1))])
+    modelo(ORDEM_NAO_AJUDOU, [_resposta((INDICACAO, 1)), _resposta((CONSERVAR, 1))])
     primeira = cliente.post("/api/v1/perguntas", json={"pergunta": "O que é o Exemplol?"}).json()
     eventos = _fluxo(cliente.post(f"/api/v1/perguntas/{primeira['consulta_id']}/outra-explicacao/com-progresso"))
     # O "não ajudou" é uma pergunta nova para o agente: a contagem de rodadas recomeça em 1.
     assert _etapas(eventos) == [("buscando", 1, 3), ("escrevendo", 1, 3), ("conferindo", 1, 3)]
     final = eventos[-1]["resposta"]
-    assert (eventos[-1]["tipo"], final["outra_explicacao"], final["resposta"]) == ("resposta", True, f"{CONTRAINDICACAO} [1].")
+    assert (eventos[-1]["tipo"], final["outra_explicacao"], final["resposta"]) == ("resposta", True, f"{CONSERVAR} [1].")
     # Consulta que não existe: 404 comum, antes do fluxo.
     r = cliente.post(f"/api/v1/perguntas/{uuid4()}/outra-explicacao/com-progresso")
     assert _erro(r) == (404, "CONSULTA_NAO_ENCONTRADA")
+
+
+# --- Segurança: teto de perguntas em andamento (docs/SEGURANCA.md, achado 4) ----------------------
+
+
+def test_perguntas_demais_ao_mesmo_tempo_dao_429_e_depois_volta_a_responder(api, cliente, modelo):
+    modelo("interacoes", _resposta(("Pode reduzir o efeito anti-hipertensivo", 1)))
+    sv = api.app.state.servicos
+    tomadas = 0
+    while sv.vagas.acquire(blocking=False):  # ocupa todas as vagas, como se houvesse perguntas em andamento
+        tomadas += 1
+    try:
+        pedido = {"pergunta": "Exemplol tem interação medicamentosa?"}
+        r = cliente.post("/api/v1/perguntas", json=pedido)
+        assert _erro(r) == (429, "SERVIDOR_OCUPADO") and "outras perguntas" in r.json()["erro"]["mensagem"]
+        # Sem vaga não há consulta gravada: nada foi processado.
+        assert cliente.get("/api/v1/historico").json()["total"] == 0
+        # O fluxo com progresso devolve o mesmo erro como linha do fluxo, com o status 429.
+        eventos = _fluxo(cliente.post("/api/v1/perguntas/com-progresso", json=pedido))
+        assert (eventos[-1]["tipo"], eventos[-1]["status"], eventos[-1]["erro"]["codigo"]) == ("erro", 429, "SERVIDOR_OCUPADO")
+    finally:
+        for _ in range(tomadas):
+            sv.vagas.release()
+    assert tomadas == S.perguntas_simultaneas
+    # Soltas as vagas, a pergunta passa; e a vaga volta depois dela (não vaza).
+    assert cliente.post("/api/v1/perguntas", json=pedido).status_code == 200
+    assert sv.vagas.acquire(blocking=False)
+    sv.vagas.release()
+
+
+def test_vaga_volta_mesmo_quando_a_pergunta_termina_em_erro(api, cliente, monkeypatch):
+    def fora(textos, s=None):
+        raise ollama.OllamaError(ErrorCode.OLLAMA_INDISPONIVEL, "Ollama fora do ar")
+
+    monkeypatch.setattr(ollama, "embed", fora)
+    sv = api.app.state.servicos
+    for _ in range(S.perguntas_simultaneas + 2):  # mais erros que vagas: se vazasse, a 3ª daria 429
+        assert _erro(cliente.post("/api/v1/perguntas", json={"pergunta": "Exemplol tem interação?"})) == (503, "OLLAMA_INDISPONIVEL")
+    assert sv.vagas.acquire(blocking=False)
+    sv.vagas.release()
+
+
+def test_filtro_com_nome_gigante_da_422(cliente):
+    r = cliente.post("/api/v1/perguntas", json={"pergunta": "Pode com álcool?", "principios_ativos": ["a" * 5000]})
+    assert _erro(r) == (422, "ENTRADA_INVALIDA")

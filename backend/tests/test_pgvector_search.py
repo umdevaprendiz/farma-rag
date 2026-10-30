@@ -121,3 +121,16 @@ def test_tabelas_ficam_no_schema_temporario(engine):
         ).scalars())
     assert schema.startswith("teste_")
     assert {"bulas", "chunks", "consultas", "consulta_fontes"} <= tabelas
+
+
+@pytest.mark.parametrize(
+    "bulas", [["exemplol-50-mg-laboratorio-teste"], ["outrol-10-mg-laboratorio-teste"], ["nao-existe"], []]
+)
+def test_filtro_por_bula_igual_ao_da_memoria(buscas, dados, bulas):
+    """Apresentação escolhida (DECISOES §41): o mesmo resultado do InMemoryIndex com o filtro por bula."""
+    memoria, pg = buscas
+    _, chunks, matriz = dados
+    filtro = ["maleato de exemplina", "acido outrinico"]
+    for i in (0, len(chunks) - 1):
+        q = matriz[i] + 0.1 * np.random.default_rng(i).normal(size=EMBED_DIM)
+        _iguais(pg.buscar(q, 4, filtro, bulas), memoria.buscar(q, 4, filtro, bulas))

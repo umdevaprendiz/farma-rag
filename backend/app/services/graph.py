@@ -55,7 +55,7 @@ from app.db.vector_search import SearchHit
 from app.llm import ollama
 from app.schemas.api import MAX_MEDICAMENTOS_POR_PERGUNTA, ErrorCode
 from app.schemas.dataset import Chunk
-from app.services import explanation, glossary, grounding, indication, presentation, rerank
+from app.services import dosage_form, explanation, glossary, grounding, indication, presentation, rerank, scope
 from app.services.citations import InvalidOutputError, validar_saida
 from app.services.corpus import Corpus
 from app.services.extract import INTERACAO, PERGUNTA_DE_DOSE, frase_da_alternativa, frases_de_dose, frases_sobre
@@ -114,6 +114,17 @@ DICA_SO_NOME = (
     "que diz, com as palavras do trecho, o que o trecho diz sobre aquele medicamento."
 )
 # Regra 5 da fundamentação: "não é indicado para dor no ouvido" citando um trecho que diz "é indicado".
+# Regra 6: "pode ser usado na gravidez" citando um trecho que diz "contraindicado na gravidez".
+DICA_AFIRMACAO = (
+    "A tentativa anterior disse que o remédio pode ser usado onde o trecho proíbe. Escreva só o que o trecho diz; "
+    'se ele proíbe ou manda evitar, diga isso; se nenhum trecho responde à pergunta, devolva "nao_encontrada".'
+)
+# Seção 47: "Sim, é recomendado verificar a função renal" respondendo a "pode usar?".
+DICA_SIM = (
+    'A tentativa anterior começou com "Sim" sem que o trecho diga que pode. Só comece com "Sim" se o trecho diz que '
+    "pode; se ele proíbe, manda ter cautela ou não responde, diga o que ele diz, sem \"Sim\"; "
+    'se nenhum trecho responde à pergunta, devolva "nao_encontrada".'
+)
 DICA_NEGACAO = (
     "A tentativa anterior negou o que o trecho não nega. Escreva só o que o trecho diz, sem acrescentar "
     "\"não\"; se nenhum trecho responde à pergunta, devolva \"nao_encontrada\"."
@@ -161,12 +172,15 @@ class State(TypedDict, total=False):
     inicio: float  # time.perf_counter() no começo, para o orçamento de tempo
     anterior: PreviousQuestion | None  # a pergunta anterior da conversa, se a tela mandou
     outra: AnotherExplanation | None  # "não ajudou": refazer sem os trechos citados (seção 26)
+    bula_id: str | None  # uma bula só: o botão da pergunta de apresentação (§41)
     # entender
     texto: str  # o que vai para a busca: a pergunta, ou a anterior + a nova quando continua
     assunto: list[str]  # palavras que o trecho precisa ter na busca geral (termos_do_assunto)
     continuacao: bool
     principios_ativos: list[str]
     nao_indexados: list[str]
+    # Apresentação escolhida (§41): o remédio que tem alguma destas bulas só busca nelas. Vazio = todas.
+    bulas: list[str]
     secoes: list[str]  # seções que a pergunta indica (intent.inferir_secoes)
     alergia_a: str | None  # remédio da alergia: a busca traz alternativas a ele
     uso: str | None  # pergunta de para que serve: o uso perguntado ("" = geral); None = outra pergunta
@@ -193,7 +207,7 @@ class State(TypedDict, total=False):
     tempos_s: dict[str, float]
     prompt_tokens: int
     # Fim antes das rodadas: erro (filtro desconhecido, Ollama fora do ar) ou pergunta de volta
-    desfecho: Literal["erro", "esclarecer"]
+    desfecho: Literal["erro", "esclarecer", "fora_do_escopo", "fora_da_bula"]
     codigo_erro: ErrorCode
     detalhe_erro: str
     esclarecimento: Clarification
@@ -278,20 +292,32 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
             "situacao": None, "caminho": "remedio", "explicacao": None,
             "usados": list(e["outra"].enviados) if e.get("outra") else [],
             "tentativas": [], "tempos_s": {}, "prompt_tokens": 0, "principios_ativos": [], "nao_indexados": [],
+            "bulas": [],
         }
-        if e["filtro"]:
+        if scope.fora_do_escopo(pergunta):
+            # Preço e animais (seção 47): a bula não responde, e o caminho de resposta copiada devolvia a posologia.
+            return inicial | {"desfecho": "fora_do_escopo"}
+        filtro = e["filtro"]
+        if e.get("bula_id"):
+            # O botão da pergunta de apresentação (§41): uma bula só, e o remédio é o dela.
+            if (bula := acervo.bulas.get(e["bula_id"])) is None:
+                return inicial | _erro(ErrorCode.BULA_NAO_ENCONTRADA, f"bula desconhecida: {e['bula_id']}")
+            filtro, inicial["bulas"] = [bula.principio_ativo], [bula.id]
+        if filtro:
             # O filtro aceita qualquer nome que o catálogo conheça ("losartana", "Cozaar"). Remédio
             # conhecido sem bula ("isotretinoína", escolhido no "é o Roacutan?") segue como na
             # pergunta escrita: busca nas bulas que falam dele (seção 28; antes era 404).
-            achados = {p: acervo.catalogo.resolver(p) for p in e["filtro"]}
+            achados = {p: acervo.catalogo.resolver(p) for p in filtro}
             desconhecidos = [p for p, nomes in achados.items() if not any(nomes)]
             if desconhecidos:
                 return inicial | _erro(
                     ErrorCode.MEDICAMENTO_NAO_ENCONTRADO, f"medicamento desconhecido: {', '.join(desconhecidos)}"
                 )
+            do_filtro = sorted({a for a, _ in achados.values() if a})
             return inicial | {
-                "principios_ativos": sorted({a for a, _ in achados.values() if a}),
+                "principios_ativos": do_filtro,
                 "nao_indexados": sorted({n for _, n in achados.values() if n}),
+                "bulas": inicial["bulas"] or _bulas_pela_pergunta(texto, do_filtro, None),
                 # "Tomei rocutan para dor no ouvido" -> "É o Roacutan?" -> o botão reenvia a pergunta.
                 "uso": indication.uso_perguntado(pergunta) if len(achados) == 1 else None,
             }
@@ -322,6 +348,7 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
                 "assunto": termos_do_assunto(anterior.pergunta),
             }
         estado = inicial | {"principios_ativos": ativos, "nao_indexados": nao_indexados}
+        estado["bulas"] = _bulas_pela_pergunta(estado["texto"], ativos, anterior if continua else None)
         if anterior is None and not ativos and not nao_indexados and eliptica(pergunta):
             # "E para criança?" sem pergunta anterior: não há de quem falar. Pergunta de volta, em vez
             # de buscar "criança" em todas as bulas (respondia com a frase de outro remédio).
@@ -356,6 +383,58 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
             return estado | {"principios_ativos": outros}
         return estado | {"alergia_a": nomes[0], "principios_ativos": []}
 
+    def _substancia_fora_da_bula(e: State) -> bool:
+        """"Omeprazol pode com chá de boldo?": nenhuma bula do remédio (ou, sem remédio, nenhuma do acervo) cita o
+        boldo. A busca por semelhança devolvia o trecho de interações de qualquer jeito e o modelo respondia com ele."""
+        if (substancia := scope.substancia_fora_do_remedio(e["pergunta"])) is None:
+            return False
+        alvos = {normalizar(a) for a in e["principios_ativos"]}
+        textos = [normalizar(c.texto) for c in acervo.chunks.values() if not alvos or normalizar(c.principio_ativo) in alvos]
+        return not scope.citada_em(substancia, textos)
+
+    def _bulas_do_remedio(ativo: str) -> list:
+        alvo = normalizar(ativo)
+        return sorted(
+            (b for b in acervo.bulas.values() if normalizar(b.principio_ativo) == alvo), key=lambda b: normalizar(b.medicamento)
+        )
+
+    def _bulas_pela_pergunta(texto: str, ativos: list[str], anterior: PreviousQuestion | None) -> list[str]:
+        """As bulas que a pergunta escolhe pela apresentação ("Tylalgin gotas", "AAS 100"), remédio a remédio
+        (services/dosage_form.py, §41). Sem escolha na pergunta, as da pergunta anterior que ela continua
+        ("e para criança?" depois de "Tylalgin gotas, qual a dose?")."""
+        saida: list[str] = []
+        for ativo in ativos:
+            do_remedio = _bulas_do_remedio(ativo)
+            ids = [b.id for b in dosage_form.escolhidas(texto, do_remedio)]
+            if not ids and anterior is not None:
+                ids = [b.id for b in do_remedio if b.id in anterior.bulas]
+            saida += ids
+        return saida
+
+    def _permitida(c: Chunk, e: State) -> bool:
+        """O trecho vale: o remédio dele não tem apresentação escolhida, ou ele é da escolhida (§41)."""
+        if not e.get("bulas") or c.bula_id in e["bulas"]:
+            return True
+        return normalizar(c.principio_ativo) not in {normalizar(acervo.bulas[b].principio_ativo) for b in e["bulas"]}
+
+    def _apresentacoes_a_perguntar(e: State) -> list:
+        """As bulas entre as quais perguntar (§41), ou vazio. Pergunta quando a pergunta é sobre um remédio só,
+        ele tem mais de uma bula ainda possível e de apresentações diferentes (não o mesmo produto de dois
+        laboratórios), o assunto muda com a apresentação (dose, modo de usar,
+        superdose, armazenamento, criança) e a resposta iria para o LLM (a dose copiada da bula, que já vem
+        uma frase por apresentação, passou antes). Nunca no "não ajudou", na alergia, no para que serve, nem
+        na resposta a um esclarecimento (no máximo um por pergunta, §14)."""
+        if e.get("outra") or e.get("alergia_a") or e.get("uso") is not None:
+            return []
+        if len(e["principios_ativos"]) != 1 or e["nao_indexados"]:
+            return []
+        if (anterior := e.get("anterior")) is not None and anterior.pediu_esclarecimento:
+            return []
+        candidatas = [b for b in _bulas_do_remedio(e["principios_ativos"][0]) if not e["bulas"] or b.id in e["bulas"]]
+        if not dosage_form.diferentes(candidatas) or not dosage_form.depende(e["texto"], e["secoes"]):
+            return []
+        return candidatas
+
     def buscar(e: State) -> State:
         """Com medicamento: rodada 1 por semelhança, depois os trechos ainda não usados das seções
         indicadas. Sem medicamento: busca geral em todas as bulas.
@@ -365,6 +444,8 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         rodada = e["rodada"] + 1
         _avisar("buscando", rodada)
         t = time.perf_counter()
+        if rodada == 1 and not e.get("outra") and _substancia_fora_da_bula(e):
+            return {"rodada": rodada, "fontes": [], "desfecho": "fora_da_bula", "tempos_s": _somar_tempo(e, "busca", t)}
         # Os caminhos da primeira tentativa: frases copiadas da bula e o top-k direto.
         primeira = rodada == 1 and not e.get("outra")
         uso = e.get("uso")
@@ -398,6 +479,13 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
             (achados, extrato), caminho = dose, "dose"
         elif not e["principios_ativos"]:
             achados, caminho = _busca_geral(vetor, e), "geral"
+        elif primeira and (opcoes := _apresentacoes_a_perguntar(e)):
+            # Mais de uma bula do remédio e a resposta iria para o LLM misturando-as (§41): pergunta qual.
+            nome = indication.nome_curto(opcoes[0].principio_ativo)
+            return {
+                "fontes": [], "vetor": vetor, "tempos_s": _somar_tempo(e, "busca", t),
+                "desfecho": "esclarecer", "esclarecimento": dosage_form.esclarecimento(nome, opcoes),
+            }
         elif primeira:
             achados = _primeira_busca(vetor, e)
         else:
@@ -438,7 +526,10 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         for ativo in e["principios_ativos"]:
             alvo = normalizar(ativo)
             da_secao = sorted(
-                (c for c in acervo.chunks.values() if c.secao == "indicacoes" and normalizar(c.principio_ativo) == alvo),
+                (
+                    c for c in acervo.chunks.values()
+                    if c.secao == "indicacoes" and normalizar(c.principio_ativo) == alvo and _permitida(c, e)
+                ),
                 key=lambda c: c.chunk_id,
             )
             if not da_secao:
@@ -462,7 +553,7 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         varias = len({c.bula_id for c, _ in escolhidas}) > 1
         extrato = [(c.chunk_id, f"{c.medicamento}: {f}" if varias else f) for c, f in escolhidas]
         ativos = e["principios_ativos"]
-        semelhanca = {a.chunk_id: a.score for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos)}
+        semelhanca = {a.chunk_id: a.score for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos, e["bulas"])}
         trechos = list(dict.fromkeys(c.chunk_id for c, _ in escolhidas))
         conclusao = indication.conclusao(vereditos + _vereditos_sem_bula(e))
         situacao = vereditos[0].situacao if len(vereditos) == 1 else None
@@ -476,11 +567,11 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         if not ativos or not PERGUNTA_DE_DOSE.search(normalizar(e["texto"])):
             return None
         alvos = {normalizar(a) for a in ativos}
-        das_bulas = [c for c in acervo.chunks.values() if normalizar(c.principio_ativo) in alvos]
+        das_bulas = [c for c in acervo.chunks.values() if normalizar(c.principio_ativo) in alvos and _permitida(c, e)]
         frases = frases_de_dose(das_bulas, _termos_da_pergunta(e))
         if not frases:
             return None
-        semelhanca = {a.chunk_id: a.score for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos)}
+        semelhanca = {a.chunk_id: a.score for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos, e["bulas"])}
         return [SearchHit(c.chunk_id, semelhanca.get(c.chunk_id, 0.0)) for c, _ in frases], [(c.chunk_id, f) for c, f in frases]
 
     def _frases_da_interacao(vetor: list[float], e: State) -> tuple[list[SearchHit], list[tuple[str, str]]] | None:
@@ -491,12 +582,14 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
             return None
         frases = []
         for ativo in ativos:
-            da_bula = [c for c in acervo.chunks.values() if normalizar(c.principio_ativo) == normalizar(ativo)]
+            da_bula = [
+                c for c in acervo.chunks.values() if normalizar(c.principio_ativo) == normalizar(ativo) and _permitida(c, e)
+            ]
             for outro in [a for a in ativos if a != ativo] + e["nao_indexados"]:
                 frases += frases_sobre(da_bula, outro)
         if not frases:
             return None
-        semelhanca = {a.chunk_id: a.score for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos)}
+        semelhanca = {a.chunk_id: a.score for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos, e["bulas"])}
         trechos = list(dict.fromkeys(chunk.chunk_id for chunk, _ in frases))
         return [SearchHit(c, semelhanca.get(c, 0.0)) for c in trechos], [(chunk.chunk_id, f) for chunk, f in frases]
 
@@ -510,12 +603,12 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         outras, ficava de fora até a rodada 2 (~45 s a mais)."""
         ativos = e["principios_ativos"]
         if not s.rerank_candidatos:
-            return acervo.indice.buscar(vetor, s.top_k, ativos)
+            return acervo.indice.buscar(vetor, s.top_k, ativos, e["bulas"])
         secoes = secoes_para_rerank(e["texto"], len(ativos) + len(e["nao_indexados"]))
-        candidatos = acervo.indice.buscar(vetor, s.rerank_candidatos * len(ativos), ativos)
+        candidatos = acervo.indice.buscar(vetor, s.rerank_candidatos * len(ativos), ativos, e["bulas"])
         if secoes:
             vistos: dict[tuple[str, str], int] = defaultdict(int)
-            for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos):  # já em ordem de score
+            for a in acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos, e["bulas"]):  # já em ordem de score
                 c = acervo.chunks[a.chunk_id]
                 chave = (normalizar(c.principio_ativo), c.secao)
                 if c.secao in secoes and vistos[chave] < rerank.EXTRA_POR_SECAO:
@@ -531,7 +624,7 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         alvos = {normalizar(a) for a in e["principios_ativos"]}
         das_bulas = [
             nome for b in acervo.bulas.values() if normalizar(b.principio_ativo) in alvos
-            for nome in (b.medicamento, b.fabricante, *b.nomes_comerciais)
+            for nome in (b.medicamento, b.fabricante, *b.nomes_comerciais, b.forma_farmaceutica or "")
         ]
         nomes = [*e["principios_ativos"], *e["nao_indexados"], *das_bulas]
         palavras = set(re.findall(r"[a-z]{3,}", normalizar(" ".join(nomes))))
@@ -546,7 +639,7 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         já foram citados, nenhum (não há outra explicação; o resto da bula não fala disso)."""
 
         ativos = e["principios_ativos"]
-        todos = acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos)
+        todos = acervo.indice.buscar(vetor, K_AMPLO * len(ativos), ativos, e["bulas"])
         tem_secao = any(acervo.chunks[a.chunk_id].secao in e["secoes"] for a in todos)
         candidatos = _sem_os_citados(todos, e)
         novos = [a for a in candidatos if a.chunk_id not in e["usados"]]
@@ -712,16 +805,27 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
 
         chunks = {f.posicao: f.chunk for f in fontes}
         permitidos = [e["alergia_a"]] if e.get("alergia_a") else None
-        frases, tentativa["correcoes"] = grounding.corrigir_citacoes(
-            afirmacoes(bruto), chunks, s.fundamentacao_min_termos, acervo.catalogo, permitidos,
+        brutas = afirmacoes(bruto)
+        sem_conselho, tirados = grounding.sem_conselho(brutas, chunks)
+        if brutas and not sem_conselho:
+            # Só conselho ("consulte um médico") que nenhum trecho citado traz: nada da bula (seção 42).
+            tentativa["correcoes"] = tirados
+            return reprovar(ErrorCode.RESPOSTA_NAO_VERIFICADA, "a resposta só traz conselho que os trechos não trazem", DICA_ASSUNTO)
+        frases, corrigidas = grounding.corrigir_citacoes(
+            sem_conselho, chunks, s.fundamentacao_min_termos, acervo.catalogo, permitidos,
         )
+        tentativa["correcoes"] = tirados + corrigidas
         resposta, citacoes = montar_resposta(frases)
+        if not e.get("extrativa") and any(grounding.sim_sem_permissao(e["pergunta"], f) for f, _ in frases):
+            return reprovar(ErrorCode.RESPOSTA_NAO_VERIFICADA, "abre com “sim” sem dizer que pode", DICA_SIM)
         problemas = grounding.checar(frases, chunks, s.fundamentacao_min_termos, acervo.catalogo, permitidos)
         if problemas:
             if all(p.endswith(grounding.SO_NOME) for p in problemas):
                 dica = DICA_SO_NOME
             elif all(p.endswith(grounding.NEGA) for p in problemas):
                 dica = DICA_NEGACAO
+            elif all(p.endswith(grounding.AFIRMA) for p in problemas):
+                dica = DICA_AFIRMACAO
             else:
                 dica = DICA_FUNDAMENTACAO
             return reprovar(ErrorCode.RESPOSTA_NAO_VERIFICADA, "; ".join(problemas), dica)
@@ -740,8 +844,14 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
 
     def _termos_da_pergunta(e: State) -> list[str]:
         """O assunto da pergunta (a nova, não a anterior), sem os nomes de remédio: "dose máxima de
-        dipirona?" -> dose, maxim. A resposta tem de falar disso (intent.responde_ao_assunto)."""
-        nomes = [*e["principios_ativos"], *e["nao_indexados"], *(f.chunk.medicamento for f in e.get("fontes", []))]
+        dipirona?" -> dose, maxim. A resposta tem de falar disso (intent.responde_ao_assunto).
+        A forma farmacêutica das bulas do remédio também é nome, não assunto (§41): "o comprimido",
+        escrito em resposta a "qual apresentação?", não exige a palavra "comprimido" na resposta."""
+        alvos = {normalizar(a) for a in e["principios_ativos"]}
+        formas = [b.forma_farmaceutica or "" for b in acervo.bulas.values() if normalizar(b.principio_ativo) in alvos]
+        nomes = [
+            *e["principios_ativos"], *e["nao_indexados"], *(f.chunk.medicamento for f in e.get("fontes", [])), *formas,
+        ]
         palavras = set(re.findall(r"[a-z]{3,}", normalizar(" ".join(nomes))))
         return [t for t in termos_do_assunto(e["pergunta"]) if not any(p.startswith(t) for p in palavras)]
 
@@ -870,6 +980,7 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         r = Result(
             status="nao_encontrada",
             principios_ativos=e.get("principios_ativos", []),
+            bulas=e.get("bulas", []),
             medicamentos_nao_indexados=e.get("nao_indexados", []),
             fontes=e.get("fontes", []),
             saida_bruta=e.get("saida_bruta"),
@@ -890,6 +1001,8 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
             r.status, r.codigo_erro, r.detalhe_erro = "erro", e["codigo_erro"], e["detalhe_erro"]
         elif e.get("desfecho") == "esclarecer":
             r.status, r.esclarecimento = "precisa_esclarecimento", e["esclarecimento"]
+        elif e.get("desfecho") in ("fora_do_escopo", "fora_da_bula"):
+            r.motivo = e["desfecho"]
         elif e.get("falha"):
             # Decisão de 2026-10-13: rodadas esgotadas viram erro 502 com explicação.
             r.status, r.codigo_erro, r.detalhe_erro = "erro", e["falha"].codigo, _explicar(e, s)
@@ -914,7 +1027,7 @@ def montar_grafo(acervo: Corpus, s: Settings, avisar: Progress | None = None):
         return "finalizar" if e.get("desfecho") else "buscar"
 
     def depois_de_buscar(e: State) -> str:
-        return "gerar" if e.get("desfecho") != "erro" and e["fontes"] else "finalizar"
+        return "gerar" if not e.get("desfecho") and e["fontes"] else "finalizar"
 
     def depois_de_gerar(e: State) -> str:
         return "finalizar" if e.get("desfecho") == "erro" else "validar"
@@ -972,10 +1085,11 @@ def executar(
     anterior: PreviousQuestion | None = None,
     outra: AnotherExplanation | None = None,
     avisar: Progress | None = None,
+    bula_id: str | None = None,
 ) -> Result:
     s = s or get_settings()
     final = montar_grafo(acervo, s, avisar).invoke({
         "pergunta": pergunta, "filtro": principios_ativos or [], "inicio": time.perf_counter(),
-        "anterior": anterior, "outra": outra,
+        "anterior": anterior, "outra": outra, "bula_id": bula_id,
     })
     return final["resultado"]

@@ -32,6 +32,8 @@ _COLUNAS_NOVAS = (
     ("consultas", "explicacao", "text"),
     ("consultas", "marcas", "jsonb"),
     ("consultas", "sugestoes", "text[]"),
+    ("consultas", "bula_id_filtro", "text"),
+    ("consultas", "bulas", "text[]"),
 )
 
 

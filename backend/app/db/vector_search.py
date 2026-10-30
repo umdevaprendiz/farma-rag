@@ -5,6 +5,9 @@ poucos milhares de trechos (~4 KB cada embedding), então a força bruta leva mi
 
 `VectorSearch` é a interface que o serviço de RAG usa. A versão no PostgreSQL é a
 `PgvectorSearch` (pgvector_search.py), com a mesma assinatura e o mesmo resultado.
+
+`bulas` (apresentação escolhida, docs/DECISOES.md §41): o princípio ativo que tem alguma dessas bulas
+só busca nelas; os outros princípios da pergunta continuam em todas as bulas deles.
 """
 
 import math
@@ -32,8 +35,17 @@ class SearchHit:
 
 class VectorSearch(Protocol):
     def buscar(
-        self, consulta: Sequence[float], k: int, principios_ativos: Collection[str] | None = None
+        self,
+        consulta: Sequence[float],
+        k: int,
+        principios_ativos: Collection[str] | None = None,
+        bulas: Collection[str] | None = None,
     ) -> list[SearchHit]: ...
+
+
+def bula_do_chunk(chunk_id: str) -> str:
+    """O chunk_id é <bula_id>__<secao>__<ordem> (contrato do dataset)."""
+    return chunk_id.split("__", 1)[0]
 
 
 class InMemoryIndex:
@@ -42,6 +54,7 @@ class InMemoryIndex:
             raise ValueError("chunk_ids, principios_ativos e matriz precisam ter o mesmo tamanho")
         self._ids = chunk_ids
         self._ativos = np.array([normalizar(p) for p in principios_ativos])
+        self._bulas = np.array([bula_do_chunk(c) for c in chunk_ids])
         normas = np.linalg.norm(matriz, axis=1, keepdims=True)
         self._matriz = matriz / np.where(normas == 0, 1, normas)
 
@@ -68,10 +81,15 @@ class InMemoryIndex:
         return [SearchHit(self._ids[i], float(scores[i])) for i in melhores]
 
     def buscar(
-        self, consulta: Sequence[float], k: int, principios_ativos: Collection[str] | None = None
+        self,
+        consulta: Sequence[float],
+        k: int,
+        principios_ativos: Collection[str] | None = None,
+        bulas: Collection[str] | None = None,
     ) -> list[SearchHit]:
         """Top-k por cosseno. Com vários princípios ativos, divide o k entre eles para que
-        uma pergunta de interação receba trechos das duas bulas, não só da mais parecida."""
+        uma pergunta de interação receba trechos das duas bulas, não só da mais parecida.
+        `bulas`: só vale com princípios ativos (ver o começo do módulo)."""
         if len(self) == 0 or k <= 0:
             return []
         q = np.asarray(consulta, dtype="<f4")
@@ -85,7 +103,11 @@ class InMemoryIndex:
 
         alvos = sorted({normalizar(p) for p in principios_ativos})
         k_por_alvo = max(1, math.ceil(k / len(alvos)))
+        escolhidas = np.isin(self._bulas, list(bulas or []))
         resultados: list[SearchHit] = []
         for alvo in alvos:
-            resultados += self._top(q, k_por_alvo, self._ativos == alvo)
+            mascara = self._ativos == alvo
+            if (mascara & escolhidas).any():
+                mascara &= escolhidas
+            resultados += self._top(q, k_por_alvo, mascara)
         return sorted(resultados, key=lambda r: -r.score)[: max(k, len(alvos))]

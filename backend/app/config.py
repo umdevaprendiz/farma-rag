@@ -1,6 +1,7 @@
 from functools import lru_cache
 from urllib.parse import quote_plus
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -60,6 +61,10 @@ class Settings(BaseSettings):
     # Rodadas de verificação (docs/DECISOES.md, seção 14). Uma nova rodada só começa se a
     # anterior falhou e se ainda cabe no orçamento de tempo da pergunta.
     rodadas_max: int = 3
+    # Perguntas em andamento ao mesmo tempo (docs/SEGURANCA.md, achado 4). Cada uma segura uma thread da API e o
+    # Ollama por 30-90 s na CPU; sem teto, abas demais (ou um laço) empilham chamadas e todas estouram o tempo.
+    # Acima disto a API responde 429 SERVIDOR_OCUPADO na hora, sem gravar consulta.
+    perguntas_simultaneas: int = 2
     orcamento_s: int = 150
     # Fração mínima dos termos de cada afirmação que precisa aparecer no trecho citado.
     fundamentacao_min_termos: float = 0.6
@@ -83,6 +88,21 @@ class Settings(BaseSettings):
     bulas_dir: str = "data/processed/bulas"
     chunks_arquivo: str = "data/processed/chunks.jsonl"
     cache_embeddings: str = "data/cache/embeddings.sqlite"
+
+    @field_validator("ollama_url")
+    @classmethod
+    def _so_http(cls, v: str) -> str:
+        """O cliente do Ollama usa urllib, que também abre file:// e ftp://: só http(s) é aceito (SSRF)."""
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("OLLAMA_URL precisa começar com http:// ou https://")
+        return v
+
+    @field_validator("perguntas_simultaneas")
+    @classmethod
+    def _pelo_menos_uma(cls, v: int) -> int:
+        if v < 1:
+            raise ValueError("PERGUNTAS_SIMULTANEAS precisa ser 1 ou mais")
+        return v
 
     @property
     def database_url(self) -> str:

@@ -21,12 +21,14 @@ from sqlalchemy import Engine
 from sqlalchemy.exc import OperationalError
 
 from app.api import errors, routes
+from app.api.security import SecurityHeadersMiddleware
 from app.api.errors import ApiError
 from app.config import Settings, get_settings
 from app.db.connection import criar_engine
 from app.llm import ollama
 
 log = logging.getLogger("farmarag")
+SENHAS_DE_EXEMPLO = {"senha", "troque-esta-senha", "password", "postgres", "admin", "farmarag"}
 
 
 def aquecer_em_segundo_plano(s: Settings) -> threading.Thread:
@@ -56,6 +58,9 @@ def aquecer_em_segundo_plano(s: Settings) -> threading.Thread:
 def criar_app(s: Settings | None = None, engine: Engine | None = None) -> FastAPI:
     """`engine`: os testes passam um ligado a um schema temporário."""
     s = s or get_settings()
+    if s.db_password in SENHAS_DE_EXEMPLO:
+        # Padrão do config.py ou do .env.example: serve para desenvolver, nunca para deixar o banco de pé.
+        log.warning("DB_PASSWORD é uma senha de exemplo: troque no .env (docs/SEGURANCA.md, achado 6).")
     servicos = routes.Services(s, engine or criar_engine(s))
 
     @asynccontextmanager
@@ -71,6 +76,7 @@ def criar_app(s: Settings | None = None, engine: Engine | None = None) -> FastAP
 
     app = FastAPI(title="FarmaRAG", version="0.1.0", lifespan=ciclo_de_vida)
     app.state.servicos = servicos
+    app.add_middleware(SecurityHeadersMiddleware)
     app.add_middleware(
         CORSMiddleware, allow_origins=s.cors_origens_lista, allow_methods=["GET", "POST"], allow_headers=["Content-Type"]
     )

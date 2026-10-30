@@ -129,12 +129,16 @@ class BenchmarkQuestion(BaseModel):
     ancoras: list[Anchor] = Field(default_factory=list)
     resposta_esperada: str | None = None
     categoria: Category
+    # benchmark/quality.py (DECISOES §47). deve_conter: cada item tem de aparecer na resposta, com alternativas
+    # separadas por "|" ("3 dias|três dias"); nao_deve_conter: nenhum pode aparecer. Opcionais.
+    deve_conter: list[str] = Field(default_factory=list)
+    nao_deve_conter: list[str] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _respondivel_coerente(self):
         if self.respondivel:
             if not self.ancoras or not self.resposta_esperada:
                 raise ValueError("pergunta respondível precisa de ancoras e resposta_esperada")
-        elif self.ancoras or self.resposta_esperada:
-            raise ValueError("pergunta não respondível não pode ter ancoras nem resposta_esperada")
+        elif self.ancoras or self.resposta_esperada or self.deve_conter or self.nao_deve_conter:
+            raise ValueError("pergunta não respondível não pode ter ancoras, resposta_esperada nem termos")
         return self

@@ -46,6 +46,8 @@ def gravar(
         pergunta=entrada.pergunta,
         principios_ativos_filtro=entrada.principios_ativos,
         principios_ativos=r.principios_ativos,
+        bula_id_filtro=entrada.bula_id,
+        bulas=r.bulas,
         resposta=r.resposta,
         conclusao=r.conclusao,
         abertura=r.abertura,

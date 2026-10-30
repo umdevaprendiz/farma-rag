@@ -12,8 +12,9 @@ também os candidatos da busca vetorial (os mesmos que o reranking recebe), para
 não trouxe" de "o reranking não escolheu".
 
 Modo completo: status, resposta, rodadas, latência, recusa certa nas perguntas sem resposta e quantas
-respostas tiveram a citação corrigida no código (seção 31). A fidelidade da resposta continua sendo
-revisão manual (a resposta esperada está no gabarito). Usa a semente fixa SEMENTE (LLM_SEMENTE do .env,
+respostas tiveram a citação corrigida no código (seção 31) e, desde a seção 47, `resposta_confere` e
+`resposta_completa` (benchmark/quality.py: polaridade, termos e números contra a resposta esperada; erro grosseiro,
+não nota). A leitura humana da resposta continua valendo. Usa a semente fixa SEMENTE (LLM_SEMENTE do .env,
 se houver): o mesmo prompt dá a mesma resposta, então rodar de novo dá o mesmo resultado.
 
 Vários valores de --candidatos (RERANK_CANDIDATOS; 0 = sem reranking): roda cada um e compara com o
@@ -44,6 +45,7 @@ from app.schemas.dataset import BenchmarkQuestion, Chunk
 from app.services import rag
 from app.services.corpus import Corpus
 from benchmark.metrics import acertou_recall, chunk_cobre_ancora
+from benchmark.quality import confere
 
 PERGUNTAS = Path("data/benchmark/perguntas.jsonl")
 RESULTADOS = Path("data/benchmark/resultados")
@@ -116,11 +118,30 @@ def candidatos_por_remedio(s: Settings) -> int:
     return s.rerank_candidatos or CANDIDATOS
 
 
+def escolher_apresentacao(r: rag.Result, p: BenchmarkQuestion, acervo: Corpus) -> rag.Option:
+    """A pergunta de apresentação (DECISOES §41), respondida como o balconista faria: a opção cuja bula
+    tem a âncora do gabarito (a primeira, se nenhuma tem, ou se a pergunta não tem resposta)."""
+    opcoes = r.esclarecimento.opcoes
+    for o in opcoes:
+        da_bula = [c for c in acervo.chunks.values() if c.bula_id == o.bula_id]
+        if any(chunk_cobre_ancora(c, a) for c in da_bula for a in p.ancoras):
+            return o
+    return opcoes[0]
+
+
 def responder(p: BenchmarkQuestion, acervo: Corpus, s: Settings, modo: str) -> dict:
-    """Uma pergunta do gabarito: a linha do resultado."""
+    """Uma pergunta do gabarito: a linha do resultado. Se o agente pergunta qual apresentação, o
+    benchmark escolhe como o balconista e mede a resposta (o tempo conta as duas)."""
     inicio = time.perf_counter()
     r = rag.responder(p.pergunta, acervo, s=s)
+    apresentacao = None
+    if r.status == "precisa_esclarecimento" and r.esclarecimento.motivo == "apresentacao":
+        opcao = escolher_apresentacao(r, p, acervo)
+        apresentacao = opcao.bula_id
+        anterior = rag.PreviousQuestion(p.pergunta, r.principios_ativos, pediu_esclarecimento=True)
+        r = rag.responder(p.pergunta, acervo, opcao.principios_ativos, s, anterior, bula_id=opcao.bula_id)
     segundos = time.perf_counter() - inicio
+    nota = confere(r.resposta, p) if modo == "completo" and p.respondivel and r.status == "respondida" and r.resposta else None
     enviados = [acervo.chunks[c] for c in (r.tentativas[0].chunk_ids if r.tentativas else []) if c in acervo.chunks]
     candidatos: list[Chunk] = []
     if p.respondivel and r.principios_ativos:
@@ -129,7 +150,7 @@ def responder(p: BenchmarkQuestion, acervo: Corpus, s: Settings, modo: str) -> d
         candidatos = [acervo.chunks[h.chunk_id] for h in acervo.indice.buscar(vetor, k, r.principios_ativos)]
     return {
         "id": p.id, "categoria": p.categoria, "respondivel": p.respondivel, "pergunta": p.pergunta,
-        "caminho": caminho(r), "status": r.status, "rodadas": r.rodadas, "segundos": round(segundos, 2),
+        "caminho": caminho(r), "apresentacao_escolhida": apresentacao, "status": r.status, "rodadas": r.rodadas, "segundos": round(segundos, 2),
         "citacoes_corrigidas": sum(len(t.correcoes) for t in r.tentativas),
         "acerto": acertou_recall(enviados, p) if p.respondivel else None,
         "enviados": [c.chunk_id for c in enviados],
@@ -137,12 +158,16 @@ def responder(p: BenchmarkQuestion, acervo: Corpus, s: Settings, modo: str) -> d
         "principios_ativos": r.principios_ativos,
         "conclusao": r.conclusao, "resposta": r.resposta if modo == "completo" else None,
         "resposta_esperada": p.resposta_esperada,
+        # benchmark/quality.py: só nas respondíveis que o sistema respondeu, no modo completo.
+        "confere": nota["confere"] if nota else None,
+        "completa": nota["completa"] if nota else None,
+        "problemas_da_resposta": nota["problemas"] if nota else None,
     }
 
 
 def mostrar(linha: dict, mudou: bool = False) -> None:
     marca = "-" if not linha["respondivel"] else ("ok" if linha["acerto"] else "ERRO")
-    aviso = " (trechos mudaram)" if mudou else ""
+    aviso = (" (trechos mudaram)" if mudou else "") + (" (a resposta não confere)" if linha.get("confere") is False else "")
     print(f"{linha['id']:7} {marca:4} {linha['caminho']:14} {linha['segundos']:5.1f}s  {linha['pergunta'][:70]}{aviso}")
 
 
@@ -255,6 +280,11 @@ def resumir(linhas: list[dict], modo: str, candidatos: int = CANDIDATOS) -> dict
         sem = [l for l in linhas if not l["respondivel"]]
         resumo["recusa_certa"] = taxa([l["status"] == "nao_encontrada" for l in sem])
         resumo["respondidas"] = taxa([l["status"] == "respondida" for l in resp])
+        dadas = [l for l in resp if l.get("confere") is not None]
+        resumo["resposta_confere"] = taxa([l["confere"] for l in dadas])
+        resumo["resposta_completa"] = taxa([l["completa"] for l in dadas])
+        resumo["respostas_que_nao_conferem"] = [l["id"] for l in dadas if not l["confere"]]
+        resumo["fora_do_escopo_respondidas"] = [l["id"] for l in sem if l["status"] == "respondida"]
         resumo["rodadas_media"] = round(sum(l["rodadas"] for l in resp) / max(1, len(resp)), 2)
         resumo["com_citacao_corrigida"] = taxa([l["citacoes_corrigidas"] > 0 for l in linhas])
     return resumo

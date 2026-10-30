@@ -4,8 +4,24 @@ Assistente de bulas para o balcão da farmácia: RAG (*Retrieval-Augmented Gener
 
 > Projeto de portfólio, em construção. Não substitui o farmacêutico nem a leitura da bula.
 
+## Demonstração
+
+[![Demonstração do FarmaRAG: perguntas reais pela tela, com a fonte aberta e a frase da bula em destaque](docs/demo/capa.jpg)](docs/demo/farmarag-demo.mp4)
+
+*1 min 18 s. Clique na imagem para abrir o vídeo (o GitHub abre um player).*
+
+Gravada em 2026-10-29 com tudo rodando de verdade, na CPU: a tela React, a API FastAPI, o PostgreSQL com pgvector e o Ollama (`qwen2.5:1.5b`), com 37 bulas no acervo. É um recorte de uma sessão de 8,5 min: as telas e as respostas são as reais, e as esperas do modelo (50 a 90 s) estão aceleradas 18x, com um selo no canto.
+
+| Cena | Pergunta | O que mostra |
+|---|---|---|
+| 1 | Como armazenar a loratadina? (botão da tela inicial) | As etapas reais do agente na espera, a resposta citada `[1]`, a fonte aberta (fabricante, registro ANVISA, página, data da bula e a frase da bula em destaque) e o aviso de saúde |
+| 2 | Qual a dose máxima diária do Tylalgin 750? | A dose copiada da bula, sem o modelo de linguagem, em 2,7 s |
+| 3 | tomei rocutan para dor no ouvido, fiz certo? | O nome não existe: o sistema pergunta "É o Roacutan (isotretinoína)?", você confirma com um clique e ele responde pela bula ("dor no ouvido não está entre as indicações") |
+| 4 | Para que serve o clonazepam? | Remédio sem bula no acervo: só a classe oficial da ANVISA, sem concluir nada além disso (51 ms) |
+
 ## Sumário
 
+- [Demonstração](#demonstração)
 - [Objetivo e regras](#objetivo-e-regras)
 - [Estado atual](#estado-atual)
 - [Arquitetura](#arquitetura)
@@ -15,6 +31,7 @@ Assistente de bulas para o balcão da farmácia: RAG (*Retrieval-Augmented Gener
 - [Decisões e aprendizados](#decisões-e-aprendizados)
 - [O que vamos implementar](#o-que-vamos-implementar)
 - [Como rodar](#como-rodar)
+- [Segurança](#segurança)
 - [Estrutura do repositório](#estrutura-do-repositório)
 
 ## Objetivo e regras
@@ -64,7 +81,7 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 | Geração com saída estruturada + validação de citações | ✅ pronto | `app/services/rag.py`, `app/services/citations.py` |
 | Agente em grafo (LangGraph, 6 nós, rodadas 1 a 3) | ✅ pronto, testado com LLM falso e com o LLM real nas 24 bulas | `app/services/graph.py` |
 | Teste manual pelo terminal | ✅ pronto | `python -m benchmark.ask` |
-| Testes automáticos | ✅ 435 testes (395 sem o PostgreSQL; os 40 de banco rodam num schema temporário e são pulados sem ele) | `backend/tests/` |
+| Testes automáticos | ✅ 524 testes com o PostgreSQL ligado, 0 pulados (os de banco rodam num schema temporário e são pulados sem ele) | `backend/tests/` |
 | Bulas reais: 31 PDFs → 37 bulas, 1.384 trechos com embedding, no banco; tabela de interações lida como tabela | ✅ 28 de 40 medicamentos do MVP, mais zolpidem, sertralina e isotretinoína | `data/bulas_manifesto.json`, `data/processed/bulas/`, `ingestion/extract_pdf.py` |
 | Checagem de fundamentação (números, doses, termos, "só o nome" não vale, remédio certo), citação trocada corrigida no código e de assunto (a resposta responde à pergunta e fala do remédio perguntado) | ✅ pronto | `app/services/grounding.py`, `app/services/intent.py` |
 | Pergunta sem remédio ou com remédio sem bula: busca híbrida em todas as bulas, um trecho por medicamento | ✅ pronto, testado com o LLM real | `app/services/graph.py`, `app/services/intent.py` |
@@ -78,10 +95,14 @@ Não encontrei isso nas bulas do acervo. Nenhuma das bulas consultadas fala diss
 | Seção da pergunta já na rodada 1 e seções raras (eficácia, farmacologia) só quando pedidas | ✅ pronto, testado com LLM falso; efeito no benchmark a medir na quinta (`RERANK_GARANTE_SECAO`) | `app/services/rerank.py`, `app/services/intent.py` |
 | Modelos aquecidos no Ollama ao subir a API e `KEEP_ALIVE` no `.env` | ✅ pronto, testado com Ollama falso; ganho em segundos a medir na quinta | `app/llm/ollama.py`, `app/main.py` |
 | Progresso de verdade na tela: a API avisa cada etapa do agente (buscando, escrevendo, conferindo, verificando) | ✅ pronto; transporte conferido por HTTP de verdade, rotas de banco ainda não rodaram | `app/api/progress.py`, `app/services/graph.py`, `frontend/src/api.ts` |
-| Benchmark de 50 perguntas | 🟡 métricas prontas, perguntas não | `benchmark/metrics.py` |
+| Resposta menos robótica (F4): abertura, negrito no que foi perguntado, termo técnico explicado pelo glossário, explicação do para que serve e sugestões de pergunta seguinte | ✅ pronto, testado com LLM falso; com o LLM de verdade na quinta. Glossário a revisar | `app/services/presentation.py`, `glossary.py`, `explanation.py` |
+| Mais de uma apresentação do mesmo remédio: a pergunta escolhe a bula ("Tylalgin gotas") ou o agente pergunta qual, com um botão por bula | ✅ pronto, testado com LLM falso; testes de banco e tela na quinta | `app/services/dosage_form.py`, `app/services/graph.py` |
+| Lote 2 do gabarito (41 perguntas escritas sem olhar o que o sistema responde) e teste de contrato das âncoras dos dois lotes | ✅ pronto; rodar na quinta | `data/benchmark/perguntas_lote2.jsonl`, `backend/tests/test_dataset_contract.py` |
 | API FastAPI: 6 endpoints, histórico de toda consulta | ✅ pronta, testada com LLM falso e no servidor (perguntas sem LLM) | `app/main.py`, `app/api/`, `app/services/history.py` |
 | Frontend React (Vite + TypeScript) em formato de chat: conversa, citações clicáveis, fontes em chips, histórico na lateral | ✅ pronto, conferido no navegador com o LLM real e com o simulado | `frontend/` |
-| Docker Compose completo: banco, carga do acervo a partir do Git (sem Python nem Ollama), API e tela no nginx (mesma origem, portas só em 127.0.0.1) | 🟡 escrito e com a sintaxe conferida; construir as imagens e testar na quinta | `docker-compose.yml`, `frontend/Dockerfile`, `frontend/nginx.conf` |
+| Docker Compose completo: banco, carga do acervo a partir do Git (sem Python nem Ollama), API e tela no nginx (mesma origem, portas só em 127.0.0.1), com containers sem root, disco somente leitura e imagens por digest | ✅ construído e testado num clone novo (banco novo, carga de 37 bulas, 3 containers saudáveis) e com uma pergunta pelo LLM pela tela, com a CSP ativa | `docker-compose.yml`, `backend/Dockerfile`, `frontend/Dockerfile`, `frontend/nginx.conf` |
+| Análise de segurança: varredura de segredos, `npm audit` e `pip-audit` (0 vulnerabilidades), `docker scout` nas imagens (0 críticas e 0 altas corrigíveis), CSP, teto de perguntas simultâneas, dependências travadas | ✅ feita e corrigida em 2026-10-29; riscos que ficaram de propósito estão documentados | `docs/SEGURANCA.md`, `backend/requirements.lock`, `backend/app/api/security.py` |
+| Regra 6 da fundamentação: a resposta que diz "pode ser usado" onde a bula proíbe é reprovada | ✅ pronta; 0 falsos positivos em 146 respostas aprovadas do histórico e em 123 respostas esperadas do gabarito | `app/services/grounding.py` (DECISOES §45) |
 | Acervo completo no Git, embeddings inclusive: um clone novo carrega o banco sem recalcular nada | ✅ pronto, conferido num clone simulado sem Ollama | `data/cache/embeddings.sqlite`, `ingestion/generate_chunks.py` (`--podar`) |
 
 ## Arquitetura
@@ -195,6 +216,7 @@ Cada falha tem código próprio e status HTTP definido (`app/schemas/api.py`):
 | Código | HTTP | Quando |
 |---|---|---|
 | `MEDICAMENTO_NAO_ENCONTRADO` | 404 | Filtro com um nome que o catálogo não conhece (conhecido sem bula segue como remédio sem bula) |
+| `BULA_NAO_ENCONTRADA` | 404 | `bula_id` (o botão da pergunta de apresentação) que não está no acervo |
 | `CONSULTA_NAO_ENCONTRADA` | 404 | `GET /historico/{id}` ou "não ajudou" de uma consulta que não existe |
 | `ENTRADA_INVALIDA` | 422 | Pergunta fora de 5–500 caracteres, filtro vazio, mais de 3 medicamentos, paginação inválida, "não ajudou" de consulta que não é resposta |
 | `SAIDA_INVALIDA` | 502 | O modelo devolveu JSON quebrado até a última rodada |
@@ -225,7 +247,7 @@ FastAPI em `app/main.py`, rotas em `app/api/routes.py`, documentação interativ
 |---|---|
 | `GET /api/v1/saude` | Banco, Ollama e modelos baixados. Sempre 200: `status` é `ok` ou `degradado`, com a lista do que falta |
 | `GET /api/v1/medicamentos` | Princípios ativos com bula indexada e as bulas de cada um (fabricante, forma, data), para o seletor |
-| `POST /api/v1/perguntas` | `{pergunta, principios_ativos?, consulta_origem_id?}` → resposta, fontes, status, rodadas. Erro sai em `ErrorOut`, com o HTTP do catálogo |
+| `POST /api/v1/perguntas` | `{pergunta, principios_ativos?, consulta_origem_id?, bula_id?}` → resposta, fontes, status, rodadas. Erro sai em `ErrorOut`, com o HTTP do catálogo |
 | `POST /api/v1/perguntas/com-progresso` | O mesmo que `POST /perguntas`, em fluxo NDJSON: uma linha por etapa do agente (`{"tipo":"etapa","etapa":"buscando","rodada":1,"de":3}`) e, no fim, `{"tipo":"resposta",...}` ou `{"tipo":"erro",...}`. A tela usa esta |
 | `POST /api/v1/perguntas/{consulta_id}/outra-explicacao/com-progresso` | O "não ajudou" em fluxo, como a rota acima |
 | `POST /api/v1/perguntas/{consulta_id}/outra-explicacao` | "Não ajudou": a pergunta da consulta de novo, sem os trechos citados nela e nas explicações antes dela. Sem corpo; mesma resposta do `POST /perguntas`, com `outra_explicacao: true` |
@@ -271,6 +293,25 @@ O balconista aperta "não ajudou, explique de outro jeito" embaixo da última re
 
 - **Na API** (`POST /perguntas/{id}/outra-explicacao`): a tela manda só o id da resposta que não ajudou. A API segue a cadeia no histórico (`history.explicacoes`) até a pergunta original e monta o `AnotherExplanation` (`history.para_outra_explicacao`): evita os trechos citados em toda a cadeia; os enviados em qualquer rodada (`tentativas`) vão para o fim da fila. Roda com a pergunta, o filtro e a pergunta anterior da conversa da original, e grava uma consulta nova com `consulta_origem_id` = a que não ajudou e `outra_explicacao = true`. Só resposta `respondida` pede outra explicação (senão, 422).
 - **Na tela**: o botão fica só na última resposta respondida; o pedido aparece na conversa como "Não ajudou, explique de outro jeito." e a resposta nova vem com "Outra explicação, com trechos diferentes dos que já foram citados". Sem trecho novo: "Não há outra explicação nas bulas do acervo". No cartão da fonte, as frases dos `destaques` aparecem marcadas; na barra lateral, a consulta aparece como "Outra explicação: <pergunta>".
+
+### 9. Mais de uma apresentação do mesmo remédio
+
+Paracetamol em gotas, comprimido e sachê; permetrina em loção e loção cremosa; AAS de 100 e de 500 mg: a dose e o modo de usar mudam de uma bula para outra ([`docs/DECISOES.md`](docs/DECISOES.md) §41, `services/dosage_form.py`, sem LLM).
+
+- **A pergunta escolhe**: "Tylalgin gotas pode para criança?", "AAS 100", "loção cremosa" ficam na bula que só elas descrevem, na busca e nas frases copiadas.
+- **Senão, o agente pergunta qual**, só quando o assunto muda com a apresentação (dose, modo de usar, superdose, armazenamento, criança) e a resposta iria para o LLM: "Tenho 3 bulas de paracetamol, e a resposta muda conforme a apresentação. Qual delas?", com um botão por bula. Sem gastar o LLM. A dose copiada da bula continua vindo uma frase por apresentação, sem perguntar.
+- **O botão reenvia com `bula_id`**, e a conversa continua nela ("e para criança?"). O mesmo produto de dois laboratórios não é outra apresentação: não pergunta.
+
+### 10. Resposta menos robótica (F4)
+
+A frase da bula (ou a do modelo) continua igual e conferida; em volta dela, o código monta o que deixa a resposta com cara de conversa, sem LLM ([`docs/DECISOES.md`](docs/DECISOES.md) §37):
+
+- **Abertura** pelo caminho da pergunta: "Pela bula de Ibuprofeno 400 mg:", "Pela posologia de cada bula:", "Para quem tem alergia a dipirona, pelas bulas do acervo:". Pergunta de opinião ("o que acha do ibuprofeno pra dor de cabeça?") ganha "Opinião eu não dou, mas posso dizer o que a bula diz." e é respondida pelas indicações, copiadas, em ~2 s.
+- **Negrito no que foi perguntado** e **termo técnico explicado** entre parênteses ("cefaleia (dor de cabeça)"), pelo glossário em `services/glossary.py` (97 termos, a revisar). A fundamentação aceita a expressão do dia a dia inteira contra o termo técnico do trecho.
+- **Prompt de balcão**: frases curtas, a primeira já respondendo, sem conselho que o trecho não traz (`LINGUAGEM_SIMPLES`).
+- **"Consulte um médico" sai** quando o trecho citado não fala de médico nem de farmacêutico (`grounding.sem_conselho`, §42): o aviso fixo já diz isso. "Médico" também deixou de casar com "medicamento" na fundamentação.
+- **"Em outras palavras"** no para que serve: o modelo explica as frases copiadas em 1 a 3 frases simples, cada uma conferida com régua mais alta (0,8 dos termos); reprovada, a resposta sai só com a cópia (`EXPLICAR_INDICACAO`).
+- **Sugestões**: até 3 perguntas seguintes sobre o mesmo remédio, como botões.
 
 ## Modelo de dados
 
@@ -379,8 +420,8 @@ O projeto partiu de uma especificação ([`FarmaRAG.pdf`](FarmaRAG.pdf)). Tudo q
 
 ### 2. O que falta do agente
 
-- **"Não ajudou" com o LLM real**: pronto no grafo, na API e na tela (item 8 de [Como funciona hoje](#como-funciona-hoje)), testado só com o modelo falso; falta ver, na quinta, se a outra explicação do qwen2.5:1.5b com os trechos novos passa na fundamentação.
-- **Forma farmacêutica ambígua** (Tylalgin gotas × comprimido × sachê): a bula já tem `forma_farmaceutica`, e o contrato `precisa_esclarecimento` continua na API e na tela; falta o nó que pergunta (o antigo `esclarecer`, que perguntava o medicamento, saiu em 2026-10-16).
+- **"Não ajudou" com o LLM real**: verificado em 2026-10-29 (vídeo de demonstração): a outra explicação do qwen2.5:1.5b, com os trechos novos, passou na fundamentação e foi citada.
+- **O que não está pronto** (DECISOES §44): as 12 bulas que faltam dos 40 medicamentos (o Bulário usa Cloudflare e o download é manual: naproxeno, cetirizina, loperamida, bisacodil, lactulose, butilbrometo de escopolamina, dimenidrinato, guaifenesina, benzidamina, ácido ascórbico, sulfato ferroso e minoxidil); a meta de latência (mediana abaixo de 60 s), que o modelo de 1,5B na CPU não atinge: uma pergunta pelo LLM leva de 50 a 90 s; e a regra 6 cobre só a permissão explícita contra uma proibição clara, não toda inversão de sentido. O benchmark completo (seção 3 abaixo) mediu o que isso custa: 9 de 88 respostas contradizem a bula e 3 de 6 perguntas fora do escopo foram respondidas; o que falta é uma guarda de escopo e uma conferência do "sim/não" (DECISOES §46).
 - O esclarecimento só pergunta sobre medicamento, forma farmacêutica ou seção. **Nunca** pergunta dado do paciente (idade, gestação, doenças), por causa da LGPD e da regra "não personaliza conduta". No máximo 1 por pergunta: o reenvio já vem com o filtro.
 
 ### 3. Benchmark próprio
@@ -394,14 +435,38 @@ flowchart LR
 
 `data/benchmark/perguntas.jsonl` (DECISOES §2 e §30): cada pergunta aponta onde a resposta está na bula (princípio ativo, seção e uma frase copiada dela), então o gabarito não muda quando o corte dos trechos muda. `--sem-rerank` roda a linha de base. Resultado de 2026-10-18, modo busca: **44/70 → 57/70** com o trecho certo na rodada 1, depois do reranking e das correções de reconhecimento que o próprio benchmark achou (sigla "AAS", alergia a algo que não é remédio, pergunta de uso com dois remédios).
 
+**Lote 2** (`data/benchmark/perguntas_lote2.jsonl`, DECISOES §43): 41 perguntas (35 com resposta, 6 sem) escritas em 2026-10-28 lendo só as bulas, sem rodar o sistema, cobrindo os 7 princípios ativos que o lote 1 não tinha. O lote 1 serviu para ajustar o reranking; o lote 2 mede se os ajustes generalizam: `python -m benchmark.run --perguntas data/benchmark/perguntas_lote2.jsonl --rotulo lote2`. Um teste de contrato confere que toda âncora dos dois lotes está num trecho do acervo.
+
+**Modo completo, com o LLM real (2026-10-29, `qwen2.5:1.5b`, semente 42, DECISOES §46).** O "acerto" do benchmark mede se o trecho-âncora chegou ao modelo na rodada 1; **não mede se a resposta está certa**. Por isso as respostas foram lidas uma a uma, contra a resposta esperada do gabarito (leitura manual, não métrica automática):
+
+| | Lote 1 (70 + 10) | Lote 2 (35 + 6) |
+|---|---|---|
+| Trecho-âncora na rodada 1 | 58/70 | 30/35 |
+| Perguntas com resposta, respondidas | 64/70 | 24/35 |
+| Respostas **adequadas** (leitura manual) | 48 de 64 | 16 de 24 |
+| Respostas **erradas** (contradizem a bula ou a resposta esperada) | 6 | 3 |
+| Respostas **fora do assunto ou incompletas** | 10 | 5 |
+| Recusa certa nas perguntas sem resposta na bula | 5/10 (nenhuma resposta indevida; 3 erros 502 do modelo e 2 pedidos de esclarecimento) | 2/6 (**3 respondidas indevidamente**) |
+| Mediana / rodadas médias | 31,6 s / 1,33 | 24,8 s / 1,6 |
+
+O que isso significa na prática: o sistema responde certo na maior parte das vezes (**64 de 88 respondidas**) e, quando não acha sustentação, recusa (17 perguntas com resposta na bula terminaram em "não encontrei" ou erro do modelo). Mas **não é verdade que ele sempre prefere recusar a errar**: 9 das 88 respostas contradizem a bula. Os defeitos medidos, todos do modelo de 1,5B que a regra de fundamentação só pega em parte:
+
+- **Sim/não invertido** ("Sim, pode tomar outro comprimido" onde a bula diz "não deve ser readministrado na mesma noite"; "a amamentação é um uso recomendado" onde diz "não é recomendado"; "Sim, pode usar AAS" na úlcera, quando só o trecho de "cautela" chegou ao modelo). A regra 6 pega "pode ser usado" contra "contraindicado/evite", não toda paráfrase.
+- **Resposta que não responde** (pergunta sobre fígado respondida com amamentação; "por quantos dias no máximo" respondida com a dose pediátrica).
+- **Pergunta fora do escopo respondida** quando cita um remédio do acervo: preço do Cozaar e dose para cachorro caíram no caminho de resposta copiada da bula, e "omeprazol com chá de boldo" foi respondida com um trecho que não cita boldo.
+- **Variação entre rodadas** mesmo com semente fixa: perguntas que falharam numa execução responderam em outra.
+
+Não há trava automática para esses casos; no balcão, a conferência humana da fonte citada continua necessária (a tela mostra o trecho e o destaque de cada frase). A correção planejada está em DECISOES §46.
+
 `--candidatos 10 25 50 100` roda cada número de candidatos do reranking e compara com o primeiro: mesmos trechos na rodada 1 (= mesmo prompt, mesma resposta), perguntas que passaram a acertar ou deixaram de acertar e, no modo completo, a mesma resposta. No modo completo o LLM só roda de novo onde os trechos mudaram, com semente fixa (`LLM_SEMENTE`, 42 no benchmark), para o mesmo prompt dar a mesma resposta. Resultado de 2026-10-22 (DECISOES §32): **77 de 80 perguntas recebem os mesmos trechos** com 25, 50 ou 100; o acerto vai de 57/70 para 58/70 com 25 ou mais, e com 50 o trecho certo já está entre os candidatos nas 51 perguntas pela semelhança. O que ainda erra é a escolha do reranking, não a falta de candidatos.
 
 **Reranking da rodada 1** (`app/services/rerank.py`, sem modelo): os 10 mais parecidos de cada remédio, mais os 2 melhores de cada seção que a pergunta pede, recebem nota = semelhança + 0,08 se é da seção pedida + 0,08 × fração dos assuntos da pergunta que o trecho cita; os 3 de maior nota vão ao agente, sem repetir trecho quase igual e divididos entre os remédios. "Pode tomar X?" pede contraindicações e advertências; dois remédios pedem interações. `RERANK_CANDIDATOS=0` desliga. Desde a F3b (DECISOES §34), a rodada 1 também leva **um trecho da seção pedida por remédio** (no lugar do escolhido de menor semelhança) e "resultados de eficácia" e "características farmacológicas" só ficam na frente se a pergunta as pede (estudo, mecanismo, farmacocinética, "fazer efeito"); `RERANK_GARANTE_SECAO=false` volta ao reranking sem isso.
 
 ### 4. Entrega
 
-- **Docker Compose completo:** escrito (DECISOES §38 e §40): banco, `carga` do acervo pelo Git, API e tela no nginx, com o passo a passo em [Como rodar](#como-rodar). Falta construir as imagens e seguir o passo a passo de verdade num clone novo (quinta).
-- Resultados do benchmark publicados aqui e um vídeo curto de demonstração.
+- **Docker Compose completo:** pronto e testado (DECISOES §38, §40 e §44): banco, `carga` do acervo pelo Git, API e tela no nginx, com o passo a passo em [Como rodar](#como-rodar). Seguido de verdade num clone novo em 2026-10-29: `up -d db`, `run --rm carga`, `up -d --build`, três containers saudáveis.
+- **Vídeo de demonstração** (seção Demonstração, no topo) e resultados do benchmark (seção 3 acima).
+- **Segurança**: análise feita e corrigida (seção [Segurança](#segurança)).
 
 ## Como rodar
 
@@ -494,6 +559,19 @@ python -m ingestion.load_database            # ou: docker compose run --rm carga
 
 Para o próximo clone já vir com a bula nova, commite juntos os JSON de `data/processed/bulas/`, o `data/processed/chunks.jsonl` e o `data/cache/embeddings.sqlite`. O `--podar` deixa no cache só os trechos atuais (sem ele, o fim do `generate_chunks` avisa quantas linhas sobram), e um teste da suíte falha se faltar o embedding de algum trecho.
 
+## Segurança
+
+Análise feita em 2026-10-29 sobre o código, os containers e as dependências, com correção do que se achou
+([`docs/SEGURANCA.md`](docs/SEGURANCA.md): modelo de ameaça, achados, riscos aceitos e como repetir cada verificação).
+
+- **Rede:** tela, API e banco só respondem em `127.0.0.1`; sem login, porque o controle é esse. Para expor fora da máquina, a lista do que falta está em `SEGURANCA.md` (TLS, autenticação e limite de taxa num proxy).
+- **Containers:** API sem root (uid 10001), nginx sem privilégios (uid 101), raiz do sistema de arquivos somente leitura, sem nenhuma capability do Linux, `no-new-privileges`, teto de memória e de processos.
+- **Cadeia de suprimentos:** `backend/requirements.lock` (54 pacotes exatos), `package.json` com versões exatas e `ignore-scripts`, e as três imagens base fixadas por digest. `npm audit`: 0. `pip-audit`: 0 (achou o `certifi` antigo, corrigido). `docker scout`: 0 críticas e 0 altas com correção disponível.
+- **Tela:** Content-Security-Policy restritiva (só recursos da própria origem), sem HTML cru e sem chamada externa; o texto do modelo é sempre renderizado como texto.
+- **Abuso:** no máximo `PERGUNTAS_SIMULTANEAS` perguntas em andamento (o excedente recebe 429 na hora) e corpo de requisição de até 16 KB no nginx.
+- **Dados:** nada da pergunta sai da máquina (a única chamada de rede do código é ao Ollama; a telemetria do LangChain está desligada). O histórico guarda só pergunta e resposta, e a tela pede para não escrever dado de paciente. `SEGURANCA.md` mostra como apagar o histórico.
+- **O que ficou de propósito:** `zlib` (Debian) e `libxml2` (Alpine) sem correção publicada, mensagens de erro com detalhes técnicos, usuário do banco como dono, histórico sem retenção automática.
+
 ## Estrutura do repositório
 
 ```text
@@ -507,6 +585,7 @@ farma-rag/
 │   │   ├── llm/               # cliente do Ollama (chat + embed) e cálculo de embeddings
 │   │   ├── schemas/           # contratos do dataset e da API, catálogo de erros
 │   │   └── services/          # corpus, medicines (detecção), intent, citations, grounding (fundamentação e destaque), extract, rag (peças), graph (agente LangGraph), history
+│   ├── requirements.lock      # versões EXATAS das dependências (gerado por lock_deps.py); a imagem instala daqui
 │   └── tests/                 # pytest + fixtures (bula inventada "Exemplol")
 ├── ingestion/                 # PDF -> JSON -> trechos -> embeddings -> banco; catálogo ANVISA
 ├── benchmark/                 # medição do ambiente, métricas, teste manual (ask.py)
@@ -518,10 +597,12 @@ farma-rag/
 │   └── benchmark/             # perguntas e resultados
 ├── frontend/                  # React + TypeScript (Vite): tela de chat
 │   ├── src/                   # api.ts (cliente e tipos), conversation.ts (modelo da conversa), App.tsx, components/, styles.css
-│   ├── Dockerfile             # Node constrói, nginx serve (imagem final sem Node)
-│   └── nginx.conf             # entrega a tela e repassa /api para o backend
+│   ├── Dockerfile             # Node constrói, nginx SEM privilégios serve (imagem final sem Node)
+│   └── nginx.conf             # entrega a tela (CSP e demais cabeçalhos) e repassa /api para o backend
 ├── docs/DECISOES.md           # correções à especificação, com motivo
-├── docker-compose.yml         # pgvector/pgvector:pg17 + backend + frontend (nginx)
+├── docs/SEGURANCA.md          # modelo de ameaça, achados corrigidos, riscos aceitos e como repetir as verificações
+├── docs/demo/                 # vídeo de demonstração (farmarag-demo.mp4) e a capa usada no README
+├── docker-compose.yml         # pgvector/pgvector:pg17 + backend + frontend (nginx); containers sem root, disco somente leitura
 └── FarmaRAG.pdf               # especificação original
 ```
 

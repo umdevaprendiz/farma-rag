@@ -1,0 +1,1969 @@
+{
+ "resumo": {
+  "acerto_rodada1": "58/70",
+  "por_categoria": {
+   "advertencia": "9/10",
+   "composicao": "2/2",
+   "conservacao": "5/5",
+   "contraindicacao": "6/11",
+   "indicacao": "9/9",
+   "interacao": "7/10",
+   "posologia": "12/12",
+   "reacao_adversa": "7/9",
+   "superdose": "1/2"
+  },
+  "por_caminho": {
+   "busca_geral": "1/1",
+   "copiada": "10/11",
+   "indicacao": "6/6",
+   "semelhanca": "41/52"
+  },
+  "semelhanca_ancora_nos_10_candidatos": "45/52",
+  "semelhanca_ancora_nos_3_primeiros_candidatos": "30/52",
+  "segundos_mediana": 2.37
+ },
+ "config": {
+  "top_k": 3,
+  "rerank_candidatos": 10,
+  "llm": "qwen2.5:1.5b",
+  "llm_semente": null
+ },
+ "perguntas": [
+  {
+   "id": "pos01",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Um cliente adulto quer tomar Tylalgin 750 mg (paracetamol) para dor no corpo. Qual é a dose máxima por dia e quantos comprimidos ele pode tomar em 24 horas?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 3.73,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "tylalgin-750-mg-geolab__posologia__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "paracetamol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Até 4000 mg por dia (5 comprimidos de 750 mg), sem passar de 1000 mg por dose, com intervalos de 4 a 6 horas."
+  },
+  {
+   "id": "pos02",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Dorageo 1 g (dipirona) para dor forte em adulto: quantos comprimidos ele pode tomar e quantas vezes por dia?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.28,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "dorageo-1-g-geolab__posologia__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "dipirona monoidratada"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "½ a 1 comprimido até 4 vezes ao dia."
+  },
+  {
+   "id": "pos03",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Ibuprofeno 400 mg cápsula mole: qual o intervalo mínimo entre as doses e quantas cápsulas no máximo em 24 horas?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.49,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "ibuprofeno-400-mg-capsula-mole-geolab__posologia__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "ibuprofeno"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "1 cápsula, repetida se necessário com intervalo mínimo de 4 a 6 horas; no máximo 3 cápsulas (1.200 mg) em 24 horas."
+  },
+  {
+   "id": "pos04",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Paciente com insuficiência cardíaca vai começar losartana. Qual é a dose inicial recomendada e como ela é aumentada?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.73,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cozaar-50-mg-e-100-mg-organon__posologia__001"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "losartana potassica"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Dose inicial de 12,5 mg uma vez ao dia, titulada em intervalos semanais (12,5, 25, 50 mg/dia) até a manutenção usual de 50 mg uma vez ao dia."
+  },
+  {
+   "id": "pos05",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Nitazoxanida 500 mg comprimido para giardíase em adulto: quantas vezes ao dia e por quantos dias?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.79,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "nitazoxanida-500-mg-e-20-mg-ml-ems__posologia__001"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "nitazoxanida"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "1 comprimido de 500 mg duas vezes ao dia (a cada 12 horas), por 3 dias consecutivos."
+  },
+  {
+   "id": "pos06",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Em que momento o paciente deve tomar o zolpidem 10 mg? Ele pode tomar outro comprimido se acordar de madrugada?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.76,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "hemitartarato-de-zolpidem-10-mg-geolab__posologia__000",
+    "hemitartarato-de-zolpidem-10-mg-geolab__posologia__001",
+    "hemitartarato-de-zolpidem-10-mg-geolab__advertencias__013"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "hemitartarato de zolpidem"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Imediatamente antes de deitar ou já na cama, em dose única; não deve ser readministrado na mesma noite."
+  },
+  {
+   "id": "pos07",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Qual é a dose inicial de sertralina para depressão em adulto?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.64,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__posologia__001",
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__posologia__000",
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__posologia__004"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "cloridrato de sertralina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "50 mg/dia; quem não responde pode ter a dose aumentada conforme a titulação da bula."
+  },
+  {
+   "id": "pos08",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Com qual dose por quilo de peso o tratamento com isotretinoína deve começar?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.67,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "isotretinoina-10-mg-capsula-mole-ems__posologia__000",
+    "isotretinoina-20-mg-capsula-mole-ems__posologia__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "isotretinoina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "0,5 mg/kg por dia; na maioria dos pacientes a dose fica entre 0,5 e 1,0 mg/kg/dia, em duas tomadas após a refeição."
+  },
+  {
+   "id": "pos09",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Pozato Uni (levonorgestrel 1,5 mg): até quantas horas depois da relação sem proteção ele ainda pode ser tomado?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.6,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "pozato-uni-1-5-mg-libbs__posologia__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "levonorgestrel"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "O mais breve possível após a relação, sem ultrapassar 72 horas, porque a eficácia cai com a demora."
+  },
+  {
+   "id": "pos10",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Oximetazolina 0,5 mg/mL spray adulto: quantas aplicações em cada narina e de quanto em quanto tempo?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.74,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-oximetazolina-0-25-mg-ml-e-0-5-mg-ml-ems__posologia__000",
+    "cloridrato-de-oximetazolina-0-25-mg-ml-e-0-5-mg-ml-ems__posologia__001",
+    "cloridrato-de-oximetazolina-0-25-mg-ml-e-0-5-mg-ml-ems__outras__001"
+   ],
+   "posicao_nos_candidatos": 2,
+   "principios_ativos": [
+    "cloridrato de oximetazolina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "2 ou 3 atomizações em cada narina, de 12 em 12 horas."
+  },
+  {
+   "id": "pos11",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "Kaodine loção 10 mg/mL (permetrina) para piolho: quanto tempo o produto deve ficar agindo no cabelo antes de enxaguar?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 2,
+   "segundos": 2.94,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "kaodine-10-mg-ml-locao-geolab__posologia__001",
+    "kaodine-10-mg-ml-locao-geolab__posologia__000",
+    "kaodine-10-mg-ml-locao-geolab__advertencias__001"
+   ],
+   "posicao_nos_candidatos": 2,
+   "principios_ativos": [
+    "permetrina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Deixar agir por 10 minutos."
+  },
+  {
+   "id": "pos12",
+   "categoria": "posologia",
+   "respondivel": true,
+   "pergunta": "AAS 500 mg (ácido acetilsalicílico) para dor de cabeça em adulto: de quanto em quanto tempo pode repetir e qual o limite por dia?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.66,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "acido-acetilsalicilico-500-mg-ems__posologia__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "acido acetilsalicilico"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Repetir a cada 4 a 8 horas se necessário, sem passar de 8 comprimidos por dia."
+  },
+  {
+   "id": "con01",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Paciente com febre e suspeita de dengue pode tomar ibuprofeno 400 mg?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 2,
+   "segundos": 2.67,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "ibuprofeno-400-mg-capsula-mole-geolab__advertencias__014",
+    "ibuprofeno-400-mg-capsula-mole-geolab__contraindicacoes__001",
+    "ibuprofeno-400-mg-capsula-mole-geolab__advertencias__013"
+   ],
+   "posicao_nos_candidatos": 2,
+   "principios_ativos": [
+    "ibuprofeno"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: o ibuprofeno é contraindicado na suspeita de dengue, porque pode aumentar o risco de sangramentos."
+  },
+  {
+   "id": "con02",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Pessoa com deficiência de G6PD pode tomar dipirona?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.47,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "dorageo-1-g-geolab__contraindicacoes__000",
+    "dorageo-1-g-geolab__advertencias__010",
+    "dorageo-1-g-geolab__advertencias__002"
+   ],
+   "posicao_nos_candidatos": 5,
+   "principios_ativos": [
+    "dipirona monoidratada"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: a deficiência congênita de G6PD é contraindicação (risco de hemólise)."
+  },
+  {
+   "id": "con03",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Mulher em idade fértil que não usa nenhum método anticoncepcional pode começar isotretinoína para acne?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.66,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "isotretinoina-10-mg-capsula-mole-ems__advertencias__001",
+    "isotretinoina-20-mg-capsula-mole-ems__advertencias__016",
+    "isotretinoina-10-mg-capsula-mole-ems__advertencias__003"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "isotretinoina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: é contraindicada em grávidas ou em quem pode engravidar sem cumprir os critérios de contracepção, pelo risco de malformação fetal."
+  },
+  {
+   "id": "con04",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Nisoflan gotas (nimesulida) pode ser dado para uma criança de 8 anos com dor de garganta?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 2,
+   "segundos": 2.46,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "nisoflan-50-mg-ml-gotas-geolab__advertencias__005",
+    "nisoflan-50-mg-ml-gotas-geolab__resultados_eficacia__004",
+    "nisoflan-50-mg-ml-gotas-geolab__contraindicacoes__000"
+   ],
+   "posicao_nos_candidatos": 6,
+   "principios_ativos": [
+    "nimesulida"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: a nimesulida é contraindicada para menores de 12 anos."
+  },
+  {
+   "id": "con05",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Paciente que já teve inchaço na boca e na língua (angioedema) com captopril pode usar Renitec (enalapril)?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.81,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "renitec-5-mg-10-mg-e-20-mg-organon__advertencias__004",
+    "renitec-5-mg-10-mg-e-20-mg-organon__interacoes__006",
+    "renitec-5-mg-10-mg-e-20-mg-organon__interacoes__007"
+   ],
+   "posicao_nos_candidatos": 9,
+   "principios_ativos": [
+    "maleato de enalapril"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: o Renitec é contraindicado para quem teve edema angioneurótico com inibidores da ECA."
+  },
+  {
+   "id": "con06",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Diabético com insuficiência renal grave (taxa de filtração abaixo de 30) pode usar metformina 850 mg?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.54,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-metformina-850-mg-geolab__advertencias__004",
+    "cloridrato-de-metformina-850-mg-geolab__contraindicacoes__000",
+    "cloridrato-de-metformina-850-mg-geolab__advertencias__003"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "cloridrato de metformina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: insuficiência renal grave (depuração ou TFGe abaixo de 30 mL/min) é contraindicação."
+  },
+  {
+   "id": "con07",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Quem tem glaucoma de ângulo estreito pode usar descongestionante nasal de oximetazolina?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.53,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-oximetazolina-0-25-mg-ml-e-0-5-mg-ml-ems__contraindicacoes__000",
+    "cloridrato-de-oximetazolina-0-25-mg-ml-e-0-5-mg-ml-ems__advertencias__000",
+    "cloridrato-de-oximetazolina-0-25-mg-ml-e-0-5-mg-ml-ems__caracteristicas_farmacologicas__000"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "cloridrato de oximetazolina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: glaucoma de ângulo estreito é contraindicação, assim como o uso de IMAO nas duas semanas anteriores."
+  },
+  {
+   "id": "con08",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Paciente com úlcera no estômago em atividade pode tomar AAS para dor?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 2,
+   "segundos": 2.39,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "acido-acetilsalicilico-500-mg-ems__advertencias__000",
+    "acido-acetilsalicilico-100-mg-ems__advertencias__000",
+    "acido-acetilsalicilico-500-mg-ems__advertencias__002"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "acido acetilsalicilico"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: úlceras gastrintestinais agudas e diátese hemorrágica são contraindicações do ácido acetilsalicílico."
+  },
+  {
+   "id": "con09",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Paciente parou um antidepressivo IMAO há uma semana. Já pode começar sertralina?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.36,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__advertencias__003",
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__advertencias__002",
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__advertencias__005"
+   ],
+   "posicao_nos_candidatos": 6,
+   "principios_ativos": [
+    "cloridrato de sertralina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: a sertralina é contraindicada junto com IMAO ou nos 14 dias depois de parar o IMAO."
+  },
+  {
+   "id": "con10",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Cliente diz que é alérgico a penicilina. Ele pode tomar amoxicilina 500 mg?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.39,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "amoxicilina-500-mg-capsula-dura-ems__advertencias__000",
+    "amoxicilina-500-mg-capsula-dura-ems__contraindicacoes__000",
+    "amoxicilina-500-mg-capsula-dura-ems__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": 2,
+   "principios_ativos": [
+    "amoxicilina tri hidratada"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: a amoxicilina é uma penicilina e não deve ser usada por quem tem hipersensibilidade a betalactâmicos (penicilinas e cefalosporinas)."
+  },
+  {
+   "id": "con11",
+   "categoria": "contraindicacao",
+   "respondivel": true,
+   "pergunta": "Diabético com insuficiência renal pode usar losartana junto com alisquireno?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.46,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "cozaar-50-mg-e-100-mg-organon__interacoes__003",
+    "cozaar-50-mg-e-100-mg-organon__advertencias__007"
+   ],
+   "posicao_nos_candidatos": 9,
+   "principios_ativos": [
+    "losartana potassica"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: o uso com alisquireno é contraindicado em diabéticos e em insuficiência renal (TFG < 60)."
+  },
+  {
+   "id": "adv01",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Cliente bebe álcool todos os dias. Ele precisa de algum cuidado para tomar paracetamol?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.35,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "tylalgin-750-mg-geolab__advertencias__001",
+    "tylalgin-200-mg-ml-gotas-geolab__advertencias__002",
+    "tylalgin-750-mg-geolab__advertencias__002"
+   ],
+   "posicao_nos_candidatos": 6,
+   "principios_ativos": [
+    "paracetamol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: usuários crônicos de álcool têm risco maior de doença do fígado se passarem da dose recomendada; não exceder a dose."
+  },
+  {
+   "id": "adv02",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Quem tomou zolpidem à noite pode dirigir logo cedo na manhã seguinte?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.49,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "hemitartarato-de-zolpidem-10-mg-geolab__advertencias__013",
+    "hemitartarato-de-zolpidem-10-mg-geolab__advertencias__014",
+    "hemitartarato-de-zolpidem-10-mg-geolab__advertencias__006"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "hemitartarato de zolpidem"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "O risco de prejuízo para dirigir aumenta se o zolpidem foi tomado menos de 7 a 8 horas antes; a bula orienta não dirigir durante o tratamento."
+  },
+  {
+   "id": "adv03",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Mãe que está amamentando pode tomar sertralina?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.37,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__advertencias__022",
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__advertencias__019",
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__advertencias__018"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "cloridrato de sertralina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Depende da avaliação e acompanhamento do médico; a sertralina passa para o leite em concentração baixa."
+  },
+  {
+   "id": "adv04",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Paciente descobriu que está grávida e toma Cozaar (losartana). O que a bula orienta?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.55,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cozaar-50-mg-e-100-mg-organon__advertencias__011",
+    "cozaar-50-mg-e-100-mg-organon__advertencias__000",
+    "cozaar-50-mg-e-100-mg-organon__advertencias__009"
+   ],
+   "posicao_nos_candidatos": 2,
+   "principios_ativos": [
+    "losartana potassica"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Suspender o mais rápido possível: no 2º e 3º trimestres, remédios que agem no sistema renina-angiotensina podem lesar o feto."
+  },
+  {
+   "id": "adv05",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Paciente com histórico de depressão quer usar isotretinoína. A bula fala de risco psiquiátrico?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.42,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "isotretinoina-10-mg-capsula-mole-ems__advertencias__009",
+    "isotretinoina-20-mg-capsula-mole-ems__advertencias__008",
+    "isotretinoina-10-mg-capsula-mole-ems__advertencias__011"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "isotretinoina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: pode causar depressão, psicose, ideias e tentativas de suicídio; exige cuidado especial e acompanhamento."
+  },
+  {
+   "id": "adv06",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Mulher que amamenta precisou tomar Pozato Uni. Ela precisa parar de amamentar?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.39,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "pozato-uni-1-5-mg-libbs__contraindicacoes__001",
+    "pozato-uni-1-5-mg-libbs__advertencias__001",
+    "pozato-uni-1-5-mg-libbs__advertencias__002"
+   ],
+   "posicao_nos_candidatos": 2,
+   "principios_ativos": [
+    "levonorgestrel"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim, temporariamente: o levonorgestrel passa para o leite."
+  },
+  {
+   "id": "adv07",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Paciente toma omeprazol há anos. O uso prolongado aumenta o risco de fratura?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.39,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "omenax-20-mg-geolab__advertencias__002",
+    "omenax-20-mg-geolab__advertencias__024",
+    "omenax-20-mg-geolab__advertencias__009"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "omeprazol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Pode: estudos associam o uso de IBP, principalmente em dose alta e por um ano ou mais, a fraturas por osteoporose."
+  },
+  {
+   "id": "adv08",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Por quantos dias no máximo dá para usar o spray nasal de oximetazolina?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.4,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-oximetazolina-0-25-mg-ml-e-0-5-mg-ml-ems__advertencias__000",
+    "cloridrato-de-oximetazolina-0-25-mg-ml-e-0-5-mg-ml-ems__posologia__000",
+    "cloridrato-de-oximetazolina-0-25-mg-ml-e-0-5-mg-ml-ems__outras__001"
+   ],
+   "posicao_nos_candidatos": 2,
+   "principios_ativos": [
+    "cloridrato de oximetazolina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não mais que três dias, porque pode causar congestão recorrente (rebote)."
+  },
+  {
+   "id": "adv09",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Nimesulida faz mal para o fígado? O que a bula alerta?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.38,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "nisoflan-50-mg-ml-gotas-geolab__advertencias__001",
+    "nisoflan-50-mg-ml-gotas-geolab__advertencias__004",
+    "nisoflan-50-mg-ml-gotas-geolab__advertencias__000"
+   ],
+   "posicao_nos_candidatos": 6,
+   "principios_ativos": [
+    "nimesulida"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Raramente se associa a reações hepáticas sérias, inclusive fatais; evitar com álcool e outros hepatotóxicos e parar se houver sinais de lesão no fígado."
+  },
+  {
+   "id": "adv10",
+   "categoria": "advertencia",
+   "respondivel": true,
+   "pergunta": "Criança de 9 anos com catapora pode tomar AAS para a febre?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": "acido-acetilsalicilico-100-mg-ems",
+   "status": "nao_encontrada",
+   "rodadas": 2,
+   "segundos": 2.73,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "acido-acetilsalicilico-100-mg-ems__advertencias__002",
+    "acido-acetilsalicilico-100-mg-ems__advertencias__001",
+    "acido-acetilsalicilico-100-mg-ems__advertencias__005"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "acido acetilsalicilico"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não sem orientação médica: em catapora e gripe há risco de Síndrome de Reye."
+  },
+  {
+   "id": "int01",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Paciente toma clopidogrel depois de um infarto e o médico receitou omeprazol. Tem interação?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.81,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "omenax-20-mg-geolab__interacoes__003",
+    "omenax-20-mg-geolab__advertencias__005"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "omeprazol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: o omeprazol reduz o metabólito ativo do clopidogrel e a inibição plaquetária; a bula orienta evitar o uso junto."
+  },
+  {
+   "id": "int02",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Hipertenso que toma losartana pode tomar ibuprofeno para dor nas costas?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.39,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "ibuprofeno-400-mg-capsula-mole-geolab__interacoes__001",
+    "ibuprofeno-400-mg-capsula-mole-geolab__interacoes__002",
+    "cozaar-50-mg-e-100-mg-organon__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": 10,
+   "principios_ativos": [
+    "ibuprofeno",
+    "losartana potassica"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Com cautela: anti-inflamatórios como o ibuprofeno podem reduzir o efeito anti-hipertensivo da losartana e piorar a função renal em quem tem risco."
+  },
+  {
+   "id": "int03",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Diabético que toma metformina pode beber cerveja no fim de semana?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.3,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "cloridrato-de-metformina-850-mg-geolab__advertencias__003",
+    "cloridrato-de-metformina-850-mg-geolab__advertencias__006",
+    "cloridrato-de-metformina-850-mg-geolab__interacoes__000"
+   ],
+   "posicao_nos_candidatos": 8,
+   "principios_ativos": [
+    "cloridrato de metformina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Deve evitar: o álcool aumenta o risco de acidose láctica, principalmente em intoxicação aguda."
+  },
+  {
+   "id": "int04",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Zolpidem junto com bebida alcoólica tem problema?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.26,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "hemitartarato-de-zolpidem-10-mg-geolab__interacoes__000",
+    "hemitartarato-de-zolpidem-10-mg-geolab__interacoes__004",
+    "hemitartarato-de-zolpidem-10-mg-geolab__interacoes__001"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "hemitartarato de zolpidem"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não é recomendado: o álcool intensifica o efeito sedativo e o risco ao dirigir."
+  },
+  {
+   "id": "int05",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Isotretinoína pode ser usada junto com tetraciclina para acne?",
+   "caminho": "copiada",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.26,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "isotretinoina-10-mg-capsula-mole-ems__interacoes__000"
+   ],
+   "posicao_nos_candidatos": 5,
+   "principios_ativos": [
+    "isotretinoina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: o uso junto com tetraciclinas deve ser evitado."
+  },
+  {
+   "id": "int06",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Mulher que toma rifampicina para tuberculose tomou Pozato Uni. O remédio pode falhar?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.3,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "pozato-uni-1-5-mg-libbs__interacoes__000",
+    "pozato-uni-1-5-mg-libbs__interacoes__001",
+    "pozato-uni-1-5-mg-libbs__resultados_eficacia__001"
+   ],
+   "posicao_nos_candidatos": 4,
+   "principios_ativos": [
+    "levonorgestrel"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Pode: a rifampicina está entre os medicamentos que reduzem a eficácia do levonorgestrel."
+  },
+  {
+   "id": "int07",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Amoxicilina corta o efeito do anticoncepcional?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.26,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "amoxicilina-500-mg-capsula-dura-ems__reacoes_adversas__000",
+    "amoxicilina-500-mg-capsula-dura-ems__reacoes_adversas__002",
+    "amoxicilina-500-mg-capsula-dura-ems__interacoes__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "amoxicilina tri hidratada"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Pode reduzir a eficácia de contraceptivos orais combinados, por alterar a flora intestinal."
+  },
+  {
+   "id": "int08",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Paciente usa varfarina. Tomar AAS junto aumenta o risco de sangramento?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.36,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "acido-acetilsalicilico-100-mg-ems__interacoes__001",
+    "acido-acetilsalicilico-500-mg-ems__interacoes__001",
+    "acido-acetilsalicilico-100-mg-ems__interacoes__003"
+   ],
+   "posicao_nos_candidatos": 4,
+   "principios_ativos": [
+    "acido acetilsalicilico"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: com anticoagulantes há aumento do risco de sangramento."
+  },
+  {
+   "id": "int09",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Paciente que usa varfarina pode tomar paracetamol de vez em quando para dor de cabeça?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.29,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "tylalgin-750-mg-geolab__indicacoes__000",
+    "tylalgin-750-mg-geolab__interacoes__000",
+    "tylalgin-sachet-500-mg-geolab__interacoes__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "paracetamol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "O uso ocasional geralmente tem pouco ou nenhum efeito; o uso prolongado pode aumentar o risco de sangramento."
+  },
+  {
+   "id": "int10",
+   "categoria": "interacao",
+   "respondivel": true,
+   "pergunta": "Paciente que toma lítio pode usar diclofenaco sódico 50 mg?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.29,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "diclofenaco-sodico-50-mg-geolab__advertencias__004",
+    "diclofenaco-sodico-50-mg-geolab__interacoes__000",
+    "diclofenaco-sodico-50-mg-geolab__advertencias__007"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "diclofenaco sodico"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Com monitoramento: o diclofenaco pode elevar o lítio no sangue; recomenda-se dosar o lítio."
+  },
+  {
+   "id": "rea01",
+   "categoria": "reacao_adversa",
+   "respondivel": true,
+   "pergunta": "Isotretinoína resseca os lábios e a pele?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.26,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "isotretinoina-10-mg-capsula-mole-ems__reacoes_adversas__002",
+    "isotretinoina-10-mg-capsula-mole-ems__reacoes_adversas__004",
+    "isotretinoina-20-mg-capsula-mole-ems__resultados_eficacia__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "isotretinoina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: ressecamento da pele e dos lábios está entre as reações adversas."
+  },
+  {
+   "id": "rea02",
+   "categoria": "reacao_adversa",
+   "respondivel": true,
+   "pergunta": "Zolpidem pode causar perda de memória ou sonambulismo?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.24,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "hemitartarato-de-zolpidem-10-mg-geolab__reacoes_adversas__001",
+    "hemitartarato-de-zolpidem-10-mg-geolab__advertencias__005",
+    "hemitartarato-de-zolpidem-10-mg-geolab__reacoes_adversas__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "hemitartarato de zolpidem"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: amnésia anterógrada e sonambulismo estão entre as reações descritas, além de sonolência, dor de cabeça e tontura."
+  },
+  {
+   "id": "rea03",
+   "categoria": "reacao_adversa",
+   "respondivel": true,
+   "pergunta": "Paciente começou metformina e está com enjoo e diarreia. Isso é efeito do remédio?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.26,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-metformina-850-mg-geolab__reacoes_adversas__000",
+    "cloridrato-de-metformina-850-mg-geolab__reacoes_adversas__001",
+    "cloridrato-de-metformina-850-mg-geolab__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": 5,
+   "principios_ativos": [
+    "cloridrato de metformina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Pode ser: náusea, vômito, diarreia, dor abdominal e falta de apetite são reações comuns, principalmente no início."
+  },
+  {
+   "id": "rea04",
+   "categoria": "reacao_adversa",
+   "respondivel": true,
+   "pergunta": "Enalapril pode dar tosse seca?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 2,
+   "segundos": 2.29,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "renitec-5-mg-10-mg-e-20-mg-organon__advertencias__007",
+    "renitec-5-mg-10-mg-e-20-mg-organon__advertencias__014",
+    "renitec-5-mg-10-mg-e-20-mg-organon__advertencias__005"
+   ],
+   "posicao_nos_candidatos": 7,
+   "principios_ativos": [
+    "maleato de enalapril"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: tosse está entre as reações adversas do enalapril."
+  },
+  {
+   "id": "rea05",
+   "categoria": "reacao_adversa",
+   "respondivel": true,
+   "pergunta": "Quais são os efeitos colaterais mais comuns da amoxicilina?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.25,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "amoxicilina-500-mg-capsula-dura-ems__reacoes_adversas__000",
+    "amoxicilina-500-mg-capsula-dura-ems__reacoes_adversas__002",
+    "amoxicilina-500-mg-capsula-dura-ems__reacoes_adversas__001"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "amoxicilina tri hidratada"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Diarreia, náusea e rash cutâneo."
+  },
+  {
+   "id": "rea06",
+   "categoria": "reacao_adversa",
+   "respondivel": true,
+   "pergunta": "Depois de tomar Pozato Uni é normal ter um pequeno sangramento fora do período?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.23,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "pozato-uni-1-5-mg-libbs__reacoes_adversas__000",
+    "pozato-uni-1-5-mg-libbs__contraindicacoes__000",
+    "pozato-uni-1-5-mg-libbs__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "levonorgestrel"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: algumas mulheres têm pequenos sangramentos de escape e alteração no ciclo seguinte."
+  },
+  {
+   "id": "rea07",
+   "categoria": "reacao_adversa",
+   "respondivel": true,
+   "pergunta": "Dipirona pode causar agranulocitose?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.26,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "dorageo-1-g-geolab__advertencias__000",
+    "dorageo-1-g-geolab__reacoes_adversas__003",
+    "dorageo-1-g-geolab__advertencias__001"
+   ],
+   "posicao_nos_candidatos": 5,
+   "principios_ativos": [
+    "dipirona monoidratada"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: agranulocitose, anemia aplástica e pancitopenia, inclusive fatais, estão entre as reações do sangue."
+  },
+  {
+   "id": "rea08",
+   "categoria": "reacao_adversa",
+   "respondivel": true,
+   "pergunta": "Omeprazol dá dor de cabeça?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 2,
+   "segundos": 2.25,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "omenax-20-mg-geolab__reacoes_adversas__004",
+    "omenax-20-mg-geolab__reacoes_adversas__001",
+    "omenax-20-mg-geolab__superdose__000"
+   ],
+   "posicao_nos_candidatos": 2,
+   "principios_ativos": [
+    "omeprazol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: dor de cabeça é a reação mais comum nos estudos (7%), seguida de dor abdominal, náusea e diarreia."
+  },
+  {
+   "id": "rea09",
+   "categoria": "reacao_adversa",
+   "respondivel": true,
+   "pergunta": "Clotrimazol creme vaginal pode causar ardor ou irritação?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.22,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "clotrimazol-10-mg-g-creme-vaginal-ems__reacoes_adversas__001",
+    "clotrimazol-10-mg-g-creme-vaginal-ems__reacoes_adversas__000",
+    "clotrimazol-10-mg-g-creme-vaginal-ems__advertencias__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "clotrimazol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: irritação no local, ardência, prurido e edema estão descritos."
+  },
+  {
+   "id": "ind01",
+   "categoria": "indicacao",
+   "respondivel": true,
+   "pergunta": "oque acha de eu tomar zolpidem para nauséa?",
+   "caminho": "indicacao",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.24,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "hemitartarato-de-zolpidem-10-mg-geolab__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "hemitartarato de zolpidem"
+   ],
+   "conclusao": "Não. Nauséa não está entre as indicações da bula de zolpidem: pela bula, não é indicado para isso. A bula indica:",
+   "resposta": null,
+   "resposta_esperada": "Não é indicado: a bula indica o zolpidem para insônia; náusea não está entre as indicações."
+  },
+  {
+   "id": "ind02",
+   "categoria": "indicacao",
+   "respondivel": true,
+   "pergunta": "certralina é pra vomito?",
+   "caminho": "indicacao",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.21,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": 3,
+   "principios_ativos": [
+    "cloridrato de sertralina"
+   ],
+   "conclusao": "Não. Vomito não está entre as indicações da bula de sertralina: pela bula, não é indicado para isso. A bula indica:",
+   "resposta": null,
+   "resposta_esperada": "Não: a sertralina é indicada para depressão e outros transtornos; vômito não está entre as indicações."
+  },
+  {
+   "id": "ind03",
+   "categoria": "indicacao",
+   "respondivel": true,
+   "pergunta": "paracetamol serve para ansiedade?",
+   "caminho": "indicacao",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.16,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "tylalgin-200-mg-ml-gotas-geolab__indicacoes__000",
+    "tylalgin-sachet-500-mg-geolab__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "paracetamol"
+   ],
+   "conclusao": "Não. Ansiedade não está entre as indicações da bula de paracetamol: pela bula, não é indicado para isso. A bula indica:",
+   "resposta": null,
+   "resposta_esperada": "Não: o paracetamol é indicado para febre e dores leves a moderadas."
+  },
+  {
+   "id": "ind04",
+   "categoria": "indicacao",
+   "respondivel": true,
+   "pergunta": "tomei roacutan para dor no ouvido, fiz certo?",
+   "caminho": "indicacao",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.2,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "isotretinoina-10-mg-capsula-mole-ems__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "isotretinoina"
+   ],
+   "conclusao": "Não. Dor no ouvido não está entre as indicações da bula de isotretinoína: pela bula, não é indicado para isso. A bula indica:",
+   "resposta": null,
+   "resposta_esperada": "Não: a isotretinoína (Roacutan) é indicada para formas graves de acne, não para dor de ouvido."
+  },
+  {
+   "id": "ind05",
+   "categoria": "indicacao",
+   "respondivel": true,
+   "pergunta": "Qual remédio do acervo serve para piolho em criança?",
+   "caminho": "busca_geral",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.23,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "kaodine-10-mg-ml-locao-geolab__indicacoes__000",
+    "albendazol-400-mg-mastigavel-geolab__indicacoes__000",
+    "tylalgin-200-mg-ml-gotas-geolab__indicacoes__000",
+    "cloridrato-de-metformina-850-mg-geolab__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Permetrina loção (Kaodine 10 mg/mL), indicada para pediculose."
+  },
+  {
+   "id": "ind06",
+   "categoria": "indicacao",
+   "respondivel": true,
+   "pergunta": "Fexofenadina suspensão serve para rinite alérgica com espirro e coriza?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.25,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "cloridrato-de-fexofenadina-6-mg-ml-suspensao-oral-vitamedic__indicacoes__000",
+    "cloridrato-de-fexofenadina-6-mg-ml-suspensao-oral-vitamedic__caracteristicas_farmacologicas__002",
+    "cloridrato-de-fexofenadina-6-mg-ml-suspensao-oral-vitamedic__contraindicacoes__000"
+   ],
+   "posicao_nos_candidatos": 4,
+   "principios_ativos": [
+    "cloridrato de fexofenadina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: é indicada para manifestações alérgicas, como rinite alérgica (espirros, obstrução nasal, coriza) e urticária."
+  },
+  {
+   "id": "ind07",
+   "categoria": "indicacao",
+   "respondivel": true,
+   "pergunta": "Para que serve o Pozato Uni?",
+   "caminho": "indicacao",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.17,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "pozato-uni-1-5-mg-libbs__indicacoes__000",
+    "pozato-uni-1-5-mg-libbs__indicacoes__001"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "levonorgestrel"
+   ],
+   "conclusao": "Para que serve, pela bula de levonorgestrel:",
+   "resposta": null,
+   "resposta_esperada": "Contracepção de emergência: prevenir a gravidez após relação sem proteção ou falha do método."
+  },
+  {
+   "id": "ind08",
+   "categoria": "indicacao",
+   "respondivel": true,
+   "pergunta": "Clotrimazol creme vaginal serve para corrimento com coceira?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.33,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "clotrimazol-10-mg-g-creme-vaginal-ems__indicacoes__000",
+    "clotrimazol-10-mg-g-creme-vaginal-ems__advertencias__000",
+    "clotrimazol-10-mg-g-creme-vaginal-ems__posologia__001"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "clotrimazol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim, quando causado por fungos (geralmente Candida): é indicado para vaginite e corrimento infeccioso fúngico."
+  },
+  {
+   "id": "ind09",
+   "categoria": "indicacao",
+   "respondivel": true,
+   "pergunta": "Pantodex pomada serve para assadura?",
+   "caminho": "indicacao",
+   "apresentacao_escolhida": null,
+   "status": "respondida",
+   "rodadas": 1,
+   "segundos": 2.24,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "pantodex-50-mg-g-pomada-geolab__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "dexpantenol"
+   ],
+   "conclusao": "Sim. Pela bula de dexpantenol, é indicado para isso:",
+   "resposta": null,
+   "resposta_esperada": "Sim: o dexpantenol é indicado para tratamento e prevenção de dermatite de fraldas (assaduras), fissuras e feridas."
+  },
+  {
+   "id": "cons01",
+   "categoria": "conservacao",
+   "respondivel": true,
+   "pergunta": "Loratadina 10 mg: em que temperatura deve ser guardada?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.52,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "loratadina-10-mg-geolab__armazenamento__000",
+    "loratadina-10-mg-geolab__advertencias__000",
+    "loratadina-10-mg-geolab__outras__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "loratadina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Em temperatura ambiente, entre 15 e 30 °C."
+  },
+  {
+   "id": "cons02",
+   "categoria": "conservacao",
+   "respondivel": true,
+   "pergunta": "Isotretinoína precisa ser protegida da luz?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.31,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "isotretinoina-20-mg-capsula-mole-ems__armazenamento__000",
+    "isotretinoina-20-mg-capsula-mole-ems__advertencias__010",
+    "isotretinoina-10-mg-capsula-mole-ems__advertencias__011"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "isotretinoina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: proteger da luz e da umidade."
+  },
+  {
+   "id": "cons03",
+   "categoria": "conservacao",
+   "respondivel": true,
+   "pergunta": "Kaodine loção (permetrina) pode ficar no banheiro? Como armazenar?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": "kaodine-10-mg-ml-locao-geolab",
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.29,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "kaodine-10-mg-ml-locao-geolab__armazenamento__000",
+    "kaodine-10-mg-ml-locao-geolab__outras__000",
+    "kaodine-10-mg-ml-locao-geolab__composicao__000"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "permetrina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Em temperatura ambiente (15 a 30 °C), protegido da luz e da umidade."
+  },
+  {
+   "id": "cons04",
+   "categoria": "conservacao",
+   "respondivel": true,
+   "pergunta": "Delumi (vitamina D) precisa ficar na geladeira?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": "delumi-5-000-10-000-e-15-000-ui-geolab",
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.33,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "delumi-5-000-10-000-e-15-000-ui-geolab__armazenamento__000",
+    "delumi-5-000-10-000-e-15-000-ui-geolab__caracteristicas_farmacologicas__001",
+    "delumi-5-000-10-000-e-15-000-ui-geolab__outras__001"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "colecalciferol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Não: em temperatura ambiente, entre 15 e 30 °C."
+  },
+  {
+   "id": "cons05",
+   "categoria": "conservacao",
+   "respondivel": true,
+   "pergunta": "Desalex xarope: como deve ser guardado?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.23,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "desalex-5-mg-e-0-5-mg-ml-organon__armazenamento__000",
+    "desalex-5-mg-e-0-5-mg-ml-organon__advertencias__003",
+    "desalex-5-mg-e-0-5-mg-ml-organon__advertencias__002"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "desloratadina"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Em temperatura ambiente, de 15 °C a 30 °C."
+  },
+  {
+   "id": "sup01",
+   "categoria": "superdose",
+   "respondivel": true,
+   "pergunta": "Criança tomou muitas gotas de Tylalgin por engano. Qual o risco de uma superdose de paracetamol?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.37,
+   "citacoes_corrigidas": 0,
+   "acerto": false,
+   "enviados": [
+    "tylalgin-200-mg-ml-gotas-geolab__superdose__004",
+    "tylalgin-200-mg-ml-gotas-geolab__superdose__002",
+    "tylalgin-200-mg-ml-gotas-geolab__superdose__005"
+   ],
+   "posicao_nos_candidatos": 10,
+   "principios_ativos": [
+    "paracetamol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Lesão no fígado (hepatotoxicidade); a bula orienta procurar atendimento e descreve o tratamento."
+  },
+  {
+   "id": "sup02",
+   "categoria": "superdose",
+   "respondivel": true,
+   "pergunta": "Na superdose de zolpidem a bula fala de algum antídoto?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.28,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "hemitartarato-de-zolpidem-10-mg-geolab__superdose__000",
+    "hemitartarato-de-zolpidem-10-mg-geolab__advertencias__004",
+    "hemitartarato-de-zolpidem-10-mg-geolab__interacoes__003"
+   ],
+   "posicao_nos_candidatos": 1,
+   "principios_ativos": [
+    "hemitartarato de zolpidem"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "O flumazenil pode ser avaliado nos casos graves, com o risco de convulsões."
+  },
+  {
+   "id": "comp01",
+   "categoria": "composicao",
+   "respondivel": true,
+   "pergunta": "O zolpidem 10 mg da Geolab tem lactose? O paciente é intolerante.",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.25,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "hemitartarato-de-zolpidem-10-mg-geolab__composicao__000",
+    "hemitartarato-de-zolpidem-10-mg-geolab__contraindicacoes__000",
+    "hemitartarato-de-zolpidem-10-mg-geolab__outras__001"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "hemitartarato de zolpidem"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: lactose monoidratada está entre os excipientes."
+  },
+  {
+   "id": "comp02",
+   "categoria": "composicao",
+   "respondivel": true,
+   "pergunta": "Tylalgin Sachet tem açúcar? O paciente é diabético.",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.24,
+   "citacoes_corrigidas": 0,
+   "acerto": true,
+   "enviados": [
+    "tylalgin-sachet-500-mg-geolab__advertencias__000",
+    "tylalgin-sachet-500-mg-geolab__composicao__000",
+    "tylalgin-sachet-500-mg-geolab__contraindicacoes__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "paracetamol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": "Sim: contém sacarose entre os excipientes."
+  },
+  {
+   "id": "fora01",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Captopril 25 mg pode ser partido ao meio?",
+   "caminho": "busca_geral",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.38,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "cozaar-50-mg-e-100-mg-organon__resultados_eficacia__015",
+    "nisoflan-50-mg-ml-gotas-geolab__interacoes__004"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "fora02",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Qual a dose de ivermectina para sarna em adulto?",
+   "caminho": "busca_geral",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 2,
+   "segundos": 2.77,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "kaodine-50-mg-ml-locao-cremosa-geolab__resultados_eficacia__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "fora03",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Cetirizina gotas pode ser dada para criança de 1 ano?",
+   "caminho": "sem_trechos",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.57,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "fora04",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Rivotril (clonazepam) pode ser tomado junto com fluoxetina?",
+   "caminho": "busca_geral",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.42,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "cloridrato-de-sertralina-50-mg-e-100-mg-geolab__advertencias__005",
+    "nisoflan-50-mg-ml-gotas-geolab__interacoes__001",
+    "desalex-5-mg-e-0-5-mg-ml-organon__caracteristicas_farmacologicas__003"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "fora05",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Qual o preço do Tylalgin 750 na farmácia popular?",
+   "caminho": "semelhanca",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.22,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "tylalgin-750-mg-geolab__outras__000",
+    "tylalgin-750-mg-geolab__caracteristicas_farmacologicas__000",
+    "tylalgin-750-mg-geolab__composicao__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [
+    "paracetamol"
+   ],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "fora06",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Qual remédio é melhor para unha encravada?",
+   "caminho": "busca_geral",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.4,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "nitazoxanida-500-mg-e-20-mg-ml-ems__advertencias__000",
+    "kaodine-50-mg-ml-locao-cremosa-geolab__posologia__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "fora07",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Dorflex pode ser tomado com refrigerante?",
+   "caminho": "esclarecimento",
+   "apresentacao_escolhida": null,
+   "status": "precisa_esclarecimento",
+   "rodadas": 0,
+   "segundos": 0.02,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "fora08",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Quanto tempo dura a proteção da vacina da gripe?",
+   "caminho": "busca_geral",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.22,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "tylalgin-sachet-500-mg-geolab__indicacoes__000",
+    "amoxicilina-500-mg-capsula-dura-ems__indicacoes__000",
+    "cloridrato-de-nafazolina-0-5-mg-ml-ems__indicacoes__000",
+    "acido-acetilsalicilico-500-mg-ems__indicacoes__000"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "fora09",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Buscopan composto pode ser dado para cólica de bebê?",
+   "caminho": "esclarecimento",
+   "apresentacao_escolhida": null,
+   "status": "precisa_esclarecimento",
+   "rodadas": 0,
+   "segundos": 0.03,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  },
+  {
+   "id": "fora10",
+   "categoria": "fora_do_escopo",
+   "respondivel": false,
+   "pergunta": "Qual o melhor horário para tomar sinvastatina?",
+   "caminho": "busca_geral",
+   "apresentacao_escolhida": null,
+   "status": "nao_encontrada",
+   "rodadas": 1,
+   "segundos": 2.46,
+   "citacoes_corrigidas": 0,
+   "acerto": null,
+   "enviados": [
+    "delumi-5-000-10-000-e-15-000-ui-geolab__interacoes__001"
+   ],
+   "posicao_nos_candidatos": null,
+   "principios_ativos": [],
+   "conclusao": null,
+   "resposta": null,
+   "resposta_esperada": null
+  }
+ ]
+}

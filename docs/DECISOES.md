@@ -1023,9 +1023,66 @@ erro HTTP antes do fluxo e API fora do ar viram `ApiError` certo. **Não verific
 de `test_api.py` (precisam do PostgreSQL, ficaram pulados), o Vite repassando o fluxo (o proxy do Vite
 não costuma guardar a resposta, mas não foi aberto no navegador) e o visual da espera.
 
-## 38. Tela no Docker Compose: nginx na frente do backend (2026-10-28)
-(A §37 é da F4, resposta menos robótica: o código já a cita, o texto ainda falta.)
+## 37. Resposta menos robótica, sem perder a fonte (F4, 2026-10-24)
+**Problema:** no teste pela tela (consulta `12f61084`, 17/10), "oque acha do ibuprofeno pra dor de cabeça?"
+voltou certo, mas como a frase da bula copiada inteira: termo técnico ("cefaleia tensional"), sem dizer de
+onde veio nem o que foi perguntado, e 98 s em 2 rodadas. Pedido do Sérgio: "que a resposta inteira seja menos
+robotizada, da abertura até o final", e "o para que serve pode vir diretamente da bula, porém com a explicação
+também do agente".
 
+**Por que a resposta saía dura:** o prompt pedia "cada frase diz o que o trecho diz" e a fundamentação (§20,
+§28) exige a maioria dos termos da frase no trecho, então o modelo de 1,5B copia. Soltar a checagem quebraria
+as duas regras do projeto (só o que a bula diz, toda frase com fonte). **Decisão:** o que o modelo escreve, ou a
+frase copiada da bula, continua igual e conferido; o que deixa a resposta com cara de conversa é montado **no
+código, em volta dela**, sem LLM e sem passar pela fundamentação. O único texto novo do modelo é a explicação do
+"para que serve", e ela é conferida com régua mais alta.
+
+**O que entrou:**
+- **Abertura** (`services/presentation.py`, `abertura`): uma frase antes da resposta, pelo caminho que a
+  pergunta seguiu no `buscar`: "Pela bula de Ibuprofeno 400 mg:", "Pela posologia de cada bula:", "Sobre usar
+  omeprazol com clopidogrel, pelas bulas de...:", "Para quem tem alergia a dipirona, pelas bulas do acervo:",
+  "As bulas não dizem qual é o melhor, mas dizem isto:". Pergunta de opinião ("o que acha", "vale a pena",
+  "você recomenda") ganha antes "Opinião eu não dou, mas posso dizer o que a bula diz." No "para que serve" a
+  conclusão da §29 já abre a resposta, e a abertura fica só com a frase da opinião, se houver.
+- **Pergunta de opinião vira "para que serve"** (`indication.py`: "acha" entre os verbos de uso): o caso
+  `12f61084` passa a ser respondido pelas indicações, copiadas, em ~2 s, em vez de 2 rodadas do LLM.
+- **Marcas na resposta**, como posições no texto (a frase não muda; a tela monta): `foco`, em negrito, as
+  palavras que dizem o que foi perguntado, pelos sinônimos que `intent` já tem ("dor de cabeça" -> cefaleia,
+  enxaqueca; no máximo 6 e nunca mais da metade do texto, senão o negrito não destaca nada); `termo`, o termo
+  técnico com a palavra do dia a dia entre parênteses ("cefaleia (dor de cabeça)"), pelo glossário.
+- **Glossário** (`services/glossary.py`, 97 entradas): termo técnico da bula -> palavra do dia a dia, com dois
+  usos: a anotação na tela e a fundamentação, que passa a aceitar a expressão do dia a dia inteira ("dor de
+  cabeça", "pressão alta", nunca "pressão" solta) contra um trecho que tem o termo técnico dela. Escrito por
+  Claude, não tirado das bulas: **precisa da revisão do Sérgio** antes de confiar.
+- **Prompt de balcão** (`SISTEMA_BALCAO` em `rag.py`, `LINGUAGEM_SIMPLES=true`): até 4 frases curtas, a
+  primeira já respondendo, dizendo de qual remédio é cada informação, podendo trocar o termo técnico pela
+  palavra do dia a dia (o prompt traz as do glossário que os trechos usam) e sem conselho que o trecho não traz.
+  `LINGUAGEM_SIMPLES=false` volta ao `SISTEMA` anterior, para comparar no benchmark completo.
+- **Explicação do "para que serve"** (`services/explanation.py`, nó `explicar`, `EXPLICAR_INDICACAO=true`):
+  depois das frases copiadas das indicações, o modelo escreve de 1 a 3 frases curtas em palavras simples. Cada
+  frase passa pela fundamentação com `EXPLICACAO_MIN_TERMOS=0.8` (a resposta usa 0,6), não pode repetir a frase
+  da bula (Jaccard >= 0,8) e, quando a conclusão foi "não está nas indicações" ou "só dor em geral", não pode
+  falar do uso perguntado ("serve para ansiedade e dor de cabeça" passaria pela fração de termos). Sem a
+  pergunta no prompt, de propósito: com ela, o modelo pequeno responde à pergunta em vez de explicar. É extra:
+  Ollama fora, tempo esgotado ou frase reprovada nunca viram erro, a resposta sai só com a cópia e o motivo fica
+  na tentativa. Na ressalva ("não é recomendado... na insuficiência cardíaca") não há explicação: o "não" é o
+  que importa, e a paráfrase pode perdê-lo. Etapa nova no progresso (§36): `explicando`.
+- **Sugestões de pergunta seguinte** (`presentation.sugestoes`): até 3 botões sobre o mesmo remédio ("Para que
+  serve...?", "Qual a dose de...?", "Quem não pode tomar...?", "Quais os efeitos colaterais de...?"), cada uma
+  num caminho que o sistema responde bem; sai a da seção já perguntada. Só com um remédio citado e fora da alergia.
+
+**API e banco:** `AnswerOut` e `InquiryDetail` ganharam `abertura`, `explicacao`, `marcas`
+(`{inicio, fim, tipo, explicacao}`) e `sugestoes`; colunas novas em `consultas` (nulas nas consultas
+anteriores a 24/10). **Tela** (`Message.tsx`, `Citations.tsx`): abertura antes da resposta, negrito e
+parênteses montados pelas marcas (sem `dangerouslySetInnerHTML`), "Em outras palavras" com a explicação e as
+sugestões como botões que continuam a conversa.
+
+**Verificado em 2026-10-25:** 23 testes novos (`test_presentation.py`, `test_glossary.py`,
+`test_explanation.py`) e os ajustes em `test_indication.py`, com LLM falso; build do frontend. **Não
+verificado:** a explicação e o prompt de balcão com o LLM de verdade (quinta): medir se as respostas certas
+gravadas continuam passando na fundamentação com o `SISTEMA_BALCAO`, e quantas explicações são aprovadas.
+
+## 38. Tela no Docker Compose: nginx na frente do backend (2026-10-28)
 **Problema:** o compose subia só o banco e a API. A tela chama `/api/v1/...` no próprio endereço
 (`api.ts`), e quem repassava para a API era o proxy do Vite, que só existe no `npm run dev`. Para a entrega
 (etapa 7 do `FarmaRAG.pdf`), a tela tem de subir com `docker compose up`, sem Node rodando.
@@ -1139,3 +1196,304 @@ protegido contra escrita sem mudar um byte; sem o cache, a mensagem certa e nenh
 395 passando e 40 de banco pulados. **Não verificado (quinta, com permissão para baixar as imagens):** o
 passo a passo inteiro num clone novo de verdade (`git clone` → `carga` → `up --build` → pergunta pela tela em
 :8080), incluindo o Ollama do Windows visto de dentro do container.
+
+## 41. Mais de uma apresentação do mesmo remédio: escolher pela pergunta ou perguntar qual (2026-10-28)
+**Problema:** o acervo tem 5 remédios com mais de uma bula: paracetamol (Tylalgin gotas, comprimido 750 mg e
+sachê), permetrina (Kaodine loção e loção cremosa), AAS (100 e 500 mg), isotretinoína (10 e 20 mg) e
+colecalciferol (duas bulas do Delumi). A busca juntava trechos de todas, e para dose, modo de usar, superdose,
+armazenamento ou criança o modelo pequeno podia juntar a dose de uma com a forma de outra. A §14 já previa
+perguntar ("nome ambíguo... precisa_esclarecimento"), mas o nó que perguntava saiu na §20 e só ficou o contrato.
+
+**Decisão** (`services/dosage_form.py`, sem LLM):
+- **A pergunta escolhe a bula quando já diz qual** (`escolhidas`): as palavras e números que só aquela bula tem no
+  nome e na forma farmacêutica ("gotas"/"gotinhas", "750", "sachê"/"sachet", "cremosa", "AAS 100", "Delumi
+  50.000"). A busca, as frases copiadas (dose, interação, indicação) e as rodadas seguintes ficam nela. Número
+  que mede outra coisa não conta ("criança de 20 kg", "a cada 6 horas"). Nomeou todas = não escolheu.
+- **Pergunta qual quando não diz** (`_apresentacoes_a_perguntar` no `buscar`), só se tudo isto vale: um remédio
+  só na pergunta; mais de uma bula dele ainda possível e de **apresentações diferentes** (forma ou números do
+  nome; o mesmo produto de dois laboratórios não é outra apresentação); assunto que muda com a apresentação
+  (`depende`: posologia, superdose, armazenamento, criança, aplicar/diluir/preparar); e a resposta iria para o
+  LLM. A dose copiada da bula (§25), que já vem uma frase por apresentação, passa antes e não pergunta; para que
+  serve, interação e contraindicação também não. Nunca no "não ajudou", na alergia, nem na resposta a um
+  esclarecimento (no máximo um por pergunta, §14).
+- **A pergunta de volta** (`status = precisa_esclarecimento`, motivo novo `apresentacao`): "Tenho 3 bulas de
+  paracetamol, e a resposta muda conforme a apresentação. Qual delas?", um botão por bula ("Tylalgin 200 mg/mL
+  gotas", "Tylalgin 750 mg (comprimido)", "Tylalgin Sachet 500 mg": a forma entre parênteses quando o nome não
+  a diz). Sai antes da geração, sem gastar o LLM (`rodadas = 0`).
+- **O botão reenvia a pergunta com `bula_id`** (campo novo em `QuestionIn` e em `OptionOut`, o mesmo nome da
+  especificação): vale mais que `principios_ativos` (o remédio é o da bula); bula fora do acervo dá
+  **404 `BULA_NAO_ENCONTRADA`**, checado antes do agente (na rota com progresso, como erro HTTP comum). Escrever
+  a resposta no chat ("o comprimido") também escolhe, pelas mesmas palavras.
+- **A conversa continua na apresentação escolhida**: `consultas` ganhou `bula_id_filtro` (o botão, para refazer a
+  pergunta igual no "não ajudou" e ao reabrir pelo histórico) e `bulas` (as bulas a que a busca ficou presa);
+  "e para criança?" depois de "Tylalgin gotas, qual a dose?" herda as gotas (`PreviousQuestion.bulas`).
+- **Busca:** `VectorSearch.buscar(..., bulas)`, no `InMemoryIndex` e no `PgvectorSearch`: o princípio ativo que
+  tem alguma das bulas só busca nelas; os outros remédios da pergunta continuam em todas as bulas deles.
+- **Assunto da resposta:** a forma farmacêutica das bulas do remédio conta como nome, não como assunto (como o
+  nome comercial e o fabricante). Sem isso, "o comprimido" escrito em resposta exigia a palavra "comprimido" na
+  resposta e reprovava nas 3 rodadas (achado no teste).
+- **Benchmark:** quando o agente pergunta a apresentação, `benchmark.run` responde como o balconista, com a bula
+  que tem a âncora do gabarito, e grava `apresentacao_escolhida`; o tempo conta as duas chamadas. O
+  `benchmark.ask` oferece as opções e reenvia com a bula.
+
+**Pelo texto do gabarito (sem rodar, estimativa de 2026-10-28):** 6 perguntas passam a ficar numa bula só pela
+própria pergunta (pos01 Tylalgin 750, pos11 Kaodine loção 10 mg/mL, pos12 AAS 500, sup01 gotas, comp02 Sachet,
+fora05) e 3 passam a perguntar a apresentação (adv10 criança + AAS, cons03 Kaodine "loção", cons04 Delumi na
+geladeira). Um falso positivo achado assim e corrigido: "cliente **bebe** álcool" casava com "bebê".
+
+**Verificado:** 30 testes em `test_dosage_form.py` (escolha pela pergunta, assunto, mesmo produto de dois
+laboratórios, botões, e o grafo com LLM falso: pergunta sem chamar o modelo, botão, resposta escrita, sem segundo
+esclarecimento, conversa que herda, interação sem perguntar, dose copiada por apresentação) e 1 em
+`test_vector_search.py`; suíte com 426 passando. **Não verificado (quinta, com o banco):** 2 testes de API
+(404 e o `bula_id_filtro` no histórico) e 4 do `PgvectorSearch` com o filtro por bula; a tela com os botões novos.
+
+## 42. O conselho que o trecho não traz sai da resposta, e "médico" não casa com "medicamento" (2026-10-28)
+**Problema:** no caso "rocutan" (§28) a resposta aprovada terminava em "É recomendado consultar um médico",
+conselho que o trecho citado (a bula do diclofenaco) não dava. A F4 (§37) pôs no prompt de balcão "não acrescente
+conselho que o trecho não traz", mas o modelo de 1,5B escreve isso mesmo assim, e a fundamentação deixava passar:
+"médico" e "medicamento" começam com as mesmas 5 letras, e todo trecho de bula tem "medicamento". O conselho
+genérico também não faz falta: o aviso fixo da F2 (§33) já manda conferir com o farmacêutico e o médico.
+
+**Decisão** (`grounding.sem_conselho`, no `validar`, antes de `corrigir_citacoes`, sem LLM):
+- **Conselho** é a parte da frase com um verbo ou substantivo de conselho e, depois dele, quem procurar:
+  "consulte um médico", "procure orientação médica", "fale com o farmacêutico", "informe seu médico", "em caso de
+  dúvida, ..." (`_CONSELHO`). "O médico deve avaliar a função renal" não é conselho: a fundamentação decide.
+- **Se o trecho citado fala de médico, farmacêutico, dentista ou profissional de saúde** ("em caso de superdose,
+  procure atendimento médico"), o conselho é da bula e fica. O cabeçalho "Bula para o profissional de saúde", que
+  vem no texto de 23 trechos, não conta. Nos trechos reais, 274 de 1.384 falam de algum desses.
+- **Se não fala, o conselho sai em silêncio**: a parte da frase ("contraindicado na dengue, consulte um médico" ->
+  "contraindicado na dengue."), a frase, ou a afirmação inteira. O que saiu vai para `Attempt.correcoes` ("conselho
+  que o trecho [n] não traz, saiu/cortado"), como a citação corrigida da §31. Sem custo de rodada.
+- **Resposta que era só conselho** reprova a rodada ("a resposta só traz conselho que os trechos não trazem"), com
+  o aviso `DICA_ASSUNTO` (responda ao que foi perguntado): não há nada da bula nela.
+- **"médico", "médica", "médicos" e "médicas" só valem inteiros** na fundamentação (`Reference.tem`): "consulte um
+  médico" contra um trecho sem médico agora tem os dois termos fora. Vale também para a explicação do para que
+  serve (§37), que já reprovava a maioria desses conselhos pela régua de 0,8.
+
+**Verificado:** 10 testes novos em `test_grounding.py` (cortes, o trecho que traz o conselho, o cabeçalho,
+"médico" contra "medicamento") e 2 em `test_rag.py` (o conselho sai sem custar rodada; a resposta só de conselho
+reprova e a rodada 2 recebe o aviso); suíte com 438 passando. **Não verificado (quinta, com o banco):** quantas
+respostas aprovadas no histórico mudariam (como na §28 e na §31: rodar `sem_conselho` e a fundamentação nova sobre
+as `tentativas` gravadas) e o efeito no benchmark completo.
+
+## 43. Lote 2 do gabarito, escrito sem olhar o que o sistema responde (2026-10-28)
+**Problema:** a especificação pede "escreva as perguntas antes de olhar o que o sistema responde, para não viciar
+o teste". As 80 perguntas do lote 1 (§30) foram escritas assim, mas depois os pesos do reranking (§30, §34) e várias
+regras (sigla "AAS", alergia, uso com dois remédios) foram ajustados olhando os resultados delas: o 57/70 do modo
+busca é, em parte, treino. Falta um conjunto que meça a generalização.
+
+**Decisão:** `data/benchmark/perguntas_lote2.jsonl`, **41 perguntas (35 com resposta, 6 sem)**, ids `l2-...`,
+escritas em 2026-10-28 lendo só o texto das bulas (`data/processed/bulas/`) e as perguntas do lote 1 (para não
+repetir), sem rodar o sistema nem abrir resultado. Mesmo contrato do lote 1 (âncora = princípio ativo, seção e uma
+frase copiada da bula).
+- **Cobertura:** os 7 princípios ativos que o lote 1 não tinha (acetilcisteína, ácido fólico, albendazol, ambroxol,
+  dexclorfeniramina, tiamina, nafazolina) e assuntos novos dos outros (omeprazol antes das refeições e cápsula
+  aberta, zolpidem por no máximo 4 semanas, Pozato e vômito, digoxina com diclofenaco, pimozida com sertralina...).
+- **Categorias:** posologia 13, contraindicação 5, advertência 4, interação 7, reação adversa 1, indicação 2,
+  conservação 1, superdose 1, composição 1, fora do escopo 6. Inclui duas perguntas de remédio com mais de uma
+  apresentação (Delumi 50.000, Kaodine loção cremosa), que exercitam a §41.
+- **Fora do escopo** conferido pelo texto: nenhum trecho fala de boldo, calvície, horário da losartana ou preço; a
+  do cachorro tem trechos de estudo em cães na bula da acetilcisteína (a pergunta é sobre amoxicilina), o que testa
+  a recusa contra um falso parecido. A pergunta "a losartana genérica funciona igual à de marca?" saiu: o rótulo
+  "medicamento genérico, Lei nº 9.787" de várias bulas ficava perto demais.
+- **Rodar:** `python -m benchmark.run --perguntas data/benchmark/perguntas_lote2.jsonl --rotulo lote2` (modo busca)
+  e `--modo completo` na quinta. Comparar com o lote 1: se o lote 2 acertar bem menos, os ajustes decoraram o lote 1.
+
+**Teste de contrato novo** (`test_dataset_contract.py`): os dois gabaritos seguem o `BenchmarkQuestion`, **toda
+âncora está em algum trecho do `chunks.jsonl`** e os ids não se repetem entre os lotes. O teste antigo procurava
+`data/benchmark/perguntas.json` (o nome da especificação) e passava vazio: o arquivo real é `.jsonl`. As 106 âncoras
+dos dois lotes passam. Assim, a resposta à pergunta da especificação "se a bula mudar, quais perguntas do benchmark
+quebram?" sai na suíte, antes de rodar o benchmark.
+
+## 44. Docker endurecido, análise de segurança e a F3b medida (2026-10-29)
+Pedido do usuário: fechar o que desse, configurar o Docker, analisar a segurança e terminar. Esta seção
+junta o que mudou e por quê; o modelo de ameaça, a lista de achados e os riscos aceitos estão em
+[`SEGURANCA.md`](SEGURANCA.md).
+
+### Os testes de banco voltaram a rodar (e 4 estavam defasados)
+Desde a F3d os testes que precisam do PostgreSQL ficavam pulados quando o banco estava desligado, e
+desde então foram escritas a F3b, a F4, o `bula_id` e a forma farmacêutica. Com o banco ligado, **22 falharam**;
+as causas eram 4:
+1. **`pytest.fail` dentro da API derruba o módulo todo.** Ele roda na thread do TestClient, mata o "portal"
+   e o erro "This portal is not running" derrubava os testes seguintes em cascata (22 falhas por 1 causa).
+   Troquei por um registro de chamadas com asserção depois.
+2. **F4:** "para que serve" agora chama o LLM uma vez, para a explicação em palavras simples (opcional, nunca
+   vira erro). O teste esperava "sem LLM". O LLM falso agora trata essa chamada à parte (a explicação não
+   consome uma das saídas combinadas) e o teste confere que só ela chamou o modelo.
+3. **`bula_id`** na opção do esclarecimento: o teste antigo esperava o formato sem o campo.
+4. **F3b:** "características farmacológicas" deixou de ser o 2º trecho de "O que é o Exemplol?" (§34), e os dois
+   testes do "não ajudou" (de 20/10) esperavam isso. Reescritos com a ordem de semelhança nova e a intenção
+   original (evitar os citados; enviados e não citados depois dos nunca enviados). O comportamento estava
+   certo; o gabarito do teste é que era de antes da F3b.
+
+Resultado: **todos os testes passam com o banco ligado, 0 pulados.**
+
+### A F3b, medida (modo busca, 2026-10-29)
+`python -m benchmark.run` com e sem `RERANK_GARANTE_SECAO`:
+
+| Lote | F3b ligada | F3b desligada | Perguntas com acerto diferente | Perguntas com trechos diferentes |
+|---|---|---|---|---|
+| 1 (80, escrito antes) | 58/70 | 58/70 | 0 | 8 de 80 |
+| 2 (41, escrito sem olhar o sistema) | 30/35 | 30/35 | 0 | 4 de 41 |
+
+A F3b muda **os trechos enviados em 12 de 121 perguntas**, trocando "resultados de eficácia" e "características
+farmacológicas" por seções que a pergunta pede, e **não muda o acerto de nenhuma**. É o efeito pretendido
+(prompt mais curto e mais relevante, sem perda). **Decisão: continua ligada.** O lote 2, escrito sem olhar
+os resultados, acerta 30/35 (86%) contra 58/70 (83%) do lote 1: os pesos do reranking generalizam.
+`RERANK_CANDIDATOS` continua 10 (§32: 25 ou mais só trocava uma pergunta).
+
+### `/saude`: "ocupado" não é "fora do ar"
+Na gravação da demonstração apareceu a faixa "Ollama não respondeu em 3 s" durante toda pergunta longa: a
+sondagem do Ollama tem 3 s de limite, e na CPU o servidor passa 50-90 s gerando. `ollama._pedir` já separa
+**estouro de tempo** (`TEMPO_ESGOTADO`: o servidor aceitou a conexão) de **conexão recusada**
+(`OLLAMA_INDISPONIVEL`). O `/saude` passa a tratar o primeiro como "no ar, ocupado" e só o segundo como
+problema.
+
+### Docker
+- **Imagens por digest** (verificadas no Docker Hub em 2026-10-29): `python:3.12-slim`, `node:24.22.1-alpine3.24`
+  e `nginxinc/nginx-unprivileged:1.30.6-alpine3.24` (mantida pelo time do NGINX; mesma versão estável que o
+  projeto já usava, mas roda como usuário `nginx`, sem root).
+- **Dependências Python travadas:** `backend/requirements.lock` (54 pacotes), gerado por `backend/lock_deps.py`
+  a partir do que está instalado e testado. A imagem instala dele; o `requirements.txt` continua sendo a
+  lista legível.
+- **Containers:** backend sem root (uid 10001), raiz somente leitura (só `/tmp` em memória), `cap_drop: ALL`,
+  `no-new-privileges`, teto de memória e processos, reinício automático e healthchecks. O backend usa o
+  `/docs`, não o `/saude`: o `/saude` sonda o banco e o Ollama e ficaria lento numa pergunta longa.
+  `frontend` só sobe com o backend saudável. O banco ganhou `no-new-privileges` e reinício (o resto da lista
+  exige ajuste fino na imagem do PostgreSQL).
+- **nginx:** escuta a 8080 por dentro (sem root não abre a 80); a porta publicada no host continua
+  `127.0.0.1:8080`. CSP restritiva, `Permissions-Policy`, COOP e CORP. A tela não usa estilo nem script inline,
+  então a política não precisa de `'unsafe-inline'`.
+- **Falhas das imagens (`docker scout`):** a base do nginx trazia `brotli` (CVE explorada, na lista da CISA),
+  `curl` e `zlib` com correção já publicada. O `frontend/Dockerfile` roda `apk upgrade` e remove o `curl`.
+  No backend, a "crítica" era o `certifi` antigo (corrigido no lock). Ficaram só `zlib` (Debian) e
+  `libxml2` (Alpine), sem versão corrigida (risco aceito, em `SEGURANCA.md`).
+- **LangSmith desligado** no Compose (`LANGSMITH_TRACING` e `LANGCHAIN_TRACING_V2` falsos): o LangGraph vem do
+  ecossistema LangChain, que sabe mandar rastros para a nuvem.
+
+**Verificado:** clone novo (pasta só com o que vai ao Git, `.env` do exemplo, banco novo, portas diferentes):
+`up -d db`, `run --rm carga` (37 bulas e 1.384 trechos), `up -d --build`, os três containers saudáveis,
+`/saude` ok. Pilha principal: pergunta que passa pelo LLM pela tela do Docker, com as etapas chegando em tempo
+real pelo nginx (5,2 s "Buscando", 6,2 s "Escrevendo", resposta em 61 s) e **zero violações de CSP** no
+console. **Não verificado:** `docker scout` em CI, e a pilha em Linux (todo o teste foi no Docker Desktop do
+Windows; o `host.docker.internal:host-gateway` do Compose é o que o Linux também aceita).
+
+### Correções de segurança no código
+Ver os achados 4 a 7 de `SEGURANCA.md`: teto de perguntas em andamento (`PERGUNTAS_SIMULTANEAS`, 429
+`SERVIDOR_OCUPADO`), `nosniff` e `no-store` nas respostas da API, limite de 200 caracteres por nome no filtro,
+só `http(s)` em `OLLAMA_URL`, aviso no log para senha de exemplo, e na tela o aviso "Não escreva nome nem dado de
+paciente". Todos têm teste (`test_security.py` e os de 429 em `test_api.py`).
+
+### O que não foi feito
+- **As 12 bulas que faltam** (naproxeno, cetirizina, loperamida, bisacodil, lactulose, escopolamina,
+  dimenidrinato, guaifenesina, benzidamina, ácido ascórbico, sulfato ferroso, minoxidil): o Bulário usa
+  Cloudflare e o download é manual (`data/FONTES.md`). O MVP fica em 28 de 40, mais 3 extras.
+- **Meta de latência (mediana < 60 s):** não atingida com o modelo de 1,5B na CPU. A saída é `CHUNK_TOKENS`
+  menor (exige refazer ~1.384 embeddings) ou outro hardware.
+- **Limites conhecidos do agente:** a regra 6 (§45) pega a permissão explícita contra uma proibição clara, não
+  toda inversão de sentido; subseções como metadado e cross-encoder só valem se o benchmark pedir.
+
+## 45. Regra 6: a resposta que afirma o que a bula proíbe (2026-10-29)
+Fechava o último limite conhecido da fundamentação. A regra 5 (§28) pega a **negação inventada** ("não é
+indicado" citando um trecho que diz "é indicado"); faltava o caminho inverso, a **permissão inventada**
+("pode ser usado na gravidez" citando "contraindicado na gravidez"). Numa resposta de saúde, é o erro mais
+perigoso dos dois.
+
+**A regra** (`grounding.afirma_o_que_o_trecho_proibe`, mensagem `AFIRMA`): uma frase da afirmação diz que o
+remédio **pode ser usado**, e todas as frases do trecho que a sustentam proíbem. Estreita de propósito:
+- **Permissão** na resposta só é "pode ser usado/utilizado/tomado/administrado", "pode usar/tomar",
+  "permitido", "liberado", "seguro". "Pode" sozinho **não** conta: aparece em quase toda frase de bula
+  ("pode causar sono", "pode reduzir o efeito") e reprovaria resposta certa. Se a frase também nega, evita ou
+  proíbe ("pode, mas evite..."), não é permissão pura.
+- **Proibição** na bula é "contraindicado", "proibido", "evite/evitar/evitado" e "não deve/use/tome/pode/
+  recomendado". Fica de fora "evita" (3ª pessoa: "evita a formação de coágulos") e a frase que usa a palavra
+  para liberar ("não é contraindicado", "não há contraindicação").
+- **Apoio:** as frases do destaque (as mesmas da regra 5). Sem nenhuma (pouco em comum com o trecho, como em
+  "É seguro na gravidez"), só decide se o trecho **inteiro** é feito de proibições; senão, a regra se abstém.
+  Abster-se é o lado seguro: a regra só reprova quando tem certeza de qual frase da bula a afirmação contradiz.
+
+Reprovada, a rodada seguinte recebe um aviso próprio (`DICA_AFIRMACAO`), no mesmo esquema das regras 3 e 5.
+
+**Medido, para ter certeza de que não reprova resposta certa:**
+
+| Amostra | Pares conferidos | Sinalizados |
+|---|---|---|
+| Respostas **aprovadas** do histórico real (92, 17 copiadas da bula) | 146 afirmação-trecho | **0** |
+| Respostas **esperadas** do gabarito, nos trechos-âncora (121 perguntas, escritas à mão) | 123 | **0** |
+
+**Sensibilidade:** a permissão inventada "O medicamento pode ser usado por qualquer paciente", citando cada um
+dos 47 trechos de contraindicação do acervo, é reprovada em **24**. Nos outros 23 há alguma frase que não é
+proibição pura e a regra se abstém. É uma rede de segurança parcial e sem falsos positivos medidos, não uma
+garantia: a conferência por LLM da rodada 3 e a revisão humana do balcão continuam sendo necessárias.
+
+Testes: `test_grounding.py` (permissões que devem ser pegas; possibilidade, apoio vizinho, ressalva, bula que
+também permite, "não é contraindicado" e "evita" que não devem).
+
+
+## 46. Benchmark completo com o LLM real: o que o "acerto" não mede (2026-10-29)
+Primeira medição dos dois lotes (80 + 41 perguntas) com o `qwen2.5:1.5b` de verdade, semente 42, `top_k` 3,
+reranking de 10 candidatos (arquivos `completo_2026-10-29_*` em `data/benchmark/resultados/`). O lote 1 rodou
+antes da regra 6 (§45) e o lote 2 depois.
+
+### O "acerto" mede a busca, não a resposta
+`acerto_rodada1` diz se a frase-âncora estava entre os trechos que o modelo recebeu. Três respostas marcadas
+como acerto estão **erradas** (`pos06`, `con06`, `adv03`): o trecho certo foi enviado e o modelo o contrariou.
+Por isso as 88 respostas dadas foram lidas contra a resposta esperada do gabarito (leitura manual; o benchmark
+não tem métrica automática de qualidade da resposta, e escrever uma é o próximo passo, abaixo).
+
+| | Lote 1 | Lote 2 | Total |
+|---|---|---|---|
+| Perguntas com resposta na bula | 70 | 35 | 105 |
+| Respondidas | 64 | 24 | 88 |
+| Adequadas | 48 | 16 | **64** |
+| Erradas | 6 | 3 | **9** |
+| Fora do assunto ou incompletas | 10 | 5 | 15 |
+| Terminaram em "não encontrei" ou erro do modelo | 6 | 11 | 17 |
+| Perguntas sem resposta na bula: recusa certa | 5/10 | 2/6 | 7/16 |
+
+No lote 1, as 5 sem recusa certa são 3 erros 502 (JSON inválido do modelo) e 2 pedidos de esclarecimento: nenhuma
+resposta inventada. No lote 2, **3 foram respondidas indevidamente** (abaixo). Mediana 31,6 s (lote 1) e 24,8 s
+(lote 2): a mediana é baixa porque 11 das 70 perguntas do lote 1 vão pelo caminho de cópia da bula, sem LLM; nas
+respostas lidas que passaram pelo modelo, o tempo ficou entre 40 e 95 s (a meta de 60 s de mediana para o LLM
+não é atingida na CPU).
+
+### Os defeitos, com o trecho que os explica
+- **`pos06`** "pode tomar outro comprimido se acordar?" → "Sim". O trecho enviado diz "não deve ser readministrado
+  na mesma noite". A regra 6 não pega: a frase da bula de apoio é outra ("o comprimido deve ser tomado com
+  líquido"), e "readministrar" não é sinônimo que a regra conheça.
+- **`adv03`** "mãe que amamenta pode tomar sertralina?" → "a amamentação é um uso recomendado". O trecho diz "o uso
+  em lactantes **não é recomendado** a menos que...". A regra 6 só reconhece "pode ser usado/tomado", "permitido",
+  "liberado" e "seguro" como permissão.
+- **`con08`** úlcera ativa e AAS → "Sim, pode ser usado". Aqui a busca falhou antes: o trecho de contraindicação
+  não entrou entre os 3 enviados (só o de "usar com cautela em história de úlcera"), e o modelo concluiu "sim".
+- **`con06`** metformina com TFG < 30 → "Sim, é recomendado verificar a função renal": o trecho de contraindicação
+  estava entre os enviados, mas o modelo citou o de advertência e abriu com "Sim", sem sustentação.
+- **Fora do escopo respondido** (lote 2): `fora01` (preço do Cozaar) e `fora03` (dose para cachorro) foram
+  atendidas pelo caminho de resposta copiada da bula, que devolve a posologia do remédio citado sem checar se a
+  pergunta é sobre dose; `fora04` ("omeprazol com chá de boldo") foi respondida com um trecho de interações que
+  não contém "boldo", e a fundamentação aceitou porque "omeprazol" e "interação" estavam lá (regra 3 só barra
+  quando a frase tem *só* o nome).
+- **Fora do assunto**: a checagem "a resposta não fala do que foi perguntado" é frouxa: `adv09` (fígado) foi
+  respondida com amamentação, `adv08` ("por quantos dias no máximo") com a dose pediátrica.
+- **Variação entre execuções**, mesmo com semente fixa: `con09` ora termina em "não encontrei", ora responde
+  "Sim, pode começar a sertralina" onde a bula manda esperar 14 dias (afirmação errada que passou na fundamentação).
+
+### O que se conclui e o que não
+- Vale dizer: citação verificada no código, recusa quando a bula não sustenta, 0 resposta inventada nas 10 perguntas
+  sem resposta do lote 1.
+- **Não vale dizer** "prefere recusar a errar": 9 de 88 respostas contradizem a bula e 3 de 6 perguntas fora do
+  escopo do lote 2 foram respondidas. O README e os textos de apresentação foram corrigidos para isso.
+- As regras de fundamentação (1 a 6) são conferência lexical. Elas não leem o sentido. Um modelo maior ou uma
+  conferência semântica é o que falta, e as duas coisas custam latência na CPU.
+
+### Próximos passos (não feitos hoje; mexem no comportamento e pedem novo benchmark completo, ~1 h)
+1. **Guarda de escopo** antes da busca: preço, animal/veterinário e posologia pedida sem remédio do acervo
+   respondem "fora do escopo" sem passar pelo modelo (corrige `fora01` e `fora03`).
+2. **Sim/não com apoio:** abertura "Sim"/"Não" só se o trecho citado tem permissão ou proibição explícita; senão,
+   cortar a abertura e deixar a frase da bula (pega `pos06`, `adv03`, `con06`); incluir "recomendado" e
+   "readministr*" na regra 6 só depois de medir falso positivo nos 146 + 123 pares, como foi feito na §45.
+3. **Termo da pergunta no trecho:** exigir que o substantivo novo da pergunta ("boldo", "cachorro") apareça no
+   trecho citado, senão recusar (`fora04`).
+4. **Métrica de qualidade da resposta** no benchmark (termos obrigatórios e proibidos por pergunta), para que o
+   "acerto" deixe de ser lido como acerto da resposta.
+5. Testar `qwen2.5:7b` só nas perguntas que o 1,5B erra, para saber quanto do problema é o tamanho do modelo.

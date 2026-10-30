@@ -21,16 +21,23 @@ class PgvectorSearch:
     def __init__(self, engine: Engine):
         self._engine = engine
 
-    def _top(self, conexao, q: np.ndarray, k: int, alvo: str | None) -> list[SearchHit]:
+    def _top(self, conexao, q: np.ndarray, k: int, alvo: str | None, bulas: list[str] = ()) -> list[SearchHit]:
         distancia = Chunk.embedding.cosine_distance(q)  # 1 - cosseno
         consulta = select(Chunk.chunk_id, distancia).order_by(distancia, Chunk.chunk_id).limit(k)
         if alvo is not None:
             consulta = consulta.where(Chunk.principio_ativo_norm == alvo)
+        if bulas:
+            consulta = consulta.where(Chunk.bula_id.in_(bulas))
         return [SearchHit(chunk_id, 1.0 - float(d)) for chunk_id, d in conexao.execute(consulta)]
 
     def buscar(
-        self, consulta: Sequence[float], k: int, principios_ativos: Collection[str] | None = None
+        self,
+        consulta: Sequence[float],
+        k: int,
+        principios_ativos: Collection[str] | None = None,
+        bulas: Collection[str] | None = None,
     ) -> list[SearchHit]:
+        """`bulas`: o princípio ativo que tem alguma delas só busca nelas (vector_search.py)."""
         if k <= 0:
             return []
         q = np.asarray(consulta, dtype="<f4")
@@ -45,5 +52,11 @@ class PgvectorSearch:
             k_por_alvo = max(1, math.ceil(k / len(alvos)))
             resultados: list[SearchHit] = []
             for alvo in alvos:
-                resultados += self._top(conexao, q, k_por_alvo, alvo)
+                do_alvo = []
+                if bulas:
+                    do_alvo = list(conexao.scalars(
+                        select(Chunk.bula_id).distinct()
+                        .where(Chunk.principio_ativo_norm == alvo, Chunk.bula_id.in_(list(bulas)))
+                    ))
+                resultados += self._top(conexao, q, k_por_alvo, alvo, do_alvo)
         return sorted(resultados, key=lambda r: -r.score)[: max(k, len(alvos))]
